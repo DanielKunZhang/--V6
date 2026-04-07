@@ -83,7 +83,7 @@ NOTIFY_CONFIG = {
 
 # ========== 运行模式 ==========
 RUN_MODE = {
-    "dry_run": True,               # 改为 False 启用实盘交易（安全起见默认模拟）
+    "dry_run": False,              # 实盘模式
     "initial_capital": 60000,      # 初始资金 HKD 6万
     "check_interval": 60,          # 检查间隔（秒）
     "market_open_check": True,     # 只在交易时段检查
