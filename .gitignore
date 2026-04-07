@@ -8,3 +8,4 @@ backtest_results/
 *.json
 *.bak
 .DS_Store
+wheel_bot.pid
