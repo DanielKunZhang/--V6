@@ -948,15 +948,17 @@ class ICTrader:
                 filter_trdmarket="HK",
                 security_firm="FUTUSECURITIES",
             )
-            acc_id = int(FUTU_CONFIG.get("real_acc_id", "281756481449956811"))
+            trd_env = TrdEnv.SIMULATE if self.dry_run else TrdEnv.REAL
+            acc_id_key = "sim_acc_id" if self.dry_run else "real_acc_id"
+            acc_id = int(float(FUTU_CONFIG.get(acc_id_key, "281756481449956811")))
             
             ret, pos_data = trade_ctx.position_list_query(
                 code="",
                 pl_ratio_min=None,
                 pl_ratio_max=None,
-                trd_env=TrdEnv.REAL,
+                trd_env=trd_env,
                 acc_id=acc_id,
-                refresh_cache=True,  # 模拟交易必须刷新
+                refresh_cache=True,
             )
             trade_ctx.close()
             
@@ -1022,11 +1024,13 @@ class ICTrader:
                 filter_trdmarket="HK",
                 security_firm="FUTUSECURITIES",
             )
-            acc_id = int(FUTU_CONFIG.get("real_acc_id", "281756481449956811"))
+            trd_env = TrdEnv.SIMULATE if self.dry_run else TrdEnv.REAL
+            acc_id_key = "sim_acc_id" if self.dry_run else "real_acc_id"
+            acc_id = int(float(FUTU_CONFIG.get(acc_id_key, "281756481449956811")))
             ret, pos_data = trade_ctx.position_list_query(
-                trd_env=TrdEnv.REAL,
+                trd_env=trd_env,
                 acc_id=acc_id,
-                refresh_cache=True,  # 模拟交易必须刷新
+                refresh_cache=True,
             )
             trade_ctx.close()
 
@@ -1336,6 +1340,11 @@ class ICTrader:
         from futu import OpenSecTradeContext, TrdSide, OrderType, TrdEnv, RET_OK
         from config import FUTU_CONFIG
 
+        # dry_run 模式：不执行真实平仓
+        if self.dry_run:
+            logger.info("🔧 [模拟] 触发平仓检查，模拟模式不执行真实下单")
+            return {"success": True, "dry_run": True, "closed": 0}
+
         logger.info("=" * 50)
         logger.info("🔴 开始执行平仓")
         logger.info("=" * 50)
@@ -1351,7 +1360,8 @@ class ICTrader:
             filter_trdmarket="HK",
             security_firm="FUTUSECURITIES",
         )
-        acc_id = int(FUTU_CONFIG.get("real_acc_id", "281756481449956811"))
+        trd_env = TrdEnv.REAL
+        acc_id = int(float(FUTU_CONFIG.get("real_acc_id", "281756481449956811")))
         closed = 0
 
         for pos in positions:
@@ -1370,22 +1380,27 @@ class ICTrader:
                 close_side = TrdSide.BUY
                 side_label = "买入平仓"
 
-            # 获取实时盘口，取中间价
+            # 获取实时盘口，取中间价；无价格则用市价单
             prices = self.get_real_time_prices([code])
             p = prices.get(code, {})
-            bid = p.get("bid", 0.0)
-            ask = p.get("ask", 0.0)
-            mid = p.get("mid", 0.01)
-            price = mid if mid > 0 else 0.01
+            mid = p.get("mid", 0.0)
 
-            logger.info(f"📤 {side_label} {code}  数量={qty}  价格=HKD {price:.2f}")
+            if mid > 0:
+                order_price = round(mid, 2)
+                order_type  = OrderType.NORMAL
+            else:
+                logger.warning(f"⚠️ {code} 无实时价格，改用市价单平仓")
+                order_price = 0.0
+                order_type  = OrderType.MARKET
+
+            logger.info(f"📤 {side_label} {code}  数量={qty}  价格={'市价' if order_type == OrderType.MARKET else f'HKD {order_price:.2f}'}")
 
             ret, data = trade_ctx.place_order(
                 code=code,
-                price=price,
+                price=order_price,
                 qty=qty,
                 trd_side=close_side,
-                order_type=OrderType.NORMAL,
+                order_type=order_type,
                 adjust_limit=0,
                 trd_env=TrdEnv.REAL,
                 acc_id=acc_id,
