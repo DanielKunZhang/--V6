@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+logs/
+data/
+backtest_results/
+*.json
+*.bak
+.DS_Store

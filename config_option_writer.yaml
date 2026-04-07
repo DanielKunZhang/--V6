@@ -1,0 +1,109 @@
+# 价值投资期权策略生成器配置文件
+# 请根据实际情况修改以下配置
+
+# ========================
+# 全局配置
+# ========================
+futu_api:
+  host: "127.0.0.1"      # FutuOpenD 主机地址
+  port: 11111            # FutuOpenD 端口
+  # password: ""         # 交易密码（可选，仅用于下单功能）
+  # env: "SIMULATE"      # 交易环境: SIMULATE（模拟） 或 REAL（实盘）
+
+# ========================
+# Sell Put 策略参数
+# ========================
+sell_put:
+  # 标的代码列表（支持港股和美股）
+  target_stocks:
+    - "AAPL.US"          # 苹果公司（美股）
+    - "00700.HK"         # 腾讯控股（港股）
+    - "V.US"             # Visa（美股）
+    - "MSFT.US"          # 微软（美股）
+
+  # 击球区字典：股票代码 -> [最低可接受价格, 最高可接受价格]
+  buy_zone:
+    "AAPL.US": [150, 170]        # 苹果：150-170美元为击球区
+    "00700.HK": [250, 300]       # 腾讯：250-300港元为击球区
+    "V.US": [200, 220]           # Visa：200-220美元为击球区
+    "MSFT.US": [350, 380]        # 微软：350-380美元为击球区
+
+  # 到期日范围（天）
+  expiry_days_min: 14            # 最小到期日（偏好近月合约，时间衰减快）
+  expiry_days_max: 60            # 最大到期日
+
+  # Delta 绝对值范围（建议 0.15-0.35，即 15%-35% 的概率被行权，虚值一档到二档）
+  delta_range: [0.15, 0.35]
+
+  # IV 历史分位数上限（只在 IV 低于历史 50% 分时卖，避免"波动率陷阱"）
+  iv_percentile_max: 0.50
+
+  # 最低年化收益率要求（%）
+  min_annual_yield: 10.0
+
+  # 流动性筛选阈值
+  min_volume: 100                # 最低成交量
+  min_open_interest: 500         # 最低持仓量
+
+# ========================
+# Covered Call 策略参数
+# ========================
+covered_call:
+  # 持仓字典：股票代码 -> {持仓数量, 目标卖出价, 持仓成本（可选）}
+  holdings:
+    "AAPL.US":
+      qty: 100                  # 持仓数量
+      target_sell_price: 220    # 内在价值/目标卖出价（美元）
+      # cost_basis: 180         # 持仓成本（可选，用于计算总收益率）
+    "MSFT.US":
+      qty: 50
+      target_sell_price: 420
+      # cost_basis: 380
+
+  # 到期日范围（天）
+  expiry_days_min: 14
+  expiry_days_max: 60
+
+  # Delta 范围（建议 0.15-0.35）
+  delta_range: [0.15, 0.35]
+
+  # IV 历史分位数下限（在 IV 高于历史 50% 分时卖，赚"波动率溢价"）
+  iv_percentile_min: 0.50
+
+  # 流动性筛选阈值（同 Sell Put）
+  min_volume: 100
+  min_open_interest: 500
+
+# ========================
+# 输出配置
+# ========================
+output:
+  save_csv: true                 # 是否保存CSV文件
+  csv_path: "./option_strategy_report.csv"  # CSV文件保存路径
+  print_table: true              # 是否在终端打印表格
+  table_style: "prettytable"     # 表格样式：prettytable
+
+# ========================
+# 定时探测配置（可选）
+# ========================
+scheduler:
+  enable: false                  # 是否启用定时探测
+  schedule_times:                # 探测时间（24小时制）
+    - "10:00"                   # 上午10:00
+    - "14:30"                   # 下午2:30
+  timezone: "Asia/Shanghai"     # 时区
+  notify_email: ""              # 通知邮箱（可选）
+  notify_wechat: ""             # 企业微信Webhook（可选）
+
+# ========================
+# 风险控制配置
+# ========================
+risk_control:
+  # Sell Put 保证金估算参数（简化模型）
+  margin_rate_otm: 0.20          # 虚值期权保证金率（20%）
+  margin_rate_itm: 0.10          # 实值期权保证金率（10%）
+  min_margin_premium_ratio: 2.0  # 最低保证金/权利金比例（保守估算）
+
+  # 最大持仓限制（可选）
+  max_position_per_stock: 5      # 单只股票最大策略数量
+  max_total_margin_ratio: 0.3    # 总保证金/总资产最大比例（30%）
