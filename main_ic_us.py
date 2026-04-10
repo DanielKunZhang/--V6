@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """
-美股 Iron Condor 实盘交易脚本（多标的分散化版本）
-标的: QQQ + IWM + GLD（三标的均等分配，夏普1.91→2.23，回撤-3.29%→-3.79%）
-本金: $15,000 均等分配 $5,000×3
-参数: 5% OTM, 8% Wing, DTE=30, 每标的G1
-回测: 2010-2025, 年化+16.32%, 最大回撤-3.79%, 夏普2.23
+美股 Iron Condor 实盘交易脚本（非对称铁鹰 + 2x杠杆版本）
+
+策略配置（2026-04-10 参数扫描324组最优解）：
+  标的: QQQ ($18k×2=36k) + IWM ($6k×2=12k) + GLD ($6k×2=12k)，名义资本$30k（2x杠杆）
+  非对称OTM: Put侧 3.5%（更近，收put skew溢价）/ Call侧 5.0%（324组扫描最优）
+  翼宽 Wing: 7%
+  DTE: 30天（月度期权）
+  杠杆: 2x（实际资本$15k + 融资$15k，年化融资成本5.5%=$825/年）
+  VIX硬止损: HV20 > 45% 强平，恢复阈值 HV20 < 32%
+
+回测（2010-2025，16年，$15k实际资本×2x杠杆）：
+  年化收益 +27.97%  最大回撤 -6.97%  夏普 2.28  Calmar 4.01  期末 ~$776,000
+  324组全量扫描第1名（put_otm×call_otm×wing×dte所有组合，按Calmar/资金安全优先）
 """
 
 import time
@@ -77,13 +85,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ============ 多标的配置（均等分散，回测验证夏普2.23）============
+# ============ 多标的配置（非对称铁鹰 P3.5%/C5.0% + 2x杠杆：324组扫描最优解，Calmar4.01，年化27.97%）============
 # 三标的相关性：QQQ-IWM 0.634，QQQ-GLD 0.248，IWM-GLD 0.342
-# 分散效果：GLD 最佳对冲（与股票低相关），IWM 次之（小盘vs大盘）
+# 分散效果：GLD 最佳对冲（与股票低相关），IWM 提供小盘分散
+# 回测（2010-2025，16年）：$15k实际资本×2x杠杆 → ~$776k，年化+27.97%，最大回撤-6.97%，夏普2.28，Calmar4.01
+# 2x杠杆实现：每个标的开2x组数（QQQ 4组/IWM 2组/GLD 2组），融资$15k，名义$30k（QQQ $18k / IWM $6k / GLD $6k）
 ASSETS = [
-    {"ticker": "US.QQQ", "name": "QQQ", "capital": 5_000, "max_groups": 1},  # 纳斯达克100
-    {"ticker": "US.IWM", "name": "IWM", "capital": 5_000, "max_groups": 1},  # 罗素2000小盘
-    {"ticker": "US.GLD", "name": "GLD", "capital": 5_000, "max_groups": 1},  # 黄金ETF
+    {"ticker": "US.QQQ", "name": "QQQ", "capital": 18_000, "max_groups": 4, "hv20_threshold": 0.25},  # 纳斯达克100: $18k名义(2x)，4组，均值HV19.3%，25%≈P78
+    {"ticker": "US.IWM", "name": "IWM", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.25},  # 罗素2000小盘: $6k名义(2x)，2组，均值HV20.1%，25%≈P80
+    {"ticker": "US.GLD", "name": "GLD", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.18},  # 黄金ETF: $6k名义(2x)，2组，均值HV14.4%，18%≈P85
 ]
 
 # 兼容旧代码引用（取第一个标的）
@@ -91,12 +101,14 @@ STOCK_CONFIG = {"ticker": ASSETS[0]["ticker"], "name": ASSETS[0]["name"]}
 
 # Iron Condor 共享参数（三个标的使用相同策略参数）
 IC_CONFIG = {
-    "otm_distance": 0.05,              # 5% OTM
-    "wing_width": 0.08,                # 8% Wing
+    "put_otm": 0.035,                  # Put侧 3.5% OTM（更近，收put skew溢价）
+    "call_otm": 0.050,                 # Call侧 5.0% OTM（324组扫描最优：更紧call收更多权利金，硬止损兜底极端上涨）
+    "otm_distance": 0.05,              # 对称OTM fallback（慢熊防御/兼容旧代码用）
+    "wing_width": 0.07,                # 7% Wing（更窄翼宽降低每组最大亏损，提升Calmar）
     "entry_mode": "pre_expiry",        # 到期前入场
     "entry_days_before_expiry": 30,    # DTE=30（月度）
     "cooldown_days": 5,                # 开仓冷却期（每标的独立计算）
-    "max_groups": 1,                   # 每标的1组（三标的合计=原G2规模）
+    "max_groups": 1,                   # fallback默认值（实际被ASSETS[x]["max_groups"]覆盖：QQQ=4, IWM=2, GLD=2）
     "min_iv": 0.0,
     "early_close_days": 2,             # 到期前2天强制平仓
     "min_premium": 30,                 # 最低权利金（IWM/GLD权利金较小，调低门槛）
@@ -109,7 +121,10 @@ IC_CONFIG = {
 }
 
 # 总初始本金
-INITIAL_CAPITAL = 15_000  # USD（$5,000 × 3 标的）
+REAL_CAPITAL    = 15_000  # 实际投入资本（USD）
+LEVERAGE        = 2.0     # 杠杆倍率（融资$15k，名义$30k）
+MARGIN_RATE     = 0.055   # 融资年利率 5.5%（富途保证金利率）
+INITIAL_CAPITAL = REAL_CAPITAL  # 别名，保持与旧代码兼容
 
 # ============ 邮件通知 ============
 EMAIL_CONFIG = {
@@ -154,14 +169,16 @@ class EmailNotifier:
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def send_startup(self) -> bool:
-        subject = "🦅 QQQ Iron Condor 策略启动（实盘）"
+        subject = "🦅 Iron Condor 非对称策略启动（实盘 2x杠杆）"
         body = f"""
-<h3>🦅 QQQ Iron Condor 策略已启动</h3>
+<h3>🦅 Iron Condor 非对称铁鹰策略已启动</h3>
 <table border="1" cellpadding="6" style="border-collapse:collapse">
-<tr><td><b>标的</b></td><td>US.QQQ</td></tr>
-<tr><td><b>参数</b></td><td>OTM=5%, Wing=8%, DTE=30, G2</td></tr>
-<tr><td><b>本金</b></td><td>${INITIAL_CAPITAL:,} USD</td></tr>
-<tr><td><b>HV20阈值</b></td><td>25%</td></tr>
+<tr><td><b>标的</b></td><td>QQQ ($18k) + IWM ($6k) + GLD ($6k)</td></tr>
+<tr><td><b>OTM（非对称）</b></td><td>Put 3.5% / Call 5.0%，Wing=7%, DTE=30</td></tr>
+<tr><td><b>实际本金</b></td><td>${REAL_CAPITAL:,} USD（2x杠杆，名义$30,000）</td></tr>
+<tr><td><b>融资成本</b></td><td>{MARGIN_RATE*100:.1f}%/年 = ${REAL_CAPITAL*MARGIN_RATE:,.0f}/年</td></tr>
+<tr><td><b>HV20阈值</b></td><td>QQQ/IWM: 25%，GLD: 18%</td></tr>
+<tr><td><b>VIX硬止损</b></td><td>HV20 ≥ 45% 强平，< 32% 解除</td></tr>
 </table>
 <p><b>启动时间</b>: {self._ts()}</p>
 """
@@ -313,18 +330,21 @@ class FutuDataUS:
         """获取美股期权到期日列表"""
         from futu import RET_OK
         from datetime import timedelta
+        import pytz
         # 先订阅
         self.quote_ctx.subscribe([ticker], ["QUOTE"])
         time.sleep(0.5)
-        
-        today = date.today()
+
+        # 用美东时间作为基准，避免北京时间与 API 服务器时间不一致导致日期偏移
+        et_now = datetime.now(pytz.timezone("America/New_York"))
+        today_et = et_now.date()
         ret, data = self.quote_ctx.get_option_expiration_date(ticker)
         if ret == RET_OK and not data.empty:
             expiries = []
             for _, row in data.iterrows():
-                # 美股返回的是距离今天的天数
+                # 美股返回的是距离今天（美东）的天数
                 distance = int(row.get("option_expiry_date_distance", 999))
-                exp = today + timedelta(days=distance)
+                exp = today_et + timedelta(days=distance)
                 expiries.append(exp)
             return sorted(set(expiries))
         return []
@@ -548,8 +568,8 @@ class IronCondorTraderUS:
         max_profit = max(r["metrics"]["max_profit"] for r in total_risk_info)
         
         # 止损检查
-        # 使用每标的资金（$5,000），不用总资金（$15,000）
-        asset_capital = INITIAL_CAPITAL / len(ASSETS)
+        # 使用各标的独立资金（QQQ $9k / IWM $3k / GLD $3k），不用总资金
+        asset_capital = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
         if total_unrealized_pl < 0:
             loss_pct = abs(total_unrealized_pl) / asset_capital
             if loss_pct > stop_loss_pct:
@@ -601,20 +621,26 @@ class IronCondorTraderUS:
         return 0
     
     def calculate_strikes(self, S: float, dte: int, otm: Optional[float] = None) -> Dict:
-        """计算铁鹰行权价
-        otm: 可选，覆盖配置中的otm_distance"""
-        if otm is None:
-            otm = self.config["otm_distance"]
+        """计算铁鹰行权价（支持非对称 put_otm / call_otm）
+        otm: 可选，同时覆盖两侧OTM（慢熊防御时传入，优先级最高）"""
         wing = self.config["wing_width"]
-        
+
+        if otm is not None:
+            # 慢熊防御 / 外部覆盖：put 和 call 使用相同 OTM
+            put_otm = call_otm = otm
+        else:
+            # 非对称铁鹰：put 侧更近，call 侧更远
+            put_otm  = self.config.get("put_otm",  self.config["otm_distance"])
+            call_otm = self.config.get("call_otm", self.config["otm_distance"])
+
         # PUT边：sell更接近价内（行权价更高）
-        buy_put_k = round(S * (1 - otm - wing), 0)  # 更虚值
-        sell_put_k = round(S * (1 - otm), 0)        # 更接近价内
-        
+        buy_put_k  = round(S * (1 - put_otm  - wing), 0)  # 更虚值
+        sell_put_k = round(S * (1 - put_otm),         0)  # 更接近价内
+
         # CALL边：sell更接近价内（行权价更低）
-        sell_call_k = round(S * (1 + otm), 0)        # 更接近价内
-        buy_call_k = round(S * (1 + otm + wing), 0)  # 更虚值
-        
+        sell_call_k = round(S * (1 + call_otm),         0)  # 更接近价内
+        buy_call_k  = round(S * (1 + call_otm + wing),  0)  # 更虚值
+
         return {
             "buy_put_k": buy_put_k,
             "sell_put_k": sell_put_k,
@@ -647,7 +673,9 @@ class IronCondorTraderUS:
                 closest = data.loc[data["strike_dist"].idxmin()]
                 codes[name] = str(closest["code"])
                 logger.info(f"  {name}: {closest['code']} @ ${closest['strike_price']}")
-        
+        else:
+            logger.warning(f"  ⚠️ CALL期权链为空 (ret={ret}, expiry={expiry_str})")
+
         # 获取PUT期权链
         ret, data = self.data.quote_ctx.get_option_chain(
             self.stock["ticker"],
@@ -655,7 +683,7 @@ class IronCondorTraderUS:
             start=expiry_str,
             end=expiry_str,
         )
-        
+
         if ret == RET_OK and not data.empty:
             for name, target_k in [
                 ("sell_put", strikes["sell_put_k"]),
@@ -665,6 +693,8 @@ class IronCondorTraderUS:
                 closest = data.loc[data["strike_dist"].idxmin()]
                 codes[name] = str(closest["code"])
                 logger.info(f"  {name}: {closest['code']} @ ${closest['strike_price']}")
+        else:
+            logger.warning(f"  ⚠️ PUT期权链为空 (ret={ret}, expiry={expiry_str})")
         
         return codes
     
@@ -745,10 +775,15 @@ class IronCondorTraderUS:
             logger.info(f"  期权代码: {codes}")
             
             # 6. 获取bid/ask
+            # 期权代码必须找齐4条腿，否则直接认定无流动性
+            if len(codes) < 4:
+                logger.warning(f"⚠️ DTE={actual_dte} 期权代码不完整({len(codes)}/4)，尝试更长周期...")
+                continue
+
             prices = self.get_bid_ask(list(codes.values()))
-            
+
             # 检查是否有有效价格（必须有bid价格，否则无流动性）
-            valid = all(p.get("bid", 0) > 0 or p.get("ask", 0) > 0 for p in prices.values())
+            valid = bool(prices) and all(p.get("bid", 0) > 0 or p.get("ask", 0) > 0 for p in prices.values())
             if not valid:
                 logger.warning(f"⚠️ DTE={actual_dte} 无流动性，尝试更长周期...")
                 continue
@@ -1718,8 +1753,8 @@ class IronCondorTraderUS:
                 }
         
         # 规则2：全局止损（单标的亏损 > 20%）
-        # 使用每标的分配资金 $5,000（INITIAL_CAPITAL/3）而非总资金
-        asset_capital = INITIAL_CAPITAL / len(ASSETS)  # $5,000 per asset
+        # 使用各标的独立资金（QQQ $9k / IWM $3k / GLD $3k）而非总资金
+        asset_capital = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
         total_loss_pct = abs(total_unrealized_pl) / asset_capital
         if total_loss_pct > 0.20:
             return {
@@ -1778,6 +1813,15 @@ class IronCondorTraderUS:
             logger.info(f"[{name}] ⚠️ 已有{existing}组持仓，达到上限，跳过")
             return {"success": True, "skipped": True, "reason": f"[{name}] 已达持仓上限"}
 
+        # ── 开盘时间检查（仅美东 9:33 后才允许开仓）────────────
+        import pytz
+        et_now = datetime.now(pytz.timezone("America/New_York"))
+        et_open = et_now.replace(hour=9, minute=33, second=0, microsecond=0)
+        et_close = et_now.replace(hour=16, minute=0, second=0, microsecond=0)
+        if not (et_open <= et_now < et_close):
+            logger.info(f"[{name}] ⏰ 当前美东时间 {et_now.strftime('%H:%M')}，不在开仓窗口(09:33-16:00)，跳过开仓")
+            return {"success": True, "skipped": True, "reason": f"[{name}] 非开仓时段 (ET {et_now.strftime('%H:%M')})"}
+
         # ── 执行开仓 ─────────────────────────────────
         groups_to_open = self.config["max_groups"] - existing
         logger.info(f"[{name}] 📊 可开仓组数: {groups_to_open} (现有{existing}组，上限{self.config['max_groups']}组)")
@@ -1820,20 +1864,19 @@ def main():
         logger.error("连接失败")
         return
 
-    try:
-        # ── 交易日检查（仅一次，所有标的共用）────────────────────
+    check_interval = 300  # 5分钟
+
+    def run_one_cycle(send_email: bool = True):
+        """执行一轮检查，返回 True 表示应继续运行"""
+        # ── 交易日检查 ────────────────────────────────────────────
         _trader_check = IronCondorTraderUS(data)
         _trader_check.dry_run = args.dry_run
         if not _trader_check._is_today_trading_day():
-            logger.info("🔴 今日非美股交易日，退出")
-            return
-
-        # 实盘启动通知（模拟模式不发，仅一次）
-        if not args.dry_run:
-            _trader_check.notifier.send_startup()
+            logger.info("🔴 今日非美股交易日，本轮跳过")
+            return True  # 继续运行，等待下一个交易日
 
         # ── 逐标的执行检查/管理 ──────────────────────────────────
-        asset_results = []   # 用于日报邮件
+        asset_results = []
         notifier = _trader_check.notifier
 
         for asset in ASSETS:
@@ -1845,7 +1888,7 @@ def main():
             trader = IronCondorTraderUS(data)
             trader.dry_run = args.dry_run
             trader.stock = {"ticker": asset["ticker"], "name": asset["name"]}
-            trader.config = {**IC_CONFIG, "max_groups": asset["max_groups"]}
+            trader.config = {**IC_CONFIG, "max_groups": asset["max_groups"], "hv20_threshold": asset.get("hv20_threshold", IC_CONFIG["hv20_threshold"]), "capital": asset["capital"]}
 
             result = trader.check_and_manage()
 
@@ -1873,9 +1916,43 @@ def main():
 
             asset_results.append(summary_entry)
 
-        # ── 日报邮件（每次执行都发，不论是否开仓）──────────────
-        if not args.dry_run:
+        # ── 日报邮件 ──────────────────────────────────────────────
+        if send_email and not args.dry_run:
             notifier.send_daily_summary(asset_results)
+
+        return True
+
+    try:
+        if args.daemon:
+            # 实盘启动通知（仅一次）
+            if not args.dry_run:
+                IronCondorTraderUS(data).notifier.send_startup()
+
+            cycle = 0
+            last_email_date = None  # 记录上次发邮件的日期，每天只发一次
+            while True:
+                cycle += 1
+                now = datetime.now()
+                logger.info(f"🔄 [Daemon] 第 {cycle} 轮检查 {now.strftime('%Y-%m-%d %H:%M:%S')}")
+                try:
+                    today = now.date()
+                    should_email = (today != last_email_date)  # 每天首轮才发日报
+                    run_one_cycle(send_email=should_email)
+                    if should_email:
+                        last_email_date = today
+                except Exception as e:
+                    logger.error(f"❌ 本轮异常: {e}", exc_info=True)
+                # 非交易时段（周末/深夜美股休市）拉长间隔至30分钟，减少空转
+                hour_utc8 = datetime.now().hour
+                is_us_session = 21 <= hour_utc8 or hour_utc8 < 6  # 美股交易时段（北京时间）
+                sleep_sec = check_interval if is_us_session else 1800
+                logger.info(f"⏳ 等待 {sleep_sec} 秒后进行下一轮检查...")
+                time.sleep(sleep_sec)
+        else:
+            # --once 模式（默认）
+            if not args.dry_run:
+                IronCondorTraderUS(data).notifier.send_startup()
+            run_one_cycle(send_email=True)
 
     finally:
         data.close()

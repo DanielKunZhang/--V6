@@ -138,7 +138,7 @@ def _catchup_if_missed():
         return
 
     elapsed_min = (now_et.hour * 60 + now_et.minute) - (9 * 60 + 33)
-    if not (0 <= elapsed_min <= 57):   # 09:33 ~ 10:30 ET 窗口
+    if not (0 <= elapsed_min <= 387):   # 09:33 ~ 16:00 ET 窗口（覆盖全交易日）
         return
 
     today_str = now_et.strftime("%Y-%m-%d")
@@ -165,21 +165,32 @@ def _catchup_if_missed():
 scheduler = BlockingScheduler(timezone=ET)
 
 # Job 1: 每日 09:33 AM ET 开仓检查
+# misfire_grace_time=23400 = 6.5小时：Mac睡眠后唤醒，只要在收盘前（16:03 ET）都会补跑
 scheduler.add_job(
     run_strategy,
     CronTrigger(day_of_week="mon-fri", hour=9, minute=33, timezone=ET),
     id="iron_condor_daily",
     name="铁鹰策略每日触发",
-    misfire_grace_time=300,
+    misfire_grace_time=23400,
+)
+
+# Job 0: 每30分钟检查一次今日是否漏跑（处理Mac睡眠唤醒场景）
+scheduler.add_job(
+    _catchup_if_missed,
+    CronTrigger(day_of_week="mon-fri", hour="9-16", minute="*/30", timezone=ET),
+    id="iron_condor_catchup",
+    name="漏跑补偿检查",
+    misfire_grace_time=1800,
 )
 
 # Job 2: 每日 14:45 PM ET 盘后监控
+# misfire_grace_time=7200 = 2小时宽限
 scheduler.add_job(
     run_monitor,
     CronTrigger(day_of_week="mon-fri", hour=14, minute=45, timezone=ET),
     id="iron_condor_monitor",
     name="铁鹰盘后监控",
-    misfire_grace_time=300,
+    misfire_grace_time=7200,
 )
 
 

@@ -48,6 +48,14 @@ HV20_BLOCK_LEVEL = 0.25     # 策略禁止开仓阈值
 MIN_TRADES_FOR_SUGGESTION = 3  # 至少积累几笔交易才生成建议
 
 
+def _safe_float(val) -> float:
+    """Convert Futu API value to float; treats 'N/A', None, '' as 0.0"""
+    try:
+        return float(val) if val not in (None, "", "N/A") else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
 # ═══════════════════════════════════════════════════════════
 # 1. 历史数据存储
 # ═══════════════════════════════════════════════════════════
@@ -196,9 +204,9 @@ class MarketData:
                 "option_type": m.group(3) if m else "?",  # C/P
                 "strike": strike,
                 "qty": qty,
-                "cost_price": float(row.get("cost_price", 0) or 0),
-                "unrealized_pl": float(row.get("unrealized_pl", 0) or 0),
-                "market_val": float(row.get("market_val", 0) or 0),
+                "cost_price": _safe_float(row.get("cost_price")),
+                "unrealized_pl": _safe_float(row.get("unrealized_pl")),
+                "market_val": _safe_float(row.get("market_val")),
             })
         return positions
 
@@ -225,11 +233,10 @@ class MarketData:
             return {}
         row = data.iloc[0]
         return {
-            "cash": float(row.get("cash", 0) or 0),
-            "total_assets": float(row.get("total_assets", 0) or 0),
-            "margin_used": float(row.get("margin_call_margin", 0)
-                                  or row.get("initial_margin", 0) or 0),
-            "buying_power": float(row.get("available_funds", 0) or 0),
+            "cash": _safe_float(row.get("cash")),
+            "total_assets": _safe_float(row.get("total_assets")),
+            "margin_used": _safe_float(row.get("margin_call_margin") or row.get("initial_margin")),
+            "buying_power": _safe_float(row.get("available_funds")),
         }
 
 
