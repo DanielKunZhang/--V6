@@ -750,8 +750,9 @@ class IronCondorTraderUS:
         
             # 找到符合DTE的到期日（自适应：选择最接近目标DTE的）
         target_dte = self.config["entry_days_before_expiry"]
-        today = date.today()
-        
+        import pytz as _pytz
+        today = datetime.now(_pytz.timezone("America/New_York")).date()  # 美东日期
+
         # 尝试多个DTE层级（从小到大，找到第一个有流动性的）
         dte_options = [target_dte, target_dte + 7, target_dte + 14, target_dte + 21]
         
@@ -1264,32 +1265,33 @@ class IronCondorTraderUS:
 
     # ============ 平仓机制（从港股脚本移植）============
     def _is_today_trading_day(self) -> bool:
-        """判断今天是否为美股交易日"""
+        """判断今天是否为美股交易日（以美东时间为准）"""
+        import pytz
         from futu import OpenQuoteContext, Market
         from config import FUTU_CONFIG
-        
+
+        # 美股交易日以美东时间日期为准，不能用本机北京时间
+        et_today = datetime.now(pytz.timezone("America/New_York")).date()
+
         quote_ctx = OpenQuoteContext(host=FUTU_CONFIG["host"], port=FUTU_CONFIG["port"])
-        today = date.today()
-        
-        # 美股市场代码是 Market.US 或 3
         ret, data = quote_ctx.request_trading_days(
-            market=Market.US,  # 3=美股
-            start=today.isoformat(),
-            end=today.isoformat(),
+            market=Market.US,
+            start=et_today.isoformat(),
+            end=et_today.isoformat(),
         )
         quote_ctx.close()
-        
+
         # request_trading_days 返回可能是 list 或 DataFrame，需要兼容处理
         if ret == 0:
             if hasattr(data, 'empty'):  # DataFrame
                 is_trading = not data.empty
             else:  # list
                 is_trading = len(data) > 0
-            
+
             if is_trading:
-                logger.info(f"📅 今日 {today} 是美股交易日")
+                logger.info(f"📅 今日（美东）{et_today} 是美股交易日")
                 return True
-        logger.info(f"🔴 今日 {today} 非美股交易日（节假日或周末），跳过")
+        logger.info(f"🔴 今日（美东）{et_today} 非美股交易日（节假日或周末），跳过")
         return False
 
     def _get_positions_with_expiry(self) -> List[Dict]:
@@ -1374,7 +1376,8 @@ class IronCondorTraderUS:
         避免假期导致无法平仓的问题。
         """
         early_close_days = self.config.get("early_close_days", 1)
-        today = date.today()
+        import pytz as _pytz
+        today = datetime.now(_pytz.timezone("America/New_York")).date()  # 美东日期
 
         positions = self._get_positions_with_expiry()
         if not positions:
