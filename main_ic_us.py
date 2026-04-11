@@ -181,12 +181,15 @@ class EmailNotifier:
         body = f"""
 <h3>🦅 Iron Condor 非对称铁鹰策略已启动</h3>
 <table border="1" cellpadding="6" style="border-collapse:collapse">
-<tr><td><b>标的</b></td><td>QQQ ($18k) + IWM ($6k) + GLD ($6k)</td></tr>
-<tr><td><b>OTM（非对称）</b></td><td>Put 3.5% / Call 5.0%，Wing=7%, DTE=30</td></tr>
+<tr><td><b>标的</b></td><td>QQQ ($18k×4组) + IWM ($6k×2组) + GLD ($6k×2组)</td></tr>
+<tr><td><b>OTM（非对称）</b></td><td>Put 3.0% / Call 6.0%，Wing=9%, DTE=45</td></tr>
 <tr><td><b>实际本金</b></td><td>${REAL_CAPITAL:,} USD（2x杠杆，名义$30,000）</td></tr>
 <tr><td><b>融资成本</b></td><td>{MARGIN_RATE*100:.1f}%/年 = ${REAL_CAPITAL*MARGIN_RATE:,.0f}/年</td></tr>
-<tr><td><b>HV20阈值</b></td><td>QQQ/IWM: 25%，GLD: 18%</td></tr>
-<tr><td><b>VIX硬止损</b></td><td>HV20 ≥ 45% 强平，< 32% 解除</td></tr>
+<tr><td><b>HV20阈值</b></td><td>QQQ/IWM: ≤25%，GLD: ≤18%（Scenario C，972组扫描最优）</td></tr>
+<tr><td><b>VIX硬止损</b></td><td>HV20 ≥ 39% 强平所有持仓，< 25% 恢复开仓</td></tr>
+<tr><td><b>降杠杆</b></td><td>HV20 > 22% 自动降至1x（max_groups减半）</td></tr>
+<tr><td><b>价格止损</b></td><td>标的穿入翼宽50%（short strike ± 0.5×wing）</td></tr>
+<tr><td><b>资金止损</b></td><td>标的亏损 > 5% 分配资金</td></tr>
 </table>
 <p><b>启动时间</b>: {self._ts()}</p>
 """
@@ -535,7 +538,32 @@ class IronCondorTraderUS:
                         net_premium_per_share -= price
             
             if len(strikes) >= 4:
-                # 计算风险指标
+                # ── 价格穿越止损（优先级高，匹配回测 stop_loss_buffer=1.5）──────
+                # 回测逻辑：stop_put  = sell_put  - 0.5 × put_wing
+                #           stop_call = sell_call + 0.5 × call_wing
+                # 含义：标的价格穿入翼宽的50%处即平仓（空头行权价已深度受损）
+                put_w  = strikes.get("sell_put", 0)  - strikes.get("buy_put", 0)
+                call_w = strikes.get("buy_call", 0)  - strikes.get("sell_call", 0)
+                stop_put  = strikes.get("sell_put", 0)  - 0.5 * put_w
+                stop_call = strikes.get("sell_call", 0) + 0.5 * call_w
+                if put_w > 0 and call_w > 0:   # 只有四腿齐全时才检查
+                    if current_price <= stop_put or current_price >= stop_call:
+                        direction = "下行" if current_price <= stop_put else "上行"
+                        return {
+                            "triggered": True,
+                            "action": "CLOSE_ALL",
+                            "reason": (
+                                f"价格穿越止损（{direction}）: 当前${current_price:.2f}，"
+                                f"止损线 ${stop_put:.2f}~${stop_call:.2f}（翼宽50%）"
+                            ),
+                            "details": (
+                                f"到期 {expiry}：short_put=${strikes.get('sell_put',0):.2f} "
+                                f"short_call=${strikes.get('sell_call',0):.2f}，"
+                                f"翼宽 put={put_w:.2f}/call={call_w:.2f}"
+                            )
+                        }
+
+                # 计算风险指标（用于报告和资金止损）
                 metrics = calculate_ic_metrics(
                     current_price=current_price,
                     sell_put_strike=strikes.get("sell_put", 0),
@@ -546,13 +574,14 @@ class IronCondorTraderUS:
                     expiry=expiry,
                     currency="USD"
                 )
-                
+
                 total_risk_info.append({
                     "expiry": expiry,
                     "metrics": metrics,
                     "positions": legs,
+                    "strikes": strikes,
                 })
-                
+
                 # 打印风险报告
                 m = metrics
                 logger.info(f"📊 到期日 {expiry} 风险分析:")
@@ -561,43 +590,32 @@ class IronCondorTraderUS:
                 logger.info(f"   📉 最大亏损: -${m['max_loss']:.0f}")
                 logger.info(f"   ⚖️ 盈亏比: 1:{m['risk_reward_ratio']:.2f}")
                 logger.info(f"   🎯 盈亏平衡: ${m['breakeven_lower']:.0f} ~ ${m['breakeven_upper']:.0f}")
-                logger.info(f"   ⚠️ 亏损概率: {m['loss_probability']:.1f}%")
-        
+                logger.info(f"   🛑 价格止损: ${stop_put:.2f} / ${stop_call:.2f}（翼宽50%）")
+
         if not total_risk_info:
             return {"triggered": False, "action": "HOLD", "reason": ""}
-        
-        # 检查止损/止盈条件
-        stop_loss_pct = self.config.get("stop_loss_pct", 0.20)
-        
-        # 计算总未实现盈亏
+
+        # ── 资金回撤止损（匹配回测 stop_loss_pct=0.05）──────────────
+        # 回测：当标的分配资金回撤超5%时平仓（QQQ $18k→$900亏损触发）
+        # 注：回测的5%是从权益峰值起算的回撤；实盘用未实现亏损/标的资金近似
+        stop_loss_pct  = self.config.get("stop_loss_pct", 0.05)   # 5%，与回测一致
+        asset_capital  = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
         total_unrealized_pl = sum(p.get("unrealized_pl", 0) for p in positions)
-        
-        # 获取最大盈利和最大亏损
-        max_profit = max(r["metrics"]["max_profit"] for r in total_risk_info)
-        
-        # 止损检查
-        # 使用各标的独立资金（QQQ $9k / IWM $3k / GLD $3k），不用总资金
-        asset_capital = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
+
         if total_unrealized_pl < 0:
             loss_pct = abs(total_unrealized_pl) / asset_capital
             if loss_pct > stop_loss_pct:
                 return {
                     "triggered": True,
                     "action": "CLOSE_ALL",
-                    "reason": f"标的亏损 {loss_pct*100:.1f}% > 止损线 {stop_loss_pct*100:.1f}%（${asset_capital:.0f}/标的）",
+                    "reason": f"资金止损: 亏损 {loss_pct*100:.1f}% > {stop_loss_pct*100:.0f}%（${asset_capital:.0f}/标的）",
                     "details": f"未实现亏损 ${total_unrealized_pl:.0f}"
                 }
-            
-            # 亏损超过最大权利金的2倍
-            if abs(total_unrealized_pl) > max_profit * 2:
-                return {
-                    "triggered": True,
-                    "action": "CLOSE_ALL",
-                    "reason": f"亏损 ${abs(total_unrealized_pl):.0f} > 2倍权利金 ${max_profit*2:.0f}",
-                    "details": "亏损超过2倍权利金，触发保护性平仓"
-                }
-        
-        # 止盈检查（盈利达到目标比例时提前平仓）
+
+        # ── 止盈（回测未建模；实盘保留作运营增强，预期提升资金效率）──
+        # 50% 止盈：期权时间价值衰减后提前锁定利润，释放保证金开新仓
+        # TODO: 待评估是否加入回测后纳入标准参数体系
+        max_profit = max((r["metrics"]["max_profit"] for r in total_risk_info), default=0)
         profit_target_pct = self.config.get("profit_target_pct", 0.50)
         if total_unrealized_pl > 0 and max_profit > 0:
             profit_pct = total_unrealized_pl / max_profit
@@ -605,20 +623,10 @@ class IronCondorTraderUS:
                 return {
                     "triggered": True,
                     "action": "PARTIAL_CLOSE",
-                    "reason": f"盈利达到 {profit_pct*100:.0f}% (≥目标{profit_target_pct*100:.0f}%)，止盈平仓",
+                    "reason": f"止盈: 盈利 {profit_pct*100:.0f}% ≥ 目标 {profit_target_pct*100:.0f}%",
                     "details": f"盈利 ${total_unrealized_pl:.0f} / 最大权利金 ${max_profit:.0f}"
                 }
-        
-        # 亏损概率过高警告
-        for r in total_risk_info:
-            if r["metrics"]["loss_probability"] > 60:
-                return {
-                    "triggered": True,
-                    "action": "PARTIAL_CLOSE",
-                    "reason": f"亏损概率 {r['metrics']['loss_probability']:.1f}% 过高",
-                    "details": f"到期日 {r['expiry']} 的持仓风险较大"
-                }
-        
+
         return {"triggered": False, "action": "HOLD", "reason": ""}
 
     def get_current_price(self) -> float:
@@ -1801,16 +1809,24 @@ class IronCondorTraderUS:
             self.notifier.send_alert("CRITICAL", f"[{name}] VIX硬止损触发", msg)
             return self.close_all_positions()
 
+        # ── 降杠杆控制（匹配回测 VIX_DELEVERAGE=0.22）──────────────
+        # 回测：HV>22% 时将组合日收益率乘以1x而非2x（等效持仓减半）
+        # 实盘实现：限制 max_groups 为满仓的一半，不开新仓超过1x水平
+        # 注：已有超出1x的持仓不强平（至到期自然衰减），仅约束新开仓
+        full_max_groups = self.config["max_groups"]
         if hv20 > VIX_DELEVERAGE_HV:
+            effective_max_groups = max(1, full_max_groups // 2)
             logger.warning(
                 f"[{name}] ⚠️ HV20={hv20:.1%} > {VIX_DELEVERAGE_HV:.0%}，"
-                f"回测策略此时降杠杆至1x——建议手动将富途融资额降至$0（当前仍以2x运行）"
+                f"降杠杆至1x：max_groups {full_max_groups}→{effective_max_groups}"
             )
             self.notifier.send_alert(
                 "WARNING",
-                f"[{name}] 建议降杠杆",
-                f"HV20={hv20:.1%}>{VIX_DELEVERAGE_HV:.0%}，回测此时1x杠杆，请在富途APP手动降低融资额"
+                f"[{name}] 自动降杠杆至1x",
+                f"HV20={hv20:.1%}>{VIX_DELEVERAGE_HV:.0%}，新开仓上限降至{effective_max_groups}组（原{full_max_groups}组）"
             )
+        else:
+            effective_max_groups = full_max_groups
 
         # ── 风险评估（止盈/止损）────────────────────────
         risk_result = self._evaluate_risk()
@@ -1843,9 +1859,9 @@ class IronCondorTraderUS:
             logger.critical(f"[{name}] 🛑 不平衡头寸（{total_legs}腿），暂停新开仓！")
             return {"success": False, "skipped": True, "reason": f"[{name}] 不平衡头寸({total_legs}腿)"}
 
-        if existing >= self.config["max_groups"]:
-            logger.info(f"[{name}] ⚠️ 已有{existing}组持仓，达到上限，跳过")
-            return {"success": True, "skipped": True, "reason": f"[{name}] 已达持仓上限"}
+        if existing >= effective_max_groups:
+            logger.info(f"[{name}] ⚠️ 已有{existing}组持仓，达到上限({effective_max_groups})，跳过")
+            return {"success": True, "skipped": True, "reason": f"[{name}] 已达持仓上限({effective_max_groups}组)"}
 
         # ── 开盘时间检查（仅美东 9:33 后才允许开仓）────────────
         import pytz
@@ -1857,8 +1873,8 @@ class IronCondorTraderUS:
             return {"success": True, "skipped": True, "reason": f"[{name}] 非开仓时段 (ET {et_now.strftime('%H:%M')})"}
 
         # ── 执行开仓 ─────────────────────────────────
-        groups_to_open = self.config["max_groups"] - existing
-        logger.info(f"[{name}] 📊 可开仓组数: {groups_to_open} (现有{existing}组，上限{self.config['max_groups']}组)")
+        groups_to_open = effective_max_groups - existing
+        logger.info(f"[{name}] 📊 可开仓组数: {groups_to_open} (现有{existing}组，上限{effective_max_groups}组{'，降杠杆模式' if effective_max_groups < full_max_groups else ''})")
         result = self.open_position(groups_to_open)
 
         if not result.get("success") and result.get("partial_fills"):
