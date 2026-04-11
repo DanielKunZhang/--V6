@@ -1872,7 +1872,7 @@ class IronCondorTraderUS:
             return self.close_all_positions()
 
         # 注意：不再调用 _check_stop_loss()（使用估算权利金$100，易误触发）
-        # _evaluate_risk() 已使用真实 cost_price 做 2x premium 和 20% 双重保护
+        # _evaluate_risk() 已实现：价格穿越止损（翼宽50%）+ 5%资金止损，与回测一致
 
         # ── 到期平仓检查 ──────────────────────────────
         if self._should_close_today():
