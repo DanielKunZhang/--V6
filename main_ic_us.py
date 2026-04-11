@@ -1758,6 +1758,11 @@ class IronCondorTraderUS:
             except Exception:
                 pass
 
+        # API 正常但返回空集 → 无法判断，安全起见不拦截开仓
+        if not trading_days_set:
+            logger.warning("⚠️ 长假检查：交易日历为空，跳过假期检测")
+            return None
+
         # 找出未来7天中工作日但非交易日的日期（即假期）
         holiday_dates = []
         d = et_today + timedelta(days=1)
@@ -1888,10 +1893,17 @@ class IronCondorTraderUS:
                 )
                 pending = list(submitted_orders)  # 当前轮待验证的订单
 
-                for round_num in range(3):
-                    round_label = ["第1轮(mid价)", "第2轮(75%价差)", "第3轮(市价+3%)"][round_num]
-                    logger.info(f"⏳ 平仓 {round_label}：等待120秒...")
-                    time.sleep(120)
+                # 紧急平仓（止损/VIX硬止损）：直接从第2轮（75%向市价）开始，60秒/轮
+                # 正常平仓（到期/止盈）：从第1轮（mid）开始，120秒/轮
+                _urgent = close_reason in ("STOP_LOSS", "VIX_HARD_STOP")
+                _start_round = 1 if _urgent else 0
+                _round_wait  = 60 if _urgent else 120
+                round_labels = ["第1轮(mid价)", "第2轮(75%价差)", "第3轮(市价+3%)"]
+
+                for round_num in range(_start_round, 3):
+                    round_label = round_labels[round_num]
+                    logger.info(f"⏳ 平仓 {round_label}：等待{_round_wait}秒...")
+                    time.sleep(_round_wait)
 
                     still_pending = []
                     for o in pending:
@@ -1922,17 +1934,22 @@ class IronCondorTraderUS:
                         logger.info(f"   🔄 {len(pending)} 条腿未成交，取消后以 {['第2轮','第3轮'][round_num]} 价格重新提交...")
                         new_pending = []
                         for o in pending:
-                            # 1. 撤销旧订单
+                            # 1. 撤销旧订单（若撤单失败说明已成交，跳过重新提交）
+                            cancel_ok = False
                             try:
-                                verify_ctx.modify_order(
+                                ret_cancel, _ = verify_ctx.modify_order(
                                     modify_order_op=_MOp.CANCEL,
                                     order_id=o["order_id"],
                                     qty=0, price=0,
                                     trd_env=trd_env,
                                     acc_id=acc_id,
                                 )
+                                cancel_ok = (ret_cancel == RET_OK)
                             except Exception as _ce:
                                 logger.warning(f"   ⚠️ 撤单异常 {o['code']}: {_ce}")
+                            if not cancel_ok:
+                                logger.info(f"   ℹ️ {o['code']} 撤单失败（可能已成交），跳过重新提交")
+                                continue
 
                             # 2. 刷新盘口，以递进价格重新提交
                             fresh = self.get_bid_ask([o["code"]])
