@@ -272,9 +272,11 @@ MARGIN_RATE     = 0.055   # 融资年利率 5.5%（富途保证金利率）
 INITIAL_CAPITAL = REAL_CAPITAL  # 别名，保持与旧代码兼容
 
 # 动态组数配置（配置F=20x上限，与回测 dynamic_composite_backtest.py 对齐）
-# effective_groups = base_groups × (account_equity / total_initial_capital)，受 cap 限制
-DYNAMIC_SIZING   = True   # 是否启用动态组数（False=固定组数，与旧行为一致）
-GROUPS_CAP_MULT  = 20     # 组数上限倍数：base_groups × 20（QQQ=80, IWM=40, GLD=40）
+# effective_groups = base_groups × (IC_MANUAL_CAPITAL × LEVERAGE / total_initial_capital)，受 cap 限制
+DYNAMIC_SIZING    = True   # 是否启用动态组数（False=固定组数，与旧行为一致）
+GROUPS_CAP_MULT   = 20     # 组数上限倍数：base_groups × 20（QQQ=80, IWM=40, GLD=40）
+IC_MANUAL_CAPITAL = 15_000 # ← 手动指定本金（USD），用于动态组数计算，勿依赖账户总资产 API
+                            # 当 IC 专用资金变化时（如从$15K增至$20K），手动修改此值即可
 
 # ============ 邮件通知 ============
 import os
@@ -2239,18 +2241,17 @@ class IronCondorTraderUS:
         base_groups = self.config["max_groups"]
         groups_cap = base_groups * GROUPS_CAP_MULT
         if DYNAMIC_SIZING:
-            account_equity = self._get_account_equity()
-            if account_equity > 0:
-                total_initial = sum(a["capital"] for a in ASSETS)
-                scale = account_equity / max(total_initial, 1)
-                full_max_groups = min(groups_cap, max(base_groups, int(base_groups * scale)))
-                logger.info(
-                    f"[{name}] 📈 动态组数: 账户${account_equity:,.0f} / 初始${total_initial:,} "
-                    f"= {scale:.2f}x → {full_max_groups}组 (base={base_groups}, cap={groups_cap})"
-                )
-            else:
-                full_max_groups = base_groups
-                logger.warning(f"[{name}] ⚠️ 无法获取账户净值，使用基线组数 {base_groups}")
+            # 使用手动指定资本（IC_MANUAL_CAPITAL）而非账户总资产 API
+            # 避免账户中其他仓位（Wheel等）污染组数计算
+            total_initial   = sum(a["capital"] for a in ASSETS)    # 名义基准 $30K
+            nominal_capital = IC_MANUAL_CAPITAL * LEVERAGE          # 当前名义资本
+            scale           = nominal_capital / max(total_initial, 1)
+            full_max_groups = min(groups_cap, max(base_groups, int(base_groups * scale)))
+            logger.info(
+                f"[{name}] 📈 动态组数: 指定本金${IC_MANUAL_CAPITAL:,}×{LEVERAGE:.0f}x"
+                f"=${nominal_capital:,.0f} / 基准${total_initial:,} "
+                f"= {scale:.2f}x → {full_max_groups}组 (base={base_groups}, cap={groups_cap})"
+            )
         else:
             full_max_groups = base_groups
 
