@@ -27,7 +27,35 @@ from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Set
 
 # ── IC 持仓追踪文件（只操作策略自己开的期权，不误碰 Wheel/正股）──────
-_IC_STATE_FILE = Path(__file__).parent / "logs" / "ic_open_codes.json"
+_IC_STATE_FILE    = Path(__file__).parent / "logs" / "ic_open_codes.json"
+_IC_COOLDOWN_FILE = Path(__file__).parent / "logs" / "ic_cooldown_state.json"
+
+
+def _load_cooldown_state() -> Dict:
+    """读取各标的上次平仓日期（用于实现5天开仓冷却期）"""
+    try:
+        if _IC_COOLDOWN_FILE.exists():
+            return json.loads(_IC_COOLDOWN_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _save_cooldown_state(state: Dict):
+    """持久化冷却状态"""
+    _IC_COOLDOWN_FILE.parent.mkdir(exist_ok=True)
+    _IC_COOLDOWN_FILE.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _record_close_date(asset_name: str):
+    """平仓时记录当天日期，触发冷却期计时"""
+    state = _load_cooldown_state()
+    state[asset_name] = date.today().isoformat()
+    _save_cooldown_state(state)
+    logger.info(f"[{asset_name}] 📝 冷却期开始：{state[asset_name]}")
 
 
 def _load_ic_codes() -> Set[str]:
@@ -1632,6 +1660,10 @@ class IronCondorTraderUS:
             logger.error(f"❌ 以下腿平仓失败，仍保留在追踪文件: {failed_codes}")
             logger.error("   请手动在富途APP平仓后，再手动清理 ic_open_codes.json")
 
+        # 平仓成功后记录冷却期开始日期（匹配回测 cooldown_days=5）
+        if closed > 0:
+            _record_close_date(self.stock["name"])
+
         return {"success": True, "closed": closed, "total": len(positions)}
 
     def _check_market_conditions(self) -> Dict:
@@ -1847,6 +1879,25 @@ class IronCondorTraderUS:
             logger.info(f"[{name}] 🔴 触发到期平仓...")
             self.notifier.send_alert("WARNING", f"[{name}] 到期前平仓触发", "持仓已到平仓触发日")
             return self.close_all_positions()
+
+        # ── 冷却期检查（匹配回测 cooldown_days=5：任意平仓后5天内不开新仓）──
+        cooldown_days = self.config.get("cooldown_days", 5)
+        cooldown_state = _load_cooldown_state()
+        last_close_str = cooldown_state.get(name)
+        if last_close_str:
+            try:
+                last_close = date.fromisoformat(last_close_str)
+                days_since = (date.today() - last_close).days
+                if days_since < cooldown_days:
+                    remaining = cooldown_days - days_since
+                    logger.info(
+                        f"[{name}] ⏳ 冷却期中（{days_since}/{cooldown_days}天），"
+                        f"还剩{remaining}天，跳过开仓"
+                    )
+                    return {"success": True, "skipped": True,
+                            "reason": f"[{name}] 冷却期中（还剩{remaining}天）"}
+            except ValueError:
+                pass
 
         # ── 开仓检查 ─────────────────────────────────
         existing, total_legs = self.check_existing_positions()
