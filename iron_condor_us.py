@@ -134,6 +134,8 @@ class USIronCondorBacktester:
                  entry_days_before_expiry: int = 30,
                  kelly_fraction: float = 0.0,
                  dynamic_otm: bool = False,
+                 dynamic_sizing: bool = False,
+                 groups_cap: int = 200,
                  ):
         self.ticker = ticker
         self.initial_capital = initial_capital
@@ -151,6 +153,8 @@ class USIronCondorBacktester:
         self.entry_days_before_expiry = entry_days_before_expiry
         self.kelly_fraction = kelly_fraction
         self.dynamic_otm = dynamic_otm
+        self.dynamic_sizing = dynamic_sizing
+        self.groups_cap = groups_cap
         
         dyn_tag = " [动态OTM]" if dynamic_otm else ""
         self.label = label or f"US Iron Condor {otm_distance:.0%}±{wing_width:.0%} DTE={dte} ×{max_groups}组{dyn_tag}"
@@ -328,9 +332,27 @@ class USIronCondorBacktester:
         
         kelly_groups = max(1, int(adjusted_kelly * available_capital / max(margin_per_group, 1)))
         result = min(kelly_groups, max_by_capital, self.max_groups)
-        
+
         return max(result, 1)
-    
+
+    def _calc_dynamic_groups(self) -> int:
+        """
+        动态组数：按当前净值相对初始本金的比例，等比扩大 max_groups。
+
+        公式：effective_groups = max_groups × (current_equity / initial_capital)
+
+        例：initial_capital=$15K, max_groups=4
+          净值 $15K → 4组
+          净值 $30K → 8组
+          净值 $150K → 40组
+          净值 $500K → 133组（受 groups_cap 限制）
+
+        注：current_equity 用 self.cash 近似（开仓前持仓市值未结算）。
+        """
+        scale = self.cash / max(self.initial_capital, 1)
+        raw_groups = max(1, int(self.max_groups * scale))
+        return min(raw_groups, self.groups_cap)
+
     def run(self, df: pd.DataFrame, save_prefix: str = "ic_us") -> dict:
         """运行回测"""
         print(f"\n📊 开始美股 Iron Condor 回测 [{self.ticker}]...")
@@ -414,12 +436,16 @@ class USIronCondorBacktester:
                                 max_loss = (sp_k - bp_k) * self.LOT_SIZE
                                 loss_pct = max_loss / max(self.cash + self.initial_capital, 1)
                                 
-                                # 凯利公式调整组数
-                                actual_groups = self._calc_kelly_groups(net_credit, max_loss)
+                                # 动态/凯利组数计算
+                                if self.dynamic_sizing:
+                                    actual_groups = self._calc_dynamic_groups()
+                                else:
+                                    actual_groups = self._calc_kelly_groups(net_credit, max_loss)
                                 
                                 # 保证金检查
                                 required_margin = max_loss * 0.5 * actual_groups
-                                if self.cash + self.initial_capital * 0.5 >= required_margin:
+                                available_margin = self.cash if self.dynamic_sizing else (self.cash + self.initial_capital * 0.5)
+                                if available_margin >= required_margin:
                                     exp_date = target_expiry or (current_date + timedelta(days=actual_dte))
                                     cur_exp_str = str(exp_date)
                                     

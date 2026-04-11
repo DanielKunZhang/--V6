@@ -116,11 +116,13 @@ class EnhancedICBacktester(USIronCondorBacktester):
 
     def __init__(self, vix_hard_stop_hv=VIX_HARD_STOP_HV,
                  vix_cooldown_hv=VIX_COOLDOWN_HV,
+                 vix_deleverage_hv: float = 0.22,
                  use_variable_otm: bool = False,
                  iv_rank_min: float = 0.0,
                  put_otm: float = None,
                  call_otm: float = None,
                  ib_hv_threshold: float = 0.0,
+                 profit_target_pct: float = 0.0,
                  **kwargs):
         # 任何动态OTM模式都需开启父类 dynamic_otm 标志
         if use_variable_otm or ib_hv_threshold > 0:
@@ -128,11 +130,13 @@ class EnhancedICBacktester(USIronCondorBacktester):
         super().__init__(**kwargs)
         self.vix_hard_stop_hv  = vix_hard_stop_hv
         self.vix_cooldown_hv   = vix_cooldown_hv
+        self.vix_deleverage_hv = vix_deleverage_hv
         self.use_variable_otm  = use_variable_otm
         self.iv_rank_min       = iv_rank_min
         self.put_otm           = put_otm
         self.call_otm          = call_otm
-        self.ib_hv_threshold   = ib_hv_threshold  # HV20 < 此值时切换为Iron Butterfly
+        self.ib_hv_threshold   = ib_hv_threshold
+        self.profit_target_pct = profit_target_pct  # 0.5=50%止盈（与实盘对齐），0.0=不止盈
         self._hv_history       = deque(maxlen=252)
         self._hard_stopped     = False
 
@@ -189,6 +193,16 @@ class EnhancedICBacktester(USIronCondorBacktester):
 
         net_credit = (sp + sc - bp - bc)
         return sell_put_k, buy_put_k, sell_call_k, buy_call_k, net_credit
+
+    def _close_position_cost(self, pos: IronCondorPosition,
+                             S: float, sigma: float, current_date: date) -> float:
+        """计算当前平仓成本（不执行平仓），用于止盈判断"""
+        days_left = max((pos.expiration - current_date).days, 1)
+        sp = self.get_option_price_usd(S, pos.sell_put_k,  days_left, sigma, "PUT")
+        bp = self.get_option_price_usd(S, pos.buy_put_k,   days_left, sigma, "PUT")
+        sc = self.get_option_price_usd(S, pos.sell_call_k, days_left, sigma, "CALL")
+        bc = self.get_option_price_usd(S, pos.buy_call_k,  days_left, sigma, "CALL")
+        return sp + sc - bp - bc  # 当前市值成本
 
     def _close_position_with_slippage(self, pos: IronCondorPosition,
                                        S: float, sigma: float,
@@ -300,9 +314,16 @@ class EnhancedICBacktester(USIronCondorBacktester):
                             net_credit = credit - self.COMMISSION * 4
                             if net_credit >= 50 and sp_k > 0 and sc_k > 0:
                                 max_loss = (sp_k - bp_k) * self.LOT_SIZE
-                                actual_groups = self._calc_kelly_groups(net_credit, max_loss)
+                                if self.dynamic_sizing:
+                                    actual_groups = self._calc_dynamic_groups()
+                                    # VIX去杠杆：HV20 > 22% 时动态组数减半（与实盘对齐）
+                                    if hv20 > self.vix_deleverage_hv:
+                                        actual_groups = max(1, actual_groups // 2)
+                                else:
+                                    actual_groups = self._calc_kelly_groups(net_credit, max_loss)
                                 required_margin = max_loss * 0.5 * actual_groups
-                                if (self.cash + self.initial_capital * 0.5 >= required_margin and
+                                available_margin = self.cash if self.dynamic_sizing else (self.cash + self.initial_capital * 0.5)
+                                if (available_margin >= required_margin and
                                         self._last_opened_expiry != str(target_expiry or "")):
                                     exp_date = target_expiry or (current_date + timedelta(days=actual_dte))
                                     self._last_opened_expiry = str(exp_date)
@@ -349,10 +370,21 @@ class EnhancedICBacktester(USIronCondorBacktester):
                 stop_call = pos.sell_call_k + call_w * min(self.stop_loss_buffer - 1.0, 0.8)
 
                 should_close = False
+                close_reason = ""
                 if S <= stop_put or S >= stop_call:
                     should_close = True
+                    close_reason = "PRICE_STOP"
                 elif days_to_exp <= self.early_close_days:
                     should_close = True
+                    close_reason = "EXPIRY"
+
+                # 50%止盈（与实盘对齐：持仓浮盈 >= 50% 入场权利金时提前平仓）
+                if not should_close and self.profit_target_pct > 0:
+                    current_cost = self._close_position_cost(pos, S, iv_est, current_date)
+                    unrealized_pnl = pos.net_credit - current_cost
+                    if unrealized_pnl >= pos.net_credit * self.profit_target_pct:
+                        should_close = True
+                        close_reason = "PROFIT_TARGET"
 
                 if should_close:
                     pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
