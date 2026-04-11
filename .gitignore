@@ -9,3 +9,4 @@ backtest_results/
 *.bak
 .DS_Store
 wheel_bot.pid
+ic_us.pid
