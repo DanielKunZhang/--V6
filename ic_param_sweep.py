@@ -50,12 +50,25 @@ LEVERAGE         = 2.0
 MARGIN_RATE      = 0.055          # 融资年利率
 RISK_FREE        = 0.05
 START, END       = "2010-01-01", "2025-12-31"
-VIX_DELEVERAGE   = 0.25           # HV20 > 25% 时降为1x杠杆
+VIX_DELEVERAGE   = 0.22           # 纯HV > 22% 时降为1x杠杆（原0.25/1.15）
 
 ASSETS = [
-    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2, "hv20_entry": 0.25},
-    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1, "hv20_entry": 0.25},
-    {"ticker": "US.GLD", "capital_ratio": 3/15, "max_groups": 1, "hv20_entry": 0.18},
+    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2},
+    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1},
+    {"ticker": "US.GLD", "capital_ratio": 3/15, "max_groups": 1},
+]
+
+# ── HV阈值场景（纯HV口径，与Finviz/富途直读一致）────────────────
+# Scenario A：等价于原配置实际效果（原×1.15后25%/25%/18% → 真实21.7%/21.7%/15.7%）
+# Scenario B：放宽IWM+GLD，QQQ保守（用户指定方案）
+# Scenario C：全部用真实25%/25%/18%（去掉×1.15后原始数字）
+HV_SCENARIOS = [
+    {"name": "A", "label": "Scenario A: QQQ≤21.7%, IWM≤21.7%, GLD≤15.7% (等价当前)",
+     "QQQ": 0.217, "IWM": 0.217, "GLD": 0.157},
+    {"name": "B", "label": "Scenario B: QQQ≤21.7%, IWM≤25%, GLD≤18% (放宽IWM+GLD)",
+     "QQQ": 0.217, "IWM": 0.25, "GLD": 0.18},
+    {"name": "C", "label": "Scenario C: QQQ≤25%, IWM≤25%, GLD≤18% (全部真实25%)",
+     "QQQ": 0.25, "IWM": 0.25, "GLD": 0.18},
 ]
 
 # 基准参数（用于标注）
@@ -107,16 +120,17 @@ class SweepICBacktester(EnhancedICBacktester):
 def run_combo(args) -> dict:
     """
     运行一组参数，返回指标字典。
-    args = (put_otm, call_otm, wing, dte, dfs, qqq_sigmas)
+    args = (put_otm, call_otm, wing, dte, hv_scenario, dfs, qqq_sigmas)
     """
-    put_otm, call_otm, wing, dte, dfs, qqq_sigmas = args
+    put_otm, call_otm, wing, dte, hv_scenario, dfs, qqq_sigmas = args
 
     asset_daily: Dict[str, pd.DataFrame] = {}
 
     for asset in ASSETS:
         ticker   = asset["ticker"]
         capital  = REAL_CAPITAL * asset["capital_ratio"]
-        hv_entry = asset["hv20_entry"]
+        name     = ticker.split(".")[-1]   # "QQQ", "IWM", "GLD"
+        hv_entry = hv_scenario[name]       # 从当前场景取该标的的纯HV阈值
 
         bt = SweepICBacktester(
             hv20_entry       = hv_entry,
@@ -215,6 +229,8 @@ def run_combo(args) -> dict:
             c_dd[name] = round(((seg - sp) / sp * 100).min(), 2)
 
     return {
+        "scenario":       hv_scenario["name"],
+        "scenario_label": hv_scenario["label"],
         "put_otm":  put_otm,
         "call_otm": call_otm,
         "wing":     wing,
@@ -239,7 +255,12 @@ def print_results(results: List[dict], top_n: int = 30):
     df = pd.DataFrame(results)
     df = df.dropna(subset=["sharpe", "ann_ret", "max_dd"])
 
-    # 标记基准
+    # 确保scenario列存在
+    if "scenario" not in df.columns:
+        df["scenario"] = "A"
+        df["scenario_label"] = HV_SCENARIOS[0]["label"]
+
+    # 标记基准（各场景分别有基准参数）
     def is_baseline(r):
         return (abs(r["put_otm"] - BASELINE["put_otm"]) < 1e-4 and
                 abs(r["call_otm"] - BASELINE["call_otm"]) < 1e-4 and
@@ -247,50 +268,37 @@ def print_results(results: List[dict], top_n: int = 30):
                 r["dte"] == BASELINE["dte"])
 
     df["is_baseline"] = df.apply(is_baseline, axis=1)
-
-    # 综合得分（Sharpe 40% + 年化 40% + 回撤 20%）
-    # 年化标准化到 ~[0,1] 用 /25；回撤惩罚
     df["score"] = (0.40 * df["sharpe"] / 3.0 +
                    0.40 * df["ann_ret"] / 25.0 +
                    0.20 * (1.0 + df["max_dd"] / 10.0))
 
-    df_sorted = df.sort_values("sharpe", ascending=False).reset_index(drop=True)
-
-    # ── 表头 ────────────────────────────────────────────────
-    crisis_cols = [c for c in df.columns if c.startswith("dd_")]
+    crisis_cols  = [c for c in df.columns if c.startswith("dd_")]
     crisis_names = [c.replace("dd_", "") for c in crisis_cols]
+    df_sorted    = df.sort_values("sharpe", ascending=False).reset_index(drop=True)
+    n_scenarios  = df["scenario"].nunique()
 
-    hdr = (f"  {'标记':<4}  {'P-OTM':>6} {'C-OTM':>6} {'Wing':>5} {'DTE':>4}"
+    # ═══ 1. 全局 Top N（跨场景）═══════════════════════════════
+    hdr = (f"  {'标记':<6}  {'场景':>3} {'P-OTM':>6} {'C-OTM':>6} {'Wing':>5} {'DTE':>4}"
            f"  {'年化收益':>8} {'最大回撤':>9} {'夏普':>6} {'Calmar':>7} {'期末':>10}")
     for cn in crisis_names:
         hdr += f"  {cn:>8}"
-
     sep = "  " + "─" * (len(hdr) - 2)
 
-    print(f"\n{'='*90}")
-    print(f"  🏆  非对称铁鹰参数扫描结果  （QQQ+IWM+GLD  2x杠杆  2010-2025）")
-    print(f"  基准：P3.5%/C7.5%  Wing=8%  DTE=30  |  共 {len(df)} 组")
-    print(f"{'='*90}")
-    print(f"\n  按夏普比率排序（Top {min(top_n, len(df_sorted))}）：")
+    print(f"\n{'='*100}")
+    print(f"  🏆  非对称铁鹰 HV阈值场景对比扫描  QQQ+IWM+GLD  2x杠杆  2010-2025")
+    print(f"  基准参数：P3.5%/C7.5% Wing=8% DTE=30  |  {n_scenarios}个场景 × {len(df)//n_scenarios}组 = {len(df)}组")
+    print(f"{'='*100}")
+    print(f"\n  ── 全局 Top {min(top_n, len(df_sorted))}（按夏普，跨场景）──")
     print(hdr)
     print(sep)
-
     shown = 0
-    baseline_printed = False
     for _, r in df_sorted.iterrows():
-        if shown >= top_n and not (r["is_baseline"] and not baseline_printed):
-            if r["is_baseline"] and not baseline_printed:
-                pass
-            else:
-                continue
-        if r["is_baseline"]:
-            baseline_printed = True
-            marker = "★基准"
-        else:
-            marker = f"#{shown+1:3d}"
-
-        row = (f"  {marker:<4}  "
-               f"{r['put_otm']:>5.1%} {r['call_otm']:>6.1%} {r['wing']:>5.0%} {r['dte']:>4.0f}"
+        if shown >= top_n:
+            break
+        sc = r.get("scenario", "?")
+        marker = "★基准" if r["is_baseline"] else f"#{shown+1:3d}"
+        row = (f"  {marker:<6}  "
+               f"{sc:>3} {r['put_otm']:>5.1%} {r['call_otm']:>6.1%} {r['wing']:>5.0%} {r['dte']:>4.0f}"
                f"  {r['ann_ret']:>7.2f}% {r['max_dd']:>8.2f}% {r['sharpe']:>6.2f}"
                f"  {r['calmar']:>7.2f}  ${r['final']:>9,.0f}")
         for cn in crisis_cols:
@@ -299,93 +307,92 @@ def print_results(results: List[dict], top_n: int = 30):
         print(row)
         shown += 1
 
-    # 基准若未在 top_n 内输出，补充打印
-    if not baseline_printed:
-        brow = df_sorted[df_sorted["is_baseline"]]
-        if not brow.empty:
-            r = brow.iloc[0]
-            rank = df_sorted.index[df_sorted["is_baseline"]].tolist()[0] + 1
-            print(sep)
-            row = (f"  {'★基准':<4}  "
+    # ═══ 2. 各场景 Top 5 ══════════════════════════════════════
+    print(f"\n\n{'='*100}")
+    print(f"  📊  各场景 Top 5（按夏普）")
+    print(f"{'='*100}")
+    hdr2 = (f"  {'#':<5}  {'P-OTM':>6} {'C-OTM':>6} {'Wing':>5} {'DTE':>4}"
+            f"  {'年化':>7} {'回撤':>8} {'夏普':>6} {'Calmar':>7} {'期末':>10}")
+    for cn in crisis_names:
+        hdr2 += f"  {cn:>7}"
+    sep2 = "  " + "─" * (len(hdr2) - 2)
+
+    for sc in df["scenario"].unique():
+        df_sc = df[df["scenario"] == sc].sort_values("sharpe", ascending=False).reset_index(drop=True)
+        label = df_sc["scenario_label"].iloc[0] if "scenario_label" in df_sc.columns else sc
+        print(f"\n  【{sc}】 {label}")
+        print(hdr2)
+        print(sep2)
+        for i, (_, r) in enumerate(df_sc.head(5).iterrows(), 1):
+            row = (f"  #{i:<4}  "
                    f"{r['put_otm']:>5.1%} {r['call_otm']:>6.1%} {r['wing']:>5.0%} {r['dte']:>4.0f}"
-                   f"  {r['ann_ret']:>7.2f}% {r['max_dd']:>8.2f}% {r['sharpe']:>6.2f}"
+                   f"  {r['ann_ret']:>6.2f}% {r['max_dd']:>7.2f}% {r['sharpe']:>6.2f}"
                    f"  {r['calmar']:>7.2f}  ${r['final']:>9,.0f}")
             for cn in crisis_cols:
                 v = r.get(cn, float("nan"))
-                row += f"  {v:>8.2f}%" if not math.isnan(v) else f"  {'N/A':>8}"
-            row += f"  (全局排名第 {rank} / {len(df)})"
+                row += f"  {v:>7.2f}%" if not math.isnan(v) else f"  {'N/A':>7}"
             print(row)
 
-    # ── Top5 分项对比 ────────────────────────────────────────
-    print(f"\n\n{'='*90}")
-    print(f"  📊  Top 5 vs 基准  详细对比")
-    print(f"{'='*90}")
-    top5_idx = df_sorted[~df_sorted["is_baseline"]].head(5).index.tolist()
-    if df_sorted["is_baseline"].any():
-        base_idx = df_sorted[df_sorted["is_baseline"]].index[0]
-        top5_idx = [base_idx] + top5_idx
-
-    metrics = ["ann_ret", "max_dd", "sharpe", "calmar"] + crisis_cols
-    metric_labels = {
-        "ann_ret": "年化收益",
-        "max_dd":  "最大回撤",
-        "sharpe":  "夏普比率",
-        "calmar":  "Calmar",
-        **{c: c.replace("dd_", "危机") for c in crisis_cols},
-    }
-    fmt = {
-        "ann_ret": "{:>+8.2f}%",
-        "max_dd":  "{:>8.2f}%",
-        "sharpe":  "{:>8.2f}",
-        "calmar":  "{:>8.2f}",
-        **{c: "{:>8.2f}%" for c in crisis_cols},
-    }
-
-    # 列头
-    col_w = 18
-    header = f"  {'指标':<12}"
-    for idx in top5_idx:
-        r = df_sorted.loc[idx]
-        tag = "基准" if r["is_baseline"] else f"P{r['put_otm']:.1%}/C{r['call_otm']:.1%}"
-        col_label = f"{tag} W{r['wing']:.0%} D{r['dte']:.0f}"
-        header += f"  {col_label:>{col_w}}"
-    print(header)
-    print("  " + "─" * (14 + (col_w + 2) * len(top5_idx)))
-
-    for m in metrics:
-        row = f"  {metric_labels.get(m, m):<12}"
-        for idx in top5_idx:
-            r = df_sorted.loc[idx]
-            v = r.get(m, float("nan"))
-            if math.isnan(v):
-                row += f"  {'N/A':>{col_w}}"
-            else:
-                try:
-                    row += f"  {fmt[m].format(v):>{col_w}}"
-                except Exception:
-                    row += f"  {v:>{col_w}.2f}"
-        print(row)
-
-    # ── 最优推荐 ────────────────────────────────────────────
-    best = df_sorted.iloc[0]
-    print(f"\n\n{'='*90}")
-    print(f"  🥇  综合最优推荐")
-    print(f"{'='*90}")
-    b_tag = "（即当前基准）" if best["is_baseline"] else ""
-    print(f"  Put OTM  = {best['put_otm']:.1%}   Call OTM = {best['call_otm']:.1%}"
-          f"   Wing = {best['wing']:.0%}   DTE = {best['dte']:.0f}  {b_tag}")
-    print(f"  年化收益 {best['ann_ret']:+.2f}%  |  最大回撤 {best['max_dd']:.2f}%"
-          f"  |  夏普 {best['sharpe']:.2f}  |  Calmar {best['calmar']:.2f}")
-    print(f"  $15k 期末 → ${best['final']:,.0f}  （2010-2025，16年）")
-
-    # 与基准差值
-    base_rows = df[df["is_baseline"]]
+    # ═══ 3. 场景横向对比（固定基准参数）══════════════════════
+    print(f"\n\n{'='*100}")
+    print(f"  🔀  场景横向对比（固定基准参数 P3.5%/C7.5%/W8%/DTE30）")
+    print(f"{'='*100}")
+    base_rows = df[df["is_baseline"]].sort_values("scenario")
     if not base_rows.empty:
-        b = base_rows.iloc[0]
-        print(f"\n  对比基准（P3.5%/C7.5%）：")
-        print(f"    年化  {b['ann_ret']:+.2f}% → {best['ann_ret']:+.2f}%   差值 {best['ann_ret']-b['ann_ret']:+.2f}%")
-        print(f"    夏普  {b['sharpe']:.2f}  → {best['sharpe']:.2f}    差值 {best['sharpe']-b['sharpe']:+.2f}")
-        print(f"    回撤  {b['max_dd']:.2f}% → {best['max_dd']:.2f}%   差值 {best['max_dd']-b['max_dd']:+.2f}%")
+        metrics = ["ann_ret", "max_dd", "sharpe", "calmar"] + crisis_cols
+        metric_labels = {
+            "ann_ret": "年化收益", "max_dd": "最大回撤",
+            "sharpe": "夏普比率", "calmar": "Calmar",
+            **{c: c.replace("dd_", "") for c in crisis_cols},
+        }
+        col_w = 22
+        header = f"  {'指标':<12}"
+        for _, r in base_rows.iterrows():
+            header += f"  {'场景'+r['scenario']:>{col_w}}"
+        print(header)
+        print("  " + "─" * (14 + (col_w + 2) * len(base_rows)))
+        for m in metrics:
+            row = f"  {metric_labels.get(m, m):<12}"
+            for _, r in base_rows.iterrows():
+                v = r.get(m, float("nan"))
+                if math.isnan(v):
+                    row += f"  {'N/A':>{col_w}}"
+                elif m == "ann_ret":
+                    row += f"  {v:>+{col_w-1}.2f}%"
+                elif m == "max_dd" or m.startswith("dd_"):
+                    row += f"  {v:>{col_w-1}.2f}%"
+                else:
+                    row += f"  {v:>{col_w}.2f}"
+            print(row)
+    else:
+        print("  （未找到基准参数数据）")
+
+    # ═══ 4. 各场景最优 + 全局最优 ═══════════════════════════════
+    print(f"\n\n{'='*100}")
+    print(f"  🥇  各场景最优推荐（按夏普）")
+    print(f"{'='*100}")
+    for sc in df["scenario"].unique():
+        df_sc = df[df["scenario"] == sc]
+        if df_sc.empty:
+            continue
+        best = df_sc.sort_values("sharpe", ascending=False).iloc[0]
+        label = best.get("scenario_label", sc)
+        b_tag = "（即基准参数）" if best["is_baseline"] else ""
+        print(f"\n  【{sc}】 {label}")
+        print(f"    Put={best['put_otm']:.1%}  Call={best['call_otm']:.1%}"
+              f"  Wing={best['wing']:.0%}  DTE={best['dte']:.0f}  {b_tag}")
+        print(f"    年化={best['ann_ret']:+.2f}%  回撤={best['max_dd']:.2f}%"
+              f"  夏普={best['sharpe']:.2f}  Calmar={best['calmar']:.2f}"
+              f"  期末=${best['final']:,.0f}")
+
+    best_global = df_sorted.iloc[0]
+    print(f"\n  ── 全局最优（跨场景）──")
+    print(f"  场景={best_global.get('scenario','?')}  "
+          f"Put={best_global['put_otm']:.1%}  Call={best_global['call_otm']:.1%}"
+          f"  Wing={best_global['wing']:.0%}  DTE={best_global['dte']:.0f}")
+    print(f"  年化={best_global['ann_ret']:+.2f}%  回撤={best_global['max_dd']:.2f}%"
+          f"  夏普={best_global['sharpe']:.2f}  Calmar={best_global['calmar']:.2f}"
+          f"  期末=${best_global['final']:,.0f}")
 
 
 # ═══════════════════════════════════════════════════════
@@ -402,18 +409,21 @@ def main():
     combos = list(itertools.product(
         grid["put_otm"], grid["call_otm"], grid["wing"], grid["dte"]
     ))
-    n_total = len(combos)
+    n_params  = len(combos)
+    n_total   = n_params * len(HV_SCENARIOS)
 
     print(f"\n{'='*70}")
-    print(f"  🔬  非对称铁鹰参数扫描  QQQ+IWM+GLD  2x杠杆")
+    print(f"  🔬  非对称铁鹰 HV阈值场景扫描  QQQ+IWM+GLD  2x杠杆")
     print(f"{'='*70}")
     print(f"  模式      : {'快速(仅OTM)' if args.quick else '全量扫描'}")
-    print(f"  组合总数  : {n_total}")
+    print(f"  参数组合  : {n_params}  ×  {len(HV_SCENARIOS)}个HV场景 = {n_total}组")
     print(f"  并行进程  : {args.workers}")
     print(f"  基准      : P3.5%/C7.5%  Wing=8%  DTE=30")
     print(f"  资金      : ${REAL_CAPITAL:,} × {LEVERAGE}x 杠杆 = 名义${REAL_CAPITAL*LEVERAGE:,.0f}")
     print(f"  融资利率  : {MARGIN_RATE:.1%}/年  (${REAL_CAPITAL*(LEVERAGE-1)*MARGIN_RATE:,.0f}/年)")
     print(f"  回测区间  : {START} ~ {END}（16年）")
+    for sc in HV_SCENARIOS:
+        print(f"  {sc['name']}场景      : {sc['label']}")
 
     # ── 拉取数据（仅一次）────────────────────────────────────
     print(f"\n{'─'*70}")
@@ -445,10 +455,13 @@ def main():
     print(f" ✅ {len(qqq_sigmas)} 天")
 
     # ── 运行扫描 ─────────────────────────────────────────────
-    print(f"\n  🚀  开始扫描 {n_total} 组参数...\n")
+    print(f"\n  🚀  开始扫描 {n_total} 组（{n_params}参数 × {len(HV_SCENARIOS)}场景）...\n")
     t0 = time.time()
 
-    task_args = [(p, c, w, d, dfs, qqq_sigmas) for p, c, w, d in combos]
+    # 场景作为外层循环，param组合为内层
+    task_args = [(p, c, w, d, s, dfs, qqq_sigmas)
+                 for p, c, w, d in combos
+                 for s in HV_SCENARIOS]
 
     results = []
     if args.workers > 1:
@@ -468,8 +481,8 @@ def main():
                 results.append(r)
             elapsed = time.time() - t0
             eta = elapsed / i * (n_total - i) if i > 0 else 0
-            p, c, w, d = task[0], task[1], task[2], task[3]
-            print(f"\r  进度: {i:4d}/{n_total}  P{p:.1%}/C{c:.1%} W{w:.0%} D{d}"
+            p, c, w, d, sc = task[0], task[1], task[2], task[3], task[4]["name"]
+            print(f"\r  进度: {i:4d}/{n_total}  [{sc}] P{p:.1%}/C{c:.1%} W{w:.0%} D{d}"
                   f"  耗时: {elapsed:.0f}s  ETA: {eta:.0f}s   ", end="", flush=True)
 
     elapsed_total = time.time() - t0

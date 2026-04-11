@@ -58,20 +58,21 @@ STRADDLE_RATIO  = 0.075         # Straddle预算占总资金比
 CASH_RATIO      = 0.275         # 现金储备比
 
 # 动态滑点阈值（Option A：中等波动段不惩罚）
-SLIP_NORMAL     = 0.005         # HV20 < 0.35: 0.5%（含中等波动段）
-SLIP_ELEVATED   = 0.020         # 0.35 ≤ HV20 < 0.45: 2%
-SLIP_EXTREME    = 0.050         # HV20 ≥ 0.45: 5%（与硬止损阈值一致）
+# 注：阈值均为纯HV（无×1.15），与Finviz/富途口径一致
+SLIP_NORMAL     = 0.005         # HV20 < 0.30: 0.5%（含中等波动段）
+SLIP_ELEVATED   = 0.020         # 0.30 ≤ HV20 < 0.39: 2%
+SLIP_EXTREME    = 0.050         # HV20 ≥ 0.39: 5%（对应原0.45/1.15）
 SLIP_HARD_STOP  = 0.030         # VIX硬止损额外滑点（叠加在SLIP_EXTREME上）
 
-# VIX代理阈值（用QQQ的HV20）
-VIX_HARD_STOP_HV   = 0.45      # HV20 > 45%: 强制平仓所有IC（类比VIX>45）
-VIX_NO_LEVERAGE_HV = 0.25      # HV20 > 25%: 固定杠杆模式下解除杠杆
+# VIX代理阈值（用QQQ的纯HV20，与外部工具口径一致）
+VIX_HARD_STOP_HV   = 0.39      # 纯HV > 39%: 强制平仓（原0.45/1.15）
+VIX_NO_LEVERAGE_HV = 0.22      # 纯HV > 22%: 固定杠杆模式下解除杠杆（原0.25/1.15）
 
 # Vol Targeting 参数
 VOL_TARGET_MIN_LEV = 0.50      # 最低杠杆（极高波动时保底仓位）
 VOL_TARGET_MAX_LEV = 3.00      # 最高杠杆上限
-VOL_TARGET_BASE_HV = 0.15      # 参考HV20（= 此时使用base leverage）
-VIX_COOLDOWN_HV    = 0.32      # VIX硬止损后，需降至此阈值才恢复开仓
+VOL_TARGET_BASE_HV = 0.13      # 参考纯HV（= 此时使用base leverage，原0.15/1.15）
+VIX_COOLDOWN_HV    = 0.28      # 纯HV需降至此阈值才恢复开仓（原0.32/1.15）
 
 # Straddle参数
 STRADDLE_TRIGGER_HV_JUMP = 0.40   # HV20单周相对跳升>40%触发
@@ -83,18 +84,18 @@ STRADDLE_EXIT_PROFIT      = 1.00  # 盈利100%平仓
 STRADDLE_EXIT_LOSS        = 0.50  # 亏损50%止损
 STRADDLE_EXIT_DTE         = 21    # 剩余DTE ≤ 21天平仓
 
-# 配置D各标的参数（GLD版）
+# 配置D各标的参数（GLD版）— 阈值为纯HV（Scenario C，972组扫描最优，QQQ/IWM≤25%, GLD≤18%）
 ASSETS_CONFIG = [
-    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2, "hv20_threshold": 0.25},
-    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.25},
-    {"ticker": "US.GLD", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.18},
+    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2, "hv20_threshold": 0.25},   # 纯HV≤25%（Scenario C）
+    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.25},   # 纯HV≤25%（Scenario C）
+    {"ticker": "US.GLD", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.18},   # 纯HV≤18%（Scenario C）
 ]
 
 # TLT版：将GLD替换为20年期国债ETF（负相关对冲，捕捉利率波动溢价）
 ASSETS_CONFIG_TLT = [
-    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2, "hv20_threshold": 0.25},
-    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.25},
-    {"ticker": "US.TLT", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.15},
+    {"ticker": "US.QQQ", "capital_ratio": 9/15, "max_groups": 2, "hv20_threshold": 0.25},   # 纯HV≤25%（Scenario C）
+    {"ticker": "US.IWM", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.25},   # 纯HV≤25%（Scenario C）
+    {"ticker": "US.TLT", "capital_ratio": 3/15, "max_groups": 1, "hv20_threshold": 0.130},  # TLT维持保守（利率债波动特性不同）
 ]
 
 
@@ -109,9 +110,9 @@ class EnhancedICBacktester(USIronCondorBacktester):
     3. VIX硬止损后冷却期延长（等待HV20回落）
     """
 
-    # 变动OTM阈值（Option A+）
-    VAR_OTM_LOW_HV  = 0.15   # HV20 < 15%: 收窄OTM，收更多权利金
-    VAR_OTM_HIGH_HV = 0.25   # HV20 ≥ 25%: 拓宽OTM，防御性更强
+    # 变动OTM阈值（Option A+）— 纯HV口径
+    VAR_OTM_LOW_HV  = 0.13   # 纯HV < 13%: 收窄OTM（原0.15/1.15）
+    VAR_OTM_HIGH_HV = 0.22   # 纯HV ≥ 22%: 拓宽OTM（原0.25/1.15）
 
     def __init__(self, vix_hard_stop_hv=VIX_HARD_STOP_HV,
                  vix_cooldown_hv=VIX_COOLDOWN_HV,
@@ -145,20 +146,20 @@ class EnhancedICBacktester(USIronCondorBacktester):
             return super().get_dynamic_params(sigma)
         if sigma < self.VAR_OTM_LOW_HV:
             return {"otm": 0.035, "wing": 0.060, "skip": False,
-                    "reason": f"HV20={sigma:.1%}<15%，低波收窄 OTM=3.5%"}
+                    "reason": f"HV20={sigma:.1%}<13%，低波收窄 OTM=3.5%"}
         elif sigma < self.VAR_OTM_HIGH_HV:
             return {"otm": 0.050, "wing": 0.080, "skip": False,
-                    "reason": f"HV20={sigma:.1%}∈[15%,25%)，标准 OTM=5%"}
+                    "reason": f"HV20={sigma:.1%}∈[13%,22%)，标准 OTM=5%"}
         else:
             return {"otm": 0.065, "wing": 0.100, "skip": False,
-                    "reason": f"HV20={sigma:.1%}≥25%，高波拓宽 OTM=6.5%"}
+                    "reason": f"HV20={sigma:.1%}≥22%，高波拓宽 OTM=6.5%"}
 
     def _get_dynamic_slippage(self, sigma: float) -> float:
-        """根据vol regime返回滑点倍数（Option A：阈值宽松化）"""
-        if sigma >= 0.45:
-            return SLIP_EXTREME        # 极端：VIX>45等级
-        elif sigma >= 0.35:
-            return SLIP_ELEVATED       # 高波：VIX>35等级
+        """根据纯HV regime返回滑点倍数（阈值已换算为纯HV口径）"""
+        if sigma >= 0.39:
+            return SLIP_EXTREME        # 极端：纯HV≥39%（原45%/1.15）
+        elif sigma >= 0.30:
+            return SLIP_ELEVATED       # 高波：纯HV≥30%（原35%/1.15）
         else:
             return SLIP_NORMAL         # 正常/中等波动：一律0.5%
 
@@ -223,22 +224,23 @@ class EnhancedICBacktester(USIronCondorBacktester):
             current_date: date = row["date"]
             S: float = float(row["Close"])
             past_prices = prices.iloc[max(0, i - 20): i + 1]
-            sigma = historical_volatility(past_prices, 20)
+            hv20   = historical_volatility(past_prices, 20)          # 纯HV，用于入场过滤/VIX控制
+            iv_est = hv20 * 1.15                                      # IV估算，用于BS期权定价
 
-            # 每日更新HV历史（用于IV Rank计算）
-            self._hv_history.append(sigma)
+            # 每日更新HV历史（用于IV Rank计算，存纯HV）
+            self._hv_history.append(hv20)
 
             # ── VIX硬止损检查（最高优先级）──────────────────────
-            if not self._hard_stopped and sigma >= self.vix_hard_stop_hv and self.positions:
-                print(f"  🚨 [{current_date}] VIX硬止损触发！HV20={sigma:.1%}≥{self.vix_hard_stop_hv:.0%}，强平所有IC")
+            if not self._hard_stopped and hv20 >= self.vix_hard_stop_hv and self.positions:
+                print(f"  🚨 [{current_date}] VIX硬止损触发！HV20={hv20:.1%}≥{self.vix_hard_stop_hv:.0%}，强平所有IC")
                 for pos in self.positions:
                     pnl = self._close_position_with_slippage(
-                        pos, S, sigma, current_date,
+                        pos, S, iv_est, current_date,
                         extra_slip=SLIP_HARD_STOP)
                     self.cash += pnl
                     self.trades.append({
                         "date": str(current_date), "action": "VIX_HARD_STOP",
-                        "pnl": round(pnl, 2), "hv20": round(sigma, 3),
+                        "pnl": round(pnl, 2), "hv20": round(hv20, 3),
                     })
                 self.positions = []
                 self._hard_stopped = True
@@ -246,8 +248,8 @@ class EnhancedICBacktester(USIronCondorBacktester):
                 self.stopped = True
 
             # VIX硬止损恢复条件：HV20回落到冷却阈值以下
-            if self._hard_stopped and sigma < self.vix_cooldown_hv:
-                print(f"  ✅ [{current_date}] VIX恢复，HV20={sigma:.1%}<{self.vix_cooldown_hv:.0%}，解除硬止损")
+            if self._hard_stopped and hv20 < self.vix_cooldown_hv:
+                print(f"  ✅ [{current_date}] VIX恢复，HV20={hv20:.1%}<{self.vix_cooldown_hv:.0%}，解除硬止损")
                 self._hard_stopped = False
                 self.stopped = False
                 self._stop_date = None
@@ -278,22 +280,22 @@ class EnhancedICBacktester(USIronCondorBacktester):
                                 can_open = False
 
                     if can_open and actual_dte >= 7:
-                        # ── IV Rank 过滤 ────────────────────────
+                        # ── IV Rank 过滤（基于纯HV历史）────────────
                         if self.iv_rank_min > 0.0 and len(self._hv_history) >= 30:
-                            iv_rank = np.mean(np.array(self._hv_history) <= sigma)
+                            iv_rank = np.mean(np.array(self._hv_history) <= hv20)
                             if iv_rank < self.iv_rank_min:
                                 can_open = False  # 当前权利金偏便宜，跳过
 
-                        dyn = self.get_dynamic_params(sigma)
+                        dyn = self.get_dynamic_params(hv20)   # 入场过滤用纯HV
                         if dyn["skip"]:
                             can_open = False
 
                         if can_open:
-                            # 传入动态OTM/wing（变动OTM模式或父类dynamic_otm模式均生效）
+                            # 期权定价用iv_est（更接近市场实际IV）
                             dyn_otm  = dyn["otm"]  if self.dynamic_otm else None
                             dyn_wing = dyn["wing"] if self.dynamic_otm else None
                             sp_k, bp_k, sc_k, bc_k, credit = self.calculate_ic_prices(
-                                S, sigma, actual_dte,
+                                S, iv_est, actual_dte,
                                 dynamic_otm=dyn_otm, dynamic_wing=dyn_wing)
                             net_credit = credit - self.COMMISSION * 4
                             if net_credit >= 50 and sp_k > 0 and sc_k > 0:
@@ -305,7 +307,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
                                     exp_date = target_expiry or (current_date + timedelta(days=actual_dte))
                                     self._last_opened_expiry = str(exp_date)
                                     self._last_open_date = current_date
-                                    slip = self._get_dynamic_slippage(sigma)
+                                    slip = self._get_dynamic_slippage(hv20)  # 滑点基于纯HV regime
                                     entry_credit = net_credit * (1 - slip)
                                     for _ in range(actual_groups):
                                         self.cash += entry_credit
@@ -320,7 +322,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
             remaining = []
             for pos in self.positions:
                 days_to_exp = (pos.expiration - current_date).days
-                position_mv = self._estimate_position_value(pos, S, sigma, current_date)
+                position_mv = self._estimate_position_value(pos, S, iv_est, current_date)
                 total_value = self.cash + position_mv
 
                 if total_value > self.peak_value:
@@ -332,7 +334,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
                 if current_dd <= -self.stop_loss_pct and not self.stopped:
                     self.stopped = True
                     self._stop_date = current_date
-                    pnl = self._close_position_with_slippage(pos, S, sigma, current_date)
+                    pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
                     self.cash += pnl
                     self.trades.append({
                         "date": str(current_date), "action": "STOP_LOSS",
@@ -353,7 +355,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
                     should_close = True
 
                 if should_close:
-                    pnl = self._close_position_with_slippage(pos, S, sigma, current_date)
+                    pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
                     self.cash += pnl
                     self._last_close_date = current_date
                     self.trades.append({
@@ -365,14 +367,14 @@ class EnhancedICBacktester(USIronCondorBacktester):
 
             self.positions = remaining
 
-            # 日记录
-            pos_mv = sum(self._estimate_position_value(p, S, sigma, current_date)
+            # 日记录（sigma字段保留，记录纯HV供外部分析）
+            pos_mv = sum(self._estimate_position_value(p, S, iv_est, current_date)
                          for p in self.positions)
             total_v = self.cash + pos_mv
             self.daily_records.append({
                 "date": current_date,
                 "total_value": total_v,
-                "sigma": round(sigma, 4),
+                "sigma": round(hv20, 4),   # 存纯HV，与外部工具口径一致
             })
 
         final_v = self.daily_records[-1]["total_value"] if self.daily_records else self.initial_capital
@@ -650,15 +652,15 @@ def run_composite(leverage: float = 1.25,
             ticker=ticker,
             initial_capital=capital,
             otm_distance=0.05,
-            wing_width=0.08,
-            dte=30,
+            wing_width=0.09,                    # Scenario C 最优: Wing=9%
+            dte=45,                             # Scenario C 最优: DTE=45
             max_groups=a["max_groups"],
             cooldown_days=5,
             stop_loss_pct=0.05,
             stop_loss_buffer=1.5,
             early_close_days=2,
             entry_mode="pre_expiry",
-            entry_days_before_expiry=30,
+            entry_days_before_expiry=45,        # Scenario C 最优: DTE=45
             vix_hard_stop_hv=VIX_HARD_STOP_HV,
             vix_cooldown_hv=VIX_COOLDOWN_HV,
             use_variable_otm=use_variable_otm,
@@ -930,14 +932,14 @@ def main():
     # 复合策略变体
     results = []
 
-    # ① 非对称P3.5%C7.5% 2x — GLD版（重点验证）
+    # ① 非对称P3.0%C6.0% W9% DTE45 2x — GLD版（Scenario C 972组最优，2026-04-11确认）
     r = run_composite(leverage=2.0, use_straddle=False, ic_ratio=1.0,
-                      put_otm=0.035, call_otm=0.075)
+                      put_otm=0.030, call_otm=0.060)
     if r: results.append(r)
 
-    # ② 非对称P3.5%C7.5% 2x — TLT替换GLD
+    # ② 非对称P3.0%C6.0% W9% DTE45 2x — TLT替换GLD
     r = run_composite(leverage=2.0, use_straddle=False, ic_ratio=1.0,
-                      put_otm=0.035, call_otm=0.075,
+                      put_otm=0.030, call_otm=0.060,
                       assets_config=ASSETS_CONFIG_TLT)
     if r: results.append(r)
 

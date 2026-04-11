@@ -104,7 +104,7 @@ class HKBacktester:
 
             # 计算历史波动率
             if i >= 20:
-                hist_vol = historical_volatility(df.iloc[:i+1]['Close'])
+                hist_vol = historical_volatility(df.iloc[:i+1]['Close'], iv_premium=1.15)
             else:
                 hist_vol = 0.30
 
@@ -295,7 +295,7 @@ class USBacktester:
             price = row['Close']
 
             if i >= 20:
-                hist_vol = historical_volatility(df.iloc[:i]['Close'].values)
+                hist_vol = historical_volatility(df.iloc[:i]['Close'].values, iv_premium=1.15)
             else:
                 hist_vol = 0.30
 

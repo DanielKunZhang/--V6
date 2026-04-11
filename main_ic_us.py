@@ -2,17 +2,19 @@
 """
 美股 Iron Condor 实盘交易脚本（非对称铁鹰 + 2x杠杆版本）
 
-策略配置（2026-04-10 参数扫描324组最优解）：
+策略配置（2026-04-11 HV阈值场景扫描972组最优解 — Scenario C）：
   标的: QQQ ($18k×2=36k) + IWM ($6k×2=12k) + GLD ($6k×2=12k)，名义资本$30k（2x杠杆）
-  非对称OTM: Put侧 3.5%（更近，收put skew溢价）/ Call侧 5.0%（324组扫描最优）
-  翼宽 Wing: 7%
-  DTE: 30天（月度期权）
+  非对称OTM: Put侧 3.0%（更近，收put skew溢价）/ Call侧 6.0%（972组扫描最优）
+  翼宽 Wing: 9%
+  DTE: 45天（月度/季度期权）
   杠杆: 2x（实际资本$15k + 融资$15k，年化融资成本5.5%=$825/年）
-  VIX硬止损: HV20 > 45% 强平，恢复阈值 HV20 < 32%
+  VIX硬止损: HV20 > 39% 强平（纯HV口径，与Finviz/富途一致），恢复阈值 HV20 < 28%
+  HV20开仓阈值: QQQ≤25%, IWM≤25%, GLD≤18%（Scenario C，纯HV口径，去除原×1.15通胀）
 
 回测（2010-2025，16年，$15k实际资本×2x杠杆）：
-  年化收益 +27.97%  最大回撤 -6.97%  夏普 2.28  Calmar 4.01  期末 ~$776,000
-  324组全量扫描第1名（put_otm×call_otm×wing×dte所有组合，按Calmar/资金安全优先）
+  年化收益 +30.49%  最大回撤 -6.49%  夏普 2.63  Calmar 4.70  期末 ~$1,060,000
+  972组全量扫描第1名（3个HV场景 × 324参数组合，按夏普/Calmar综合最优）
+  HV阈值说明：历史波动率使用纯HV20（无×1.15），BS定价时IV估算=HV20×1.15（更接近实盘IV）
 """
 
 import time
@@ -88,12 +90,13 @@ logger = logging.getLogger(__name__)
 # ============ 多标的配置（非对称铁鹰 P3.5%/C5.0% + 2x杠杆：324组扫描最优解，Calmar4.01，年化27.97%）============
 # 三标的相关性：QQQ-IWM 0.634，QQQ-GLD 0.248，IWM-GLD 0.342
 # 分散效果：GLD 最佳对冲（与股票低相关），IWM 提供小盘分散
-# 回测（2010-2025，16年）：$15k实际资本×2x杠杆 → ~$776k，年化+27.97%，最大回撤-6.97%，夏普2.28，Calmar4.01
+# 回测（2010-2025，16年）：$15k实际资本×2x杠杆 → ~$1,060k，年化+30.49%，最大回撤-6.49%，夏普2.63，Calmar4.70
 # 2x杠杆实现：每个标的开2x组数（QQQ 4组/IWM 2组/GLD 2组），融资$15k，名义$30k（QQQ $18k / IWM $6k / GLD $6k）
+# HV20阈值说明：使用纯HV20（与Finviz/富途口径一致，无×1.15通胀），Scenario C（972组扫描最优场景）
 ASSETS = [
-    {"ticker": "US.QQQ", "name": "QQQ", "capital": 18_000, "max_groups": 4, "hv20_threshold": 0.25},  # 纳斯达克100: $18k名义(2x)，4组，均值HV19.3%，25%≈P78
-    {"ticker": "US.IWM", "name": "IWM", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.25},  # 罗素2000小盘: $6k名义(2x)，2组，均值HV20.1%，25%≈P80
-    {"ticker": "US.GLD", "name": "GLD", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.18},  # 黄金ETF: $6k名义(2x)，2组，均值HV14.4%，18%≈P85
+    {"ticker": "US.QQQ", "name": "QQQ", "capital": 18_000, "max_groups": 4, "hv20_threshold": 0.25},   # 纳斯达克100: 纯HV≤25%（Scenario C）
+    {"ticker": "US.IWM", "name": "IWM", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.25},   # 罗素2000小盘: 纯HV≤25%（Scenario C）
+    {"ticker": "US.GLD", "name": "GLD", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.18},   # 黄金ETF: 纯HV≤18%（Scenario C）
 ]
 
 # 兼容旧代码引用（取第一个标的）
@@ -101,12 +104,12 @@ STOCK_CONFIG = {"ticker": ASSETS[0]["ticker"], "name": ASSETS[0]["name"]}
 
 # Iron Condor 共享参数（三个标的使用相同策略参数）
 IC_CONFIG = {
-    "put_otm": 0.035,                  # Put侧 3.5% OTM（更近，收put skew溢价）
-    "call_otm": 0.050,                 # Call侧 5.0% OTM（324组扫描最优：更紧call收更多权利金，硬止损兜底极端上涨）
+    "put_otm": 0.030,                  # Put侧 3.0% OTM（972组扫描最优：Scenario C P3.0%/C6.0%/W9%/DTE45）
+    "call_otm": 0.060,                 # Call侧 6.0% OTM（972组扫描最优：夏普2.63, Calmar4.70）
     "otm_distance": 0.05,              # 对称OTM fallback（慢熊防御/兼容旧代码用）
-    "wing_width": 0.07,                # 7% Wing（更窄翼宽降低每组最大亏损，提升Calmar）
+    "wing_width": 0.09,                # 9% Wing（扩宽翼宽增加期权流动性，与更长DTE配合）
     "entry_mode": "pre_expiry",        # 到期前入场
-    "entry_days_before_expiry": 30,    # DTE=30（月度）
+    "entry_days_before_expiry": 45,    # DTE=45（月度/季度期权，更长时间价值衰减）
     "cooldown_days": 5,                # 开仓冷却期（每标的独立计算）
     "max_groups": 1,                   # fallback默认值（实际被ASSETS[x]["max_groups"]覆盖：QQQ=4, IWM=2, GLD=2）
     "min_iv": 0.0,
@@ -114,7 +117,7 @@ IC_CONFIG = {
     "min_premium": 30,                 # 最低权利金（IWM/GLD权利金较小，调低门槛）
     "estimated_credit_per_group": 100, # 每组估算权利金（三标的均值）
     "profit_target_pct": 0.50,         # 50%止盈目标
-    "hv20_threshold": 0.25,            # HV20上限25%
+    "hv20_threshold": 0.25,            # HV20上限（fallback；实际由ASSETS[x]["hv20_threshold"]覆盖）
     "slow_bear_threshold_20d": -0.07,  # 慢熊检测
     "slow_bear_defense": "increase_otm",
     "slow_bear_otm_increase": 0.25,

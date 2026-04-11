@@ -191,7 +191,7 @@ class ImprovedICBacktester:
             S: float = float(row["Close"])
 
             past_prices = prices.iloc[max(0, i - 20): i + 1]
-            sigma = historical_volatility(past_prices, 20)
+            sigma = historical_volatility(past_prices, 20, iv_premium=1.15)  # HK: IV通常比HV高15%
 
             # ── 冷却恢复 ──
             if self.stopped and self._stop_date:

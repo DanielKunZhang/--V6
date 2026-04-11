@@ -353,7 +353,7 @@ class USIronCondorBacktester:
             
             # 计算历史波动率
             past_prices = prices.iloc[max(0, i - 20): i + 1]
-            sigma = historical_volatility(past_prices, 20)
+            sigma = historical_volatility(past_prices, 20)  # iv_premium=1.0 by default (pure HV)
             
             # 冷却恢复机制
             if self.stopped and self._stop_date:

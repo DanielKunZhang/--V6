@@ -133,18 +133,19 @@ def bs_option_price(S: float, K: float, T: float, sigma: float,
     return max(price, 0.01)
 
 
-def historical_volatility(prices: pd.Series, window: int = 20) -> float:
+def historical_volatility(prices: pd.Series, window: int = 20, iv_premium: float = 1.0) -> float:
     """
     计算历史波动率（年化）
-    window: 交易日窗口（默认20日）
+    window:     交易日窗口（默认20日）
+    iv_premium: IV溢价系数（默认1.0 = 纯HV，与Finviz/富途口径一致）
+                港股/HK期权定价时传入 1.15（腾讯IV通常比HV高10-20%）
+                美股IC策略入场过滤用默认1.0，期权定价处调用方自行乘以1.15
     """
     if len(prices) <= window:
         return 0.30  # 默认30%
 
     log_returns = np.log(prices / prices.shift(1)).dropna()
     vol = log_returns.tail(window).std() * math.sqrt(252)
-    # 港股腾讯 IV 通常比历史波动率高 10-20%，加一个 IV 溢价
-    iv_premium = 1.15
     return float(vol * iv_premium)
 
 
@@ -215,7 +216,7 @@ class RealDataBacktester:
 
             # 计算历史波动率（用前 vol_window 天）
             past_prices = prices.iloc[max(0, i - self.vol_window): i + 1]
-            sigma = historical_volatility(past_prices, self.vol_window)
+            sigma = historical_volatility(past_prices, self.vol_window, iv_premium=1.15)  # HK: IV通常比HV高15%
 
             # ── IDLE → SELL_PUT ─────────────────────
             if self.strategy.state == WheelState.IDLE:

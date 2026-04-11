@@ -452,7 +452,7 @@ class IronCondorBacktester:
             all_sigmas = []
             for i in range(20, len(prices)):
                 past_p = prices.iloc[i - 20: i + 1]
-                sig = historical_volatility(past_p, 20)
+                sig = historical_volatility(past_p, 20, iv_premium=1.15)  # HK: IV通常比HV高15%
                 all_sigmas.append(sig)
             if all_sigmas:
                 self._iv_percentile_low_val = float(np.percentile(all_sigmas, self.iv_percentile_low))
@@ -466,8 +466,8 @@ class IronCondorBacktester:
             
             # 计算历史波动率
             past_prices = prices.iloc[max(0, i - 20): i + 1]
-            sigma = historical_volatility(past_prices, 20)
-            
+            sigma = historical_volatility(past_prices, 20, iv_premium=1.15)  # HK: IV通常比HV高15%
+
             # V3：IV分位数过滤（替代固定阈值模式）
             iv_pass = True
             if self.iv_filter_mode == "percentile":
