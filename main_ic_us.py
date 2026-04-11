@@ -123,6 +123,11 @@ IC_CONFIG = {
     "slow_bear_otm_increase": 0.25,
 }
 
+# VIX / HV20 风险控制阈值（与 composite_backtest.py 回测保持一致）
+VIX_HARD_STOP_HV   = 0.39   # HV20 ≥ 39%：触发硬止损，强平所有持仓（回测中 VIX_HARD_STOP_HV）
+VIX_COOLDOWN_HV    = 0.28   # HV20 < 28%：硬止损解除，恢复开仓（回测中 VIX_COOLDOWN_HV）
+VIX_DELEVERAGE_HV  = 0.22   # HV20 > 22%：建议将杠杆从2x降至1x（回测中 VIX_DELEVERAGE）
+
 # 总初始本金
 REAL_CAPITAL    = 15_000  # 实际投入资本（USD）
 LEVERAGE        = 2.0     # 杠杆倍率（融资$15k，名义$30k）
@@ -1776,6 +1781,7 @@ class IronCondorTraderUS:
         检查并管理单个标的的仓位（每次循环调用）
 
         流程：
+          0. VIX硬止损检查（HV20≥39% → 强平所有持仓）
           1. 风险评估 → 止盈/止损平仓
           2. 到期前平仓检查
           3. 开仓检查
@@ -1783,6 +1789,28 @@ class IronCondorTraderUS:
         """
         ticker = self.stock["ticker"]
         name   = self.stock["name"]
+
+        # ── VIX 硬止损检查（优先级最高，匹配回测 VIX_HARD_STOP_HV=0.39）──────
+        # 获取当前 HV20（此处单独计算，后续 open_position 内部会再次调用 _check_market_conditions）
+        market_cond = self._check_market_conditions()
+        hv20 = market_cond.get("hv20", 0.0)
+
+        if hv20 >= VIX_HARD_STOP_HV:
+            msg = f"HV20={hv20:.1%} ≥ {VIX_HARD_STOP_HV:.0%}，触发VIX硬止损，强平所有持仓"
+            logger.critical(f"[{name}] 🚨 {msg}")
+            self.notifier.send_alert("CRITICAL", f"[{name}] VIX硬止损触发", msg)
+            return self.close_all_positions()
+
+        if hv20 > VIX_DELEVERAGE_HV:
+            logger.warning(
+                f"[{name}] ⚠️ HV20={hv20:.1%} > {VIX_DELEVERAGE_HV:.0%}，"
+                f"回测策略此时降杠杆至1x——建议手动将富途融资额降至$0（当前仍以2x运行）"
+            )
+            self.notifier.send_alert(
+                "WARNING",
+                f"[{name}] 建议降杠杆",
+                f"HV20={hv20:.1%}>{VIX_DELEVERAGE_HV:.0%}，回测此时1x杠杆，请在富途APP手动降低融资额"
+            )
 
         # ── 风险评估（止盈/止损）────────────────────────
         risk_result = self._evaluate_risk()
