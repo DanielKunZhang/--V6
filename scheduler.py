@@ -2,6 +2,9 @@
 """
 铁鹰策略自动调度器
 - 每个美股交易日 09:33 AM ET 自动触发 main_ic_us.py --once
+- 开仓后 5 / 15 / 35 分钟执行结构巡检
+- 持仓期间每 60 分钟执行一次结构巡检
+- 收盘前执行一次结构巡检
 - 每个美股交易日 14:45 PM ET 自动触发 ic_monitor.py（盘后监控）
 - 启动时补偿检查：若当天 09:33 ET 触发记录缺失，立即补跑
 - 自动处理美国夏令时（EDT/EST）切换
@@ -12,6 +15,8 @@ import socket
 import subprocess
 import sys
 import logging
+import os
+import fcntl
 from datetime import datetime
 from pathlib import Path
 
@@ -22,8 +27,10 @@ import pytz
 # ── 路径配置 ─────────────────────────────────────────────
 SCRIPT_DIR   = Path(__file__).parent
 LOG_FILE     = SCRIPT_DIR / "logs" / "scheduler.log"
+LOCK_FILE    = SCRIPT_DIR / "logs" / "scheduler.lock"
 MAIN_SCRIPT  = SCRIPT_DIR / "main_ic_us.py"
 MONITOR_SCRIPT = SCRIPT_DIR / "ic_monitor.py"
+GUARD_SCRIPT = SCRIPT_DIR / "ic_execution_guard.py"
 LOG_FILE.parent.mkdir(exist_ok=True)
 
 PYTHON = sys.executable
@@ -40,6 +47,40 @@ logging.basicConfig(
     ],
 )
 logger = logging.getLogger(__name__)
+
+
+class _ProcessFileLock:
+    def __init__(self, path: Path):
+        self.path = path
+        self.handle = None
+
+    def acquire(self) -> bool:
+        self.path.parent.mkdir(exist_ok=True)
+        self.handle = open(self.path, "a+", encoding="utf-8")
+        try:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.handle.seek(0)
+            self.handle.truncate()
+            self.handle.write(str(os.getpid()))
+            self.handle.flush()
+            return True
+        except BlockingIOError:
+            return False
+
+    def release(self):
+        if not self.handle:
+            return
+        try:
+            self.handle.seek(0)
+            self.handle.truncate()
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            self.handle.close()
+        except Exception:
+            pass
+        self.handle = None
 
 
 # ═══════════════════════════════════════════════════════════
@@ -128,6 +169,34 @@ def run_monitor():
         logger.info("✅ 盘后监控完成")
 
 
+def run_execution_guard(mode="routine", label="执行巡检"):
+    """执行层巡检：只检查结构异常，不改变策略层决策。"""
+    now_et = datetime.now(ET).strftime("%Y-%m-%d %H:%M:%S ET")
+    now_bj = datetime.now(pytz.timezone("Asia/Shanghai")).strftime("%H:%M:%S 北京")
+    logger.info("=" * 55)
+    logger.info(f"🛡️ {label}  |  {now_et}  ({now_bj})")
+    logger.info("=" * 55)
+
+    if not is_opend_running():
+        logger.warning("⚠️ Futu OpenD 未运行，跳过执行巡检")
+        return
+
+    logger.info(f"✅ OpenD 已连接，启动 {GUARD_SCRIPT.name} --mode {mode} ...")
+    result = subprocess.run(
+        [PYTHON, str(GUARD_SCRIPT), "--mode", mode],
+        capture_output=True, text=True, cwd=str(SCRIPT_DIR),
+    )
+    for line in result.stdout.splitlines():
+        logger.info(f"  {line}")
+    for line in result.stderr.splitlines():
+        logger.warning(f"  {line}")
+
+    if result.returncode != 0:
+        logger.error(f"执行巡检异常退出 (exit code {result.returncode})")
+    else:
+        logger.info("✅ 执行巡检完成")
+
+
 def _catchup_if_missed():
     """
     启动时补偿：若今天 09:33–10:30 ET 内没有触发记录，立即补跑一次。
@@ -172,6 +241,64 @@ scheduler.add_job(
     id="iron_condor_daily",
     name="铁鹰策略每日触发",
     misfire_grace_time=23400,
+    max_instances=1,
+    coalesce=True,
+)
+
+# Job 1.1-1.3: 开仓后 5 / 15 / 35 分钟结构巡检
+scheduler.add_job(
+    run_execution_guard,
+    CronTrigger(day_of_week="mon-fri", hour=9, minute=38, timezone=ET),
+    kwargs={"mode": "post_open", "label": "开仓后巡检（+5m）"},
+    id="iron_condor_guard_post_open_5",
+    name="开仓后巡检 +5m",
+    misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
+)
+scheduler.add_job(
+    run_execution_guard,
+    CronTrigger(day_of_week="mon-fri", hour=9, minute=48, timezone=ET),
+    kwargs={"mode": "post_open", "label": "开仓后巡检（+15m）"},
+    id="iron_condor_guard_post_open_15",
+    name="开仓后巡检 +15m",
+    misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
+)
+scheduler.add_job(
+    run_execution_guard,
+    CronTrigger(day_of_week="mon-fri", hour=10, minute=8, timezone=ET),
+    kwargs={"mode": "post_open", "label": "开仓后巡检（+35m）"},
+    id="iron_condor_guard_post_open_35",
+    name="开仓后巡检 +35m",
+    misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
+)
+
+# Job 1.4: 持仓期间每 60 分钟巡检一次
+scheduler.add_job(
+    run_execution_guard,
+    CronTrigger(day_of_week="mon-fri", hour="11-15", minute=8, timezone=ET),
+    kwargs={"mode": "routine", "label": "盘中结构巡检"},
+    id="iron_condor_guard_hourly",
+    name="盘中结构巡检",
+    misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
+)
+
+# Job 1.5: 收盘前巡检
+scheduler.add_job(
+    run_execution_guard,
+    CronTrigger(day_of_week="mon-fri", hour=15, minute=50, timezone=ET),
+    kwargs={"mode": "pre_close", "label": "收盘前巡检"},
+    id="iron_condor_guard_pre_close",
+    name="收盘前巡检",
+    misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
 )
 
 # Job 0: 每30分钟检查一次今日是否漏跑（处理Mac睡眠唤醒场景）
@@ -181,6 +308,8 @@ scheduler.add_job(
     id="iron_condor_catchup",
     name="漏跑补偿检查",
     misfire_grace_time=1800,
+    max_instances=1,
+    coalesce=True,
 )
 
 # Job 2: 每日 14:45 PM ET 盘后监控
@@ -191,6 +320,8 @@ scheduler.add_job(
     id="iron_condor_monitor",
     name="铁鹰盘后监控",
     misfire_grace_time=7200,
+    max_instances=1,
+    coalesce=True,
 )
 
 
@@ -199,12 +330,19 @@ scheduler.add_job(
 # ═══════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    process_lock = _ProcessFileLock(LOCK_FILE)
+    if not process_lock.acquire():
+        logger.warning("⚠️ 已有一个 scheduler 实例在运行，本次退出，避免重复触发")
+        sys.exit(0)
+
     logger.info("🕐 铁鹰调度器已启动")
     logger.info("   ① 开仓任务: 每个美股交易日 09:33 AM ET（北京约 21:33 夏令 / 22:33 冬令）")
-    logger.info("   ② 盘后监控: 每个美股交易日 14:45 PM ET（北京约 02:45+1 夏令 / 03:45+1 冬令）")
-    logger.info("   ③ 补偿机制: 启动时若当日 09:33–10:30 ET 无记录，立即补跑")
+    logger.info("   ② 执行巡检: 开仓后 +5m / +15m / +35m，盘中每60分钟一次，15:50 ET 收盘前复核")
+    logger.info("   ③ 盘后监控: 每个美股交易日 14:45 PM ET（北京约 02:45+1 夏令 / 03:45+1 冬令）")
+    logger.info("   ④ 补偿机制: 启动时若当日 09:33–10:30 ET 无记录，立即补跑")
     logger.info(f"   Python  : {PYTHON}")
     logger.info(f"   脚本    : {MAIN_SCRIPT}")
+    logger.info(f"   巡检    : {GUARD_SCRIPT}")
     logger.info(f"   监控    : {MONITOR_SCRIPT}")
     logger.info(f"   日志    : {LOG_FILE}")
 
@@ -214,3 +352,5 @@ if __name__ == "__main__":
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         logger.info("调度器已停止")
+    finally:
+        process_lock.release()

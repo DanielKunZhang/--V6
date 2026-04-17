@@ -72,6 +72,8 @@ def run_period(
     qqq_sigmas: dict,
     commission_per_contract: float = 0.0,
     label: str = "",
+    min_data_rows: int = 100,
+    min_equity_days: int = 50,
 ) -> dict:
     """
     运行一组参数在指定区间上的回测，返回指标字典。
@@ -96,7 +98,7 @@ def run_period(
         date_series = pd.to_datetime(df_full["date"])
         mask = (date_series >= start_dt) & (date_series <= end_dt)
         df_slice = df_full[mask].reset_index(drop=True)
-        if len(df_slice) < 100:
+        if len(df_slice) < min_data_rows:
             return {}
 
         bt = SweepICBacktester(
@@ -175,7 +177,7 @@ def run_period(
         eq_curve.append((dt, equity))
 
     eq = pd.Series(dict(eq_curve))
-    if len(eq) < 50:
+    if len(eq) < min_equity_days:
         return {}
 
     # ── 统计指标 ──────────────────────────────────────────────
@@ -441,6 +443,8 @@ def run_gfc_extension(workers: int = 4) -> Optional[List[dict]]:
                         if pd.Timestamp(s).date() <= k <= pd.Timestamp(e).date()},
             commission_per_contract=0.65,
             label=lbl,
+            min_data_rows=40,
+            min_equity_days=30,
         )
         if r:
             results.append(r)
@@ -508,7 +512,7 @@ def print_robustness_table(results: List[dict], top_n: int = 20):
                       ("dte", ROBUSTNESS_GRID["dte"])]:
         neighbors = []
         for v in vals:
-            mask = pd.Series([True] * len(df))
+            mask = pd.Series(True, index=df.index)
             for d2, ov in [("put_otm", OPTIMAL["put_otm"]), ("call_otm", OPTIMAL["call_otm"]),
                             ("wing", OPTIMAL["wing"]), ("dte", OPTIMAL["dte"])]:
                 if d2 == dim:

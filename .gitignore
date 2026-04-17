@@ -10,3 +10,10 @@ backtest_results/
 .DS_Store
 wheel_bot.pid
 ic_us.pid
+.ic_env.local
+investment_screener/__pycache__/
+investment_screener/reports/
+investment_screener/launchd_*.log
+investment_screener/screener.log
+tax_calc_v1/outputs/
+tmp_external/

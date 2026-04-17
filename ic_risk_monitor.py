@@ -278,7 +278,8 @@ def calculate_ic_metrics(
     buy_call_strike: float,
     net_premium_per_share: float,
     expiry: date,
-    currency: str = "HKD"
+    currency: str = "HKD",
+    contract_count: int = 2,
 ) -> Dict:
     """
     快速计算 Iron Condor 风险指标（简化版）
@@ -297,10 +298,10 @@ def calculate_ic_metrics(
     # 翼宽
     wing_put = sell_put_strike - buy_put_strike
     wing_call = buy_call_strike - sell_call_strike
-    wing = min(wing_put, wing_call)
+    wing = max(wing_put, wing_call)
     
     # 合约乘数
-    multiplier = 100 * 2  # 100股/张 × 2张
+    multiplier = 100 * max(1, int(contract_count))  # 100股/张 × 实际组数
     
     # 最大盈亏
     max_profit = net_premium_per_share * multiplier

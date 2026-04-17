@@ -1,37 +1,48 @@
 #!/usr/bin/env python3
 """
-美股 Iron Condor 实盘交易脚本（非对称铁鹰 + 2x杠杆版本）
+美股 Iron Condor 实盘交易脚本（非对称铁鹰 + 2x杠杆 + 动态组数）
 
-策略配置（2026-04-11 HV阈值场景扫描972组最优解 — Scenario C）：
-  标的: QQQ ($18k×2=36k) + IWM ($6k×2=12k) + GLD ($6k×2=12k)，名义资本$30k（2x杠杆）
-  非对称OTM: Put侧 3.0%（更近，收put skew溢价）/ Call侧 6.0%（972组扫描最优）
+当前实盘配置（2026-04-12 确认）：
+  标的: QQQ $18k + IWM $6k + GLD $6k（名义资本 $30k）
+  实际本金: $15k，2x 杠杆；动态组数基于 IC_MANUAL_CAPITAL × LEVERAGE 计算
+  非对称OTM: Put 3.0% / Call 6.0%
   翼宽 Wing: 9%
   DTE: 45天（月度/季度期权）
-  杠杆: 2x（实际资本$15k + 融资$15k，年化融资成本5.5%=$825/年）
-  VIX硬止损: HV20 > 39% 强平（纯HV口径，与Finviz/富途一致），恢复阈值 HV20 < 28%
-  HV20开仓阈值: QQQ≤25%, IWM≤25%, GLD≤18%（Scenario C，纯HV口径，去除原×1.15通胀）
+  VIX硬止损: HV20 ≥ 39% 强平；HV20 < 28% 才恢复开仓
+  HV20开仓阈值: QQQ≤25%, IWM≤25%, GLD≤18%（纯HV口径）
 
-回测（2010-2025，16年，$15k实际资本×2x杠杆）：
-  年化收益 +30.49%  最大回撤 -6.49%  夏普 2.63  Calmar 4.70  期末 ~$1,060,000
-  972组全量扫描第1名（3个HV场景 × 324参数组合，按夏普/Calmar综合最优）
-  HV阈值说明：历史波动率使用纯HV20（无×1.15），BS定价时IV估算=HV20×1.15（更接近实盘IV）
+回测基准（2010-2025，16年，$15k实际资本）：
+  当前实盘基准：动态组数 Config F=20x → 年化 +38.99%，最大回撤 -12.0%，夏普 2.64
+  固定组数基线：年化 +30.49%，最大回撤 -6.49%，夏普 2.63
+  HV说明：历史波动率使用纯HV20；BS定价时 IV 估算 = HV20 × 1.15
 """
 
+import os
 import time
 import json
 import logging
 import sys
 import argparse
+import fcntl
 from pathlib import Path
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Set
+
+from capacity_utils import build_capacity_policy, build_capacity_snapshot, capacity_band
+from env_utils import load_local_env
+
+load_local_env()
 
 # ── IC 持仓追踪文件（只操作策略自己开的期权，不误碰 Wheel/正股）──────
 _IC_STATE_FILE        = Path(__file__).parent / "logs" / "ic_open_codes.json"
 _IC_COOLDOWN_FILE     = Path(__file__).parent / "logs" / "ic_cooldown_state.json"
 _IC_VIX_HARDSTOP_FILE = Path(__file__).parent / "logs" / "ic_vix_hardstop.json"
 _IC_OPEN_TRADE_FILE   = Path(__file__).parent / "logs" / "ic_open_trade.json"
+_IC_ASSET_RISK_FILE   = Path(__file__).parent / "logs" / "ic_asset_risk_state.json"
 _IC_TRADE_HISTORY_CSV = Path(__file__).parent / "logs" / "trade_history.csv"
+_IC_EXECUTION_EVENTS_FILE = Path(__file__).parent / "logs" / "ic_execution_events.jsonl"
+_IC_EXECUTION_GUARD_STATE_FILE = Path(__file__).parent / "logs" / "ic_execution_guard_state.json"
+_MAIN_RUN_LOCK_FILE   = Path(__file__).parent / "logs" / "main_ic_us.lock"
 
 
 def _load_cooldown_state() -> Dict:
@@ -89,6 +100,97 @@ def _clear_vix_hard_stop(asset_name: str):
         state.pop(asset_name)
         _save_vix_hardstop_state(state)
         logger.info(f"[{asset_name}] ✅ VIX 硬止损解除")
+
+
+def _load_asset_risk_state() -> Dict:
+    """读取单标的权益峰值状态（用于回撤止损，与回测口径对齐）"""
+    try:
+        if _IC_ASSET_RISK_FILE.exists():
+            return json.loads(_IC_ASSET_RISK_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _save_asset_risk_state(state: Dict):
+    _IC_ASSET_RISK_FILE.parent.mkdir(exist_ok=True)
+    _IC_ASSET_RISK_FILE.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _load_execution_guard_state() -> Dict:
+    """读取执行巡检状态，用于日报展示。"""
+    try:
+        if _IC_EXECUTION_GUARD_STATE_FILE.exists():
+            return json.loads(_IC_EXECUTION_GUARD_STATE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _load_realized_pnl_by_asset() -> Dict[str, float]:
+    """从 trade_history.csv 汇总各标的已实现盈亏。"""
+    import csv as _csv
+
+    realized: Dict[str, float] = {}
+    if not _IC_TRADE_HISTORY_CSV.exists():
+        return realized
+
+    try:
+        with open(_IC_TRADE_HISTORY_CSV, "r", encoding="utf-8") as f:
+            reader = _csv.DictReader(f)
+            for row in reader:
+                if row.get("action") != "CLOSE":
+                    continue
+                asset = str(row.get("asset", "") or "").strip()
+                if not asset:
+                    continue
+                try:
+                    pnl = float(row.get("realized_pnl", 0) or 0)
+                except Exception:
+                    pnl = 0.0
+                realized[asset] = realized.get(asset, 0.0) + pnl
+    except Exception:
+        return {}
+    return realized
+
+
+def _compute_asset_strategy_equity(asset_name: str, asset_capital: float, unrealized_pl: float) -> Dict:
+    """
+    计算单标的当前策略权益。
+    口径：初始分配资金 + 历史已实现盈亏 + 当前未实现盈亏
+    """
+    realized_map = _load_realized_pnl_by_asset()
+    realized_pnl = float(realized_map.get(asset_name, 0.0) or 0.0)
+    baseline_equity = float(asset_capital or 0.0) + realized_pnl
+    current_equity = baseline_equity + float(unrealized_pl or 0.0)
+    return {
+        "realized_pnl": realized_pnl,
+        "baseline_equity": baseline_equity,
+        "current_equity": current_equity,
+    }
+
+
+def _update_asset_peak_equity(asset_name: str, baseline_equity: float, current_equity: float) -> Dict:
+    """
+    更新/读取单标的权益峰值状态。
+    峰值至少不低于 baseline_equity，避免首次接入时在亏损点把峰值记低。
+    """
+    state = _load_asset_risk_state()
+    asset_state = state.get(asset_name, {})
+    prev_peak = float(asset_state.get("peak_equity", 0.0) or 0.0)
+    peak_equity = max(prev_peak, baseline_equity, current_equity)
+    asset_state.update({
+        "peak_equity": round(peak_equity, 2),
+        "last_equity": round(current_equity, 2),
+        "baseline_equity": round(baseline_equity, 2),
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+    })
+    state[asset_name] = asset_state
+    _save_asset_risk_state(state)
+    return asset_state
 
 
 # ── 实盘绩效持久化（trade_history.csv）─────────────────────────────────
@@ -184,6 +286,397 @@ def _remove_ic_codes(closed_codes: List[str]):
     _save_ic_codes(existing)
 
 
+def _append_execution_event(
+    event_type: str,
+    asset: str,
+    level: str,
+    message: str,
+    details: str = "",
+    extra: Optional[Dict] = None,
+):
+    """记录执行层事件，供日报/监控统一读取。"""
+    _IC_EXECUTION_EVENTS_FILE.parent.mkdir(exist_ok=True)
+    payload = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "event_type": event_type,
+        "asset": asset,
+        "level": level,
+        "message": message,
+        "details": details,
+        "extra": extra or {},
+    }
+    with open(_IC_EXECUTION_EVENTS_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def _load_recent_execution_events(hours: int = 48, limit: int = 20) -> List[Dict]:
+    """读取最近执行事件，供日报/监控展示。"""
+    if not _IC_EXECUTION_EVENTS_FILE.exists():
+        return []
+
+    cutoff = datetime.now() - timedelta(hours=hours)
+    events = []
+    try:
+        with open(_IC_EXECUTION_EVENTS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                    ts = datetime.fromisoformat(event.get("ts"))
+                    if ts >= cutoff:
+                        events.append(event)
+                except Exception:
+                    continue
+    except Exception:
+        return []
+
+    return events[-limit:]
+
+
+def _compute_live_position_capacity_summary(data=None, dry_run: bool = False) -> List[Dict]:
+    """
+    生成每个标的的实时持仓组数 / 当前理论允许上限 / 是否还能再开。
+    """
+    summaries = []
+    own_data = data is None
+    data_obj = data or FutuDataUS()
+    if own_data:
+        data_obj.connect()
+
+    try:
+        for asset in ASSETS:
+            trader = IronCondorTraderUS(data_obj)
+            trader.dry_run = dry_run
+            trader.stock = {"ticker": asset["ticker"], "name": asset["name"]}
+            trader.config = {
+                **IC_CONFIG,
+                "max_groups": asset["max_groups"],
+                "hv20_threshold": asset.get("hv20_threshold", IC_CONFIG["hv20_threshold"]),
+                "capital": asset["capital"],
+            }
+
+            existing_groups, total_legs = trader.check_existing_positions()
+            market_cond = trader._check_market_conditions()
+            hv20 = float(market_cond.get("hv20", 0.0) or 0.0)
+
+            group_limits = trader._compute_group_limits(hv20)
+            base_groups = group_limits["base_groups"]
+            full_max_groups = group_limits["full_max_groups"]
+            effective_max_groups = group_limits["effective_max_groups"]
+
+            blocked_reason = ""
+
+            if not market_cond.get("can_open", True):
+                blocked_reason = market_cond.get("reason", "市场条件不允许开仓")
+            elif _is_vix_hard_stopped(asset["name"]):
+                if hv20 >= VIX_COOLDOWN_HV:
+                    blocked_reason = f"VIX硬止损恢复等待（HV20={hv20:.1%}，需<{VIX_COOLDOWN_HV:.0%}）"
+            else:
+                cooldown_days = trader.config.get("cooldown_days", 5)
+                cooldown_state = _load_cooldown_state()
+                last_close_str = cooldown_state.get(asset["name"])
+                if last_close_str:
+                    try:
+                        last_close = date.fromisoformat(last_close_str)
+                        days_since = (date.today() - last_close).days
+                        if days_since < cooldown_days:
+                            remaining = cooldown_days - days_since
+                            blocked_reason = f"冷却期中（还剩{remaining}天）"
+                    except ValueError:
+                        pass
+
+                if not blocked_reason:
+                    holiday_warning = trader._check_holiday_risk()
+                    if holiday_warning:
+                        blocked_reason = f"长假风险预警：{holiday_warning}"
+
+            if not blocked_reason and existing_groups >= effective_max_groups:
+                blocked_reason = f"已有{existing_groups}组，达到/超过当前上限{effective_max_groups}组"
+
+            can_add = (blocked_reason == "") and existing_groups >= 0 and existing_groups < effective_max_groups
+            summaries.append({
+                "name": asset["name"],
+                "ticker": asset["ticker"],
+                "hv20": hv20,
+                "existing_groups": existing_groups,
+                "existing_legs": total_legs,
+                "allowed_groups": effective_max_groups,
+                "base_groups": base_groups,
+                "full_max_groups": full_max_groups,
+                "can_add": can_add,
+                "blocked_reason": blocked_reason,
+            })
+    finally:
+        if own_data:
+            data_obj.close()
+
+    return summaries
+
+
+PRESSURE_MONITOR_CONFIG = {
+    "short_warn_pct": 0.03,          # 距 short strike ≤3%：黄灯
+    "short_alert_pct": 0.015,        # 距 short strike ≤1.5%：橙灯
+    "breakeven_warn_pct": 0.03,      # 距盈亏平衡 ≤3%：黄灯
+    "breakeven_alert_pct": 0.015,    # 距盈亏平衡 ≤1.5%：橙灯
+    "stop_warn_pct": 0.03,           # 距价格止损 ≤3%：橙灯
+    "stop_critical_pct": 0.015,      # 距价格止损 ≤1.5%：红灯
+    "loss_warn_ratio": 0.20,         # 当前浮亏 / 最大亏损 ≥20%：黄灯
+    "loss_alert_ratio": 0.35,        # 当前浮亏 / 最大亏损 ≥35%：橙灯
+    "loss_critical_ratio": 0.50,     # 当前浮亏 / 最大亏损 ≥50%：红灯
+}
+
+
+def _format_pressure_distance(pct: Optional[float]) -> str:
+    if pct is None:
+        return "-"
+    if pct < 0:
+        return f"已突破 {abs(pct):.1%}"
+    return f"{pct:.1%}"
+
+
+def _classify_pressure_level(
+    dist_short_pct: Optional[float],
+    dist_be_pct: Optional[float],
+    dist_stop_pct: Optional[float],
+    loss_ratio: float,
+    imbalanced: bool,
+) -> Dict:
+    cfg = PRESSURE_MONITOR_CONFIG
+
+    if imbalanced:
+        return {
+            "level": "critical",
+            "label": "🔴 红灯",
+            "color": "#c62828",
+            "title": "结构不完整",
+            "suggestion": "存在残腿/组数不一致，先修复结构，再谈持有。",
+        }
+
+    if dist_stop_pct is not None and dist_stop_pct <= 0:
+        return {
+            "level": "critical",
+            "label": "🔴 红灯",
+            "color": "#c62828",
+            "title": "已触发止损区",
+            "suggestion": "已进入价格止损区，优先执行风控或人工确认。",
+        }
+
+    if (
+        loss_ratio >= cfg["loss_critical_ratio"]
+        or (dist_stop_pct is not None and dist_stop_pct <= cfg["stop_critical_pct"])
+        or (dist_be_pct is not None and dist_be_pct <= 0)
+    ):
+        return {
+            "level": "critical",
+            "label": "🔴 红灯",
+            "color": "#c62828",
+            "title": "接近硬风控",
+            "suggestion": "接近止损/盈亏平衡失守，建议今晚重点盯盘，必要时提前减仓。",
+        }
+
+    if (
+        loss_ratio >= cfg["loss_alert_ratio"]
+        or (dist_short_pct is not None and dist_short_pct <= 0)
+        or (dist_short_pct is not None and dist_short_pct <= cfg["short_alert_pct"])
+        or (dist_be_pct is not None and dist_be_pct <= cfg["breakeven_alert_pct"])
+        or (dist_stop_pct is not None and dist_stop_pct <= cfg["stop_warn_pct"])
+    ):
+        return {
+            "level": "alert",
+            "label": "🟠 橙灯",
+            "color": "#ef6c00",
+            "title": "严肃监控区",
+            "suggestion": "短腿附近压力较大，禁止同标的继续加仓，关注盘中方向延续。",
+        }
+
+    if (
+        loss_ratio >= cfg["loss_warn_ratio"]
+        or (dist_short_pct is not None and dist_short_pct <= cfg["short_warn_pct"])
+        or (dist_be_pct is not None and dist_be_pct <= cfg["breakeven_warn_pct"])
+    ):
+        return {
+            "level": "warn",
+            "label": "🟡 黄灯",
+            "color": "#f9a825",
+            "title": "进入关注区",
+            "suggestion": "组合开始受压，关注后续是否继续向短腿逼近。",
+        }
+
+    return {
+        "level": "normal",
+        "label": "🟢 绿灯",
+        "color": "#2e7d32",
+        "title": "正常持有区",
+        "suggestion": "仍在舒适区，按系统纪律继续观察。",
+    }
+
+
+def _compute_live_pressure_summary(data=None, dry_run: bool = False) -> List[Dict]:
+    """
+    生成当前实盘持仓的压力分级摘要。
+    输出用于日报、监控器和实盘人工盯盘。
+    """
+    summaries = []
+    own_data = data is None
+    data_obj = data or FutuDataUS()
+    if own_data:
+        data_obj.connect()
+
+    try:
+        import re
+        from collections import defaultdict
+
+        for asset in ASSETS:
+            trader = IronCondorTraderUS(data_obj)
+            trader.dry_run = dry_run
+            trader.stock = {"ticker": asset["ticker"], "name": asset["name"]}
+            trader.config = {
+                **IC_CONFIG,
+                "max_groups": asset["max_groups"],
+                "hv20_threshold": asset.get("hv20_threshold", IC_CONFIG["hv20_threshold"]),
+                "capital": asset["capital"],
+            }
+
+            current_price = trader.get_current_price()
+            positions = trader._get_positions_with_expiry()
+            if not positions:
+                continue
+
+            grouped = defaultdict(list)
+            for pos in positions:
+                grouped[pos.get("expiry")].append(pos)
+
+            for expiry, legs in grouped.items():
+                parsed = {
+                    "sell_put": None,
+                    "buy_put": None,
+                    "sell_call": None,
+                    "buy_call": None,
+                }
+                net_premium_per_share = 0.0
+                unrealized_pl = 0.0
+                qty_list = []
+                strike_by_code = {}
+
+                for leg in legs:
+                    code = leg.get("code", "")
+                    qty = int(leg.get("qty", 0) or 0)
+                    if qty == 0:
+                        continue
+                    qty_list.append(abs(qty))
+                    unrealized_pl += float(leg.get("unrealized_pl", 0.0) or 0.0)
+
+                    m = re.search(r"([CP])(\d+)$", code)
+                    if not m:
+                        continue
+                    option_type = m.group(1)
+                    strike = int(m.group(2)) / 1000.0
+                    strike_by_code[code] = strike
+                    if option_type == "P":
+                        if qty < 0:
+                            parsed["sell_put"] = strike
+                            net_premium_per_share += float(leg.get("cost_price", 0.0) or 0.0)
+                        else:
+                            parsed["buy_put"] = strike
+                            net_premium_per_share -= float(leg.get("cost_price", 0.0) or 0.0)
+                    else:
+                        if qty < 0:
+                            parsed["sell_call"] = strike
+                            net_premium_per_share += float(leg.get("cost_price", 0.0) or 0.0)
+                        else:
+                            parsed["buy_call"] = strike
+                            net_premium_per_share -= float(leg.get("cost_price", 0.0) or 0.0)
+
+                if not qty_list:
+                    continue
+
+                groups = min(qty_list)
+                imbalanced = len(legs) != 4 or len(set(qty_list)) != 1 or any(v is None for v in parsed.values())
+                sell_put = float(parsed["sell_put"] or 0.0)
+                buy_put = float(parsed["buy_put"] or 0.0)
+                sell_call = float(parsed["sell_call"] or 0.0)
+                buy_call = float(parsed["buy_call"] or 0.0)
+                put_w = max(sell_put - buy_put, 0.0)
+                call_w = max(buy_call - sell_call, 0.0)
+                wing = max(put_w, call_w, 0.0)
+                max_profit = max(net_premium_per_share * 100 * groups, 0.0)
+                max_loss = max(wing * 100 * groups - max_profit, 0.0)
+                be_lower = sell_put - net_premium_per_share if sell_put else None
+                be_upper = sell_call + net_premium_per_share if sell_call else None
+                stop_put = sell_put - 0.5 * put_w if put_w > 0 else None
+                stop_call = sell_call + 0.5 * call_w if call_w > 0 else None
+
+                side = "上侧"
+                dist_short_pct = dist_be_pct = dist_stop_pct = None
+                if current_price and sell_put and sell_call:
+                    upper_short = (sell_call - current_price) / current_price
+                    lower_short = (current_price - sell_put) / current_price
+                    side = "上侧" if upper_short <= lower_short else "下侧"
+                    if side == "上侧":
+                        dist_short_pct = upper_short
+                        dist_be_pct = ((be_upper - current_price) / current_price) if be_upper else None
+                        dist_stop_pct = ((stop_call - current_price) / current_price) if stop_call else None
+                    else:
+                        dist_short_pct = lower_short
+                        dist_be_pct = ((current_price - be_lower) / current_price) if be_lower else None
+                        dist_stop_pct = ((current_price - stop_put) / current_price) if stop_put else None
+
+                loss_ratio = (max(0.0, -unrealized_pl) / max_loss) if max_loss > 0 else 0.0
+                pressure = _classify_pressure_level(
+                    dist_short_pct=dist_short_pct,
+                    dist_be_pct=dist_be_pct,
+                    dist_stop_pct=dist_stop_pct,
+                    loss_ratio=loss_ratio,
+                    imbalanced=imbalanced,
+                )
+                summaries.append({
+                    "name": asset["name"],
+                    "ticker": asset["ticker"],
+                    "expiry": expiry.isoformat() if hasattr(expiry, "isoformat") else str(expiry or ""),
+                    "groups": groups,
+                    "legs": len(legs),
+                    "current_price": float(current_price or 0.0),
+                    "pressure_side": side,
+                    "short_put": sell_put,
+                    "short_call": sell_call,
+                    "breakeven_lower": be_lower,
+                    "breakeven_upper": be_upper,
+                    "stop_put": stop_put,
+                    "stop_call": stop_call,
+                    "dist_short_pct": dist_short_pct,
+                    "dist_be_pct": dist_be_pct,
+                    "dist_stop_pct": dist_stop_pct,
+                    "dist_short_str": _format_pressure_distance(dist_short_pct),
+                    "dist_be_str": _format_pressure_distance(dist_be_pct),
+                    "dist_stop_str": _format_pressure_distance(dist_stop_pct),
+                    "unrealized_pl": round(unrealized_pl, 2),
+                    "max_profit": round(max_profit, 2),
+                    "max_loss": round(max_loss, 2),
+                    "loss_ratio": round(loss_ratio, 4),
+                    "loss_ratio_str": f"{loss_ratio:.0%}",
+                    "imbalanced": imbalanced,
+                    "level": pressure["level"],
+                    "level_label": pressure["label"],
+                    "level_color": pressure["color"],
+                    "pressure_title": pressure["title"],
+                    "suggestion": pressure["suggestion"],
+                })
+    finally:
+        if own_data:
+            data_obj.close()
+
+    summaries.sort(
+        key=lambda item: (
+            {"critical": 3, "alert": 2, "warn": 1, "normal": 0}.get(item["level"], 0),
+            -(item.get("loss_ratio", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
+    return summaries
+
+
 def _round_option_price(price: float) -> float:
     """
     将期权价格四舍五入到富途API要求的精度。
@@ -216,6 +709,60 @@ def _escalate_close_price(close_side_is_buy: bool, bid: float, ask: float, round
     return _round_option_price(levels[min(round_num, 2)])
 
 
+def _escalate_open_price(open_side_is_buy: bool, bid: float, ask: float, round_num: int) -> float:
+    """开仓递进价格：mid → 75%向市价 → market±3% 缓冲。"""
+    if bid <= 0 and ask <= 0:
+        return 0.01
+
+    if bid <= 0:
+        bid = ask
+    if ask <= 0:
+        ask = bid
+
+    mid = (bid + ask) / 2 if (bid > 0 and ask > 0) else max(bid, ask, 0.01)
+    if open_side_is_buy:
+        levels = [mid, mid + 0.5 * (ask - mid), ask * 1.03]
+    else:
+        levels = [mid, mid - 0.5 * (mid - bid), bid * 0.97]
+    return _round_option_price(levels[min(round_num, 2)])
+
+
+class _ProcessFileLock:
+    """简单文件锁，防止实盘主程序或调度器双实例并发。"""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.handle = None
+
+    def acquire(self) -> bool:
+        self.path.parent.mkdir(exist_ok=True)
+        self.handle = open(self.path, "a+", encoding="utf-8")
+        try:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.handle.seek(0)
+            self.handle.truncate()
+            self.handle.write(str(os.getpid()))
+            self.handle.flush()
+            return True
+        except BlockingIOError:
+            return False
+
+    def release(self):
+        if not self.handle:
+            return
+        try:
+            self.handle.seek(0)
+            self.handle.truncate()
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            self.handle.close()
+        except Exception:
+            pass
+        self.handle = None
+
+
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
@@ -224,12 +771,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ============ 多标的配置（非对称铁鹰 P3.5%/C5.0% + 2x杠杆：324组扫描最优解，Calmar4.01，年化27.97%）============
+# ============ 多标的配置（当前实盘：非对称铁鹰 P3.0%/C6.0% + 2x杠杆 + 动态组数 Config F=20x）============
 # 三标的相关性：QQQ-IWM 0.634，QQQ-GLD 0.248，IWM-GLD 0.342
 # 分散效果：GLD 最佳对冲（与股票低相关），IWM 提供小盘分散
-# 回测（2010-2025，16年）：$15k实际资本×2x杠杆 → ~$1,060k，年化+30.49%，最大回撤-6.49%，夏普2.63，Calmar4.70
-# 2x杠杆实现：每个标的开2x组数（QQQ 4组/IWM 2组/GLD 2组），融资$15k，名义$30k（QQQ $18k / IWM $6k / GLD $6k）
-# HV20阈值说明：使用纯HV20（与Finviz/富途口径一致，无×1.15通胀），Scenario C（972组扫描最优场景）
+# 当前实盘基准（2010-2025，16年）：动态Config F=20x → 年化+38.99%，最大回撤-12.0%，夏普2.64
+# 固定组数基线：年化+30.49%，最大回撤-6.49%，夏普2.63
+# 2x杠杆实现：名义$30k（QQQ $18k / IWM $6k / GLD $6k），实际本金$15k + 融资$15k
+# HV20阈值说明：使用纯HV20（与Finviz/富途口径一致，无×1.15通胀）
 ASSETS = [
     {"ticker": "US.QQQ", "name": "QQQ", "capital": 18_000, "max_groups": 4, "hv20_threshold": 0.25},   # 纳斯达克100: 纯HV≤25%（Scenario C）
     {"ticker": "US.IWM", "name": "IWM", "capital": 6_000,  "max_groups": 2, "hv20_threshold": 0.25},   # 罗素2000小盘: 纯HV≤25%（Scenario C）
@@ -277,9 +825,26 @@ DYNAMIC_SIZING    = True   # 是否启用动态组数（False=固定组数，与
 GROUPS_CAP_MULT   = 20     # 组数上限倍数：base_groups × 20（QQQ=80, IWM=40, GLD=40）
 IC_MANUAL_CAPITAL = 15_000 # ← 手动指定本金（USD），用于动态组数计算，勿依赖账户总资产 API
                             # 当 IC 专用资金变化时（如从$15K增至$20K），手动修改此值即可
+OPEN_ROUND_WAIT_SECONDS = (90, 90, 60)
+OPEN_REPAIR_WAIT_SECONDS = (15, 20, 30)
+
+# 容量控制（基于当前 QQQ/IWM/GLD 期权链流动性与单腿执行方式）
+CAPACITY_CONTROL = {
+    "enabled": True,
+    "soft_actual_capital_usd": 100_000,          # ≤$100k：当前执行架构下通常无明显流动性压力
+    "auto_downgrade_to_e_actual_usd": 200_000,   # ≥$200k：自动从 F=20x 降到 E=15x
+    "hard_review_actual_usd": 300_000,           # ≥$300k：已接近当前执行架构舒适上限
+    "downgrade_cap_mult": 15,
+    "inter_batch_sleep_sec": 2.0,
+    "min_relevant_book_qty": {"QQQ": 1, "IWM": 1, "GLD": 1},
+    "batch_groups": {
+        "small":  {"QQQ": 8, "IWM": 4, "GLD": 4},   # < $100k
+        "medium": {"QQQ": 6, "IWM": 3, "GLD": 3},   # $100k ~ $200k
+        "large":  {"QQQ": 4, "IWM": 2, "GLD": 2},   # ≥ $200k
+    },
+}
 
 # ============ 邮件通知 ============
-import os
 EMAIL_CONFIG = {
     "smtp_server": "smtp.163.com",
     "smtp_port": 465,
@@ -290,7 +855,7 @@ EMAIL_CONFIG = {
 
 
 class EmailNotifier:
-    """QQQ Iron Condor 邮件通知器（自包含）"""
+    """美股多标的 Iron Condor 邮件通知器（自包含）"""
 
     def __init__(self):
         self.cfg = EMAIL_CONFIG
@@ -322,19 +887,20 @@ class EmailNotifier:
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def send_startup(self) -> bool:
-        subject = "🦅 Iron Condor 非对称策略启动（实盘 2x杠杆）"
+        subject = "🦅 Iron Condor 多标的策略启动（实盘 2x杠杆）"
         body = f"""
 <h3>🦅 Iron Condor 非对称铁鹰策略已启动</h3>
 <table border="1" cellpadding="6" style="border-collapse:collapse">
-<tr><td><b>标的</b></td><td>QQQ ($18k×4组) + IWM ($6k×2组) + GLD ($6k×2组)</td></tr>
+<tr><td><b>标的</b></td><td>QQQ $18k（base 4组） + IWM $6k（base 2组） + GLD $6k（base 2组）</td></tr>
+<tr><td><b>动态组数</b></td><td>Config F=20x，按 IC_MANUAL_CAPITAL × LEVERAGE 等比扩仓</td></tr>
 <tr><td><b>OTM（非对称）</b></td><td>Put 3.0% / Call 6.0%，Wing=9%, DTE=45</td></tr>
 <tr><td><b>实际本金</b></td><td>${REAL_CAPITAL:,} USD（2x杠杆，名义$30,000）</td></tr>
 <tr><td><b>融资成本</b></td><td>{MARGIN_RATE*100:.1f}%/年 = ${REAL_CAPITAL*MARGIN_RATE:,.0f}/年</td></tr>
-<tr><td><b>HV20阈值</b></td><td>QQQ/IWM: ≤25%，GLD: ≤18%（Scenario C，972组扫描最优）</td></tr>
-<tr><td><b>VIX硬止损</b></td><td>HV20 ≥ 39% 强平所有持仓，< 25% 恢复开仓</td></tr>
-<tr><td><b>降杠杆</b></td><td>HV20 > 22% 自动降至1x（max_groups减半）</td></tr>
+<tr><td><b>HV20开仓阈值</b></td><td>QQQ/IWM: ≤25%，GLD: ≤18%（超过即禁止新开仓）</td></tr>
+<tr><td><b>HV20降杠杆阈值</b></td><td>HV20 &gt; 22%：仅在允许开仓时，max_groups 减半</td></tr>
+<tr><td><b>HV20硬止损阈值</b></td><td>HV20 ≥ 39%：强平所有持仓；HV20 &lt; 28%：恢复开仓</td></tr>
 <tr><td><b>价格止损</b></td><td>标的穿入翼宽50%（short strike ± 0.5×wing）</td></tr>
-<tr><td><b>资金止损</b></td><td>标的亏损 > 5% 分配资金</td></tr>
+<tr><td><b>资金止损</b></td><td>单标的策略权益相对峰值回撤 &gt; 5%</td></tr>
 </table>
 <p><b>启动时间</b>: {self._ts()}</p>
 """
@@ -392,9 +958,9 @@ class EmailNotifier:
 
     def send_alert(self, level: str, message: str, details: str = "") -> bool:
         emoji = {"WARNING": "⚠️", "CRITICAL": "🚨"}.get(level, "ℹ️")
-        subject = f"{emoji} QQQ IC 警报 | {message[:50]}"
+        subject = f"{emoji} Iron Condor 警报 | {message[:50]}"
         body = f"""
-<h3>{emoji} QQQ Iron Condor 警报</h3>
+<h3>{emoji} Iron Condor 警报</h3>
 <p><b>级别</b>: {level}</p>
 <p><b>消息</b>: {message}</p>
 {"<p><b>详情</b>: " + details + "</p>" if details else ""}
@@ -405,7 +971,18 @@ class EmailNotifier:
     def send_daily_summary(self, asset_results: list) -> bool:
         """每日运行摘要，无论是否开仓都发送"""
         today = datetime.now().strftime("%Y-%m-%d")
-        rows = ""
+        recent_events = _load_recent_execution_events(hours=36, limit=12)
+        execution_guard_state = _load_execution_guard_state()
+        live_position_summary = _compute_live_position_capacity_summary(dry_run=False)
+        pressure_summary = _compute_live_pressure_summary(dry_run=False)
+        capacity = build_capacity_snapshot(
+            assets=ASSETS,
+            actual_capital=IC_MANUAL_CAPITAL,
+            leverage=LEVERAGE,
+            groups_cap_mult=GROUPS_CAP_MULT,
+            capacity_control=CAPACITY_CONTROL,
+        )
+        asset_rows = ""
         for r in asset_results:
             name    = r.get("name", "")
             action  = r.get("action", "-")
@@ -415,7 +992,7 @@ class EmailNotifier:
             hv20_str = f"{hv20:.1%}" if isinstance(hv20, float) and hv20 > 0 else "-"
             premium_str = f"${premium:.0f}" if premium else "-"
             color   = "#4CAF50" if r.get("opened") else ("#FF9800" if r.get("closed") else "#555555")
-            rows += (
+            asset_rows += (
                 f"<tr>"
                 f"<td><b>{name}</b></td>"
                 f"<td style='color:{color}'>{action}</td>"
@@ -424,6 +1001,128 @@ class EmailNotifier:
                 f"<td>{premium_str}</td>"
                 f"</tr>"
             )
+        capacity_rows = ""
+        for asset in capacity["per_asset"]:
+            capacity_rows += (
+                f"<tr>"
+                f"<td><b>{asset['name']}</b></td>"
+                f"<td>{asset['estimated_groups']}组 / {asset['estimated_legs']}腿</td>"
+                f"<td>${asset['base_capital']:,.0f} ({asset['allocation_pct']:.0%})</td>"
+                f"<td>≤{asset['batch_limit']}组/批</td>"
+                f"</tr>"
+            )
+        live_position_rows = ""
+        for item in live_position_summary:
+            status = "✅ 可再开" if item["can_add"] else "⛔ 不再开"
+            color = "#2e7d32" if item["can_add"] else "#c62828"
+            live_position_rows += (
+                f"<tr>"
+                f"<td><b>{item['name']}</b></td>"
+                f"<td>{item['existing_groups']}组 / {item['existing_legs']}腿</td>"
+                f"<td>{item['allowed_groups']}组</td>"
+                f"<td style='color:{color}'>{status}</td>"
+                f"<td>{item['blocked_reason'] or '-'}</td>"
+                f"</tr>"
+            )
+        pressure_html = ""
+        if pressure_summary:
+            pressure_rows = ""
+            for item in pressure_summary:
+                pl_color = "#2e7d32" if item["unrealized_pl"] >= 0 else "#c62828"
+                pressure_rows += (
+                    f"<tr>"
+                    f"<td><b>{item['name']}</b></td>"
+                    f"<td>${item['current_price']:.2f}</td>"
+                    f"<td>{item['groups']}组 / {item['pressure_side']}</td>"
+                    f"<td>{item['dist_short_str']}</td>"
+                    f"<td>{item['dist_be_str']}</td>"
+                    f"<td>{item['dist_stop_str']}</td>"
+                    f"<td style='color:{pl_color}'>${item['unrealized_pl']:+,.0f} / {item['loss_ratio_str']}</td>"
+                    f"<td style='color:{item['level_color']}'><b>{item['level_label']}</b></td>"
+                    f"<td>{item['suggestion']}</td>"
+                    f"</tr>"
+                )
+            pressure_html = f"""
+<h3>🚦 持仓压力监控</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%;margin-top:8px">
+<tr style="background:#f2f2f2">
+  <th>标的</th><th>现价</th><th>持仓/受压侧</th><th>距短腿</th><th>距盈亏平衡</th><th>距价格止损</th><th>浮盈亏 / 最大亏损</th><th>等级</th><th>建议</th>
+</tr>
+{pressure_rows}
+</table>
+<p style="font-size:12px;color:#888">分级口径：距 short strike ≤3% 黄灯、≤1.5% 橙灯；距价格止损 ≤1.5% 或浮亏达到最大亏损 50% 红灯。</p>
+"""
+        guard_html = ""
+        if execution_guard_state:
+            guard_rows = ""
+            for asset in ASSETS:
+                item = execution_guard_state.get(asset["name"], {})
+                level = str(item.get("level", "UNKNOWN"))
+                color = "#2e7d32" if level == "OK" else "#e65100" if level == "WARNING" else "#c62828" if level == "CRITICAL" else "#555555"
+                label = "✅ 正常" if level == "OK" else "⚠️ 警告" if level == "WARNING" else "🚨 严重" if level == "CRITICAL" else "-"
+                guard_rows += (
+                    f"<tr>"
+                    f"<td><b>{asset['name']}</b></td>"
+                    f"<td style='color:{color}'>{label}</td>"
+                    f"<td>{item.get('mode', '-')}</td>"
+                    f"<td>{str(item.get('updated_at', '-')).replace('T', ' ')}</td>"
+                    f"</tr>"
+                )
+            guard_html = f"""
+<h3>🛡️ 执行巡检健康状态</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%;margin-top:8px">
+<tr style="background:#f2f2f2">
+  <th>标的</th><th>状态</th><th>最近模式</th><th>最近巡检时间</th>
+</tr>
+{guard_rows}
+</table>
+<p style="font-size:12px;color:#888">Execution Guard 只负责结构完整性与状态一致性检查，不参与策略层止损/止盈判断。</p>
+"""
+        else:
+            guard_html = """
+<h3>🛡️ 执行巡检健康状态</h3>
+<p style="color:#888">尚未生成 Execution Guard 状态文件；待巡检任务首次运行后，这里会显示 QQQ / IWM / GLD 的执行健康状态。</p>
+"""
+        cap_label = (
+            f"E={capacity['cap_mult']}x（容量自动降档）"
+            if capacity["auto_downgraded"]
+            else f"F={capacity['cap_mult']}x"
+        )
+        warning_html = ""
+        if capacity["auto_downgraded"]:
+            warning_html += (
+                f"<p style='color:#e65100'><b>容量降档</b>: 实际本金已达 "
+                f"${capacity['downgrade_threshold']:,.0f}，当前有效动态上限为 {cap_label}。</p>"
+            )
+        if capacity["needs_review"]:
+            warning_html += (
+                f"<p style='color:#c62828'><b>容量复核</b>: 实际本金已达 "
+                f"${capacity['review_threshold']:,.0f}，建议优先关注分批执行、腿级深度与成交冲击。</p>"
+            )
+        events_html = ""
+        if recent_events:
+            event_rows = ""
+            for event in reversed(recent_events):
+                color = "#c62828" if event.get("level") == "CRITICAL" else "#e65100" if event.get("level") == "WARNING" else "#555555"
+                asset = event.get("asset", "-")
+                ts = event.get("ts", "").replace("T", " ")
+                event_rows += (
+                    f"<tr>"
+                    f"<td>{ts}</td>"
+                    f"<td><b>{asset}</b></td>"
+                    f"<td style='color:{color}'>{event.get('message', '')}</td>"
+                    f"<td>{event.get('details', '')}</td>"
+                    f"</tr>"
+                )
+            events_html = f"""
+<h3>🛠️ 最近执行事件</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%">
+<tr style="background:#f2f2f2">
+  <th>时间</th><th>标的</th><th>事件</th><th>详情</th>
+</tr>
+{event_rows}
+</table>
+"""
         subject = f"📊 铁鹰日报 {today} | {'有开仓' if any(r.get('opened') for r in asset_results) else '无开仓'}"
         body = f"""
 <h3>📊 铁鹰策略每日运行报告</h3>
@@ -432,8 +1131,31 @@ class EmailNotifier:
 <tr style="background:#f2f2f2">
   <th>标的</th><th>操作</th><th>原因/备注</th><th>HV20</th><th>权利金</th>
 </tr>
-{rows}
+{asset_rows}
 </table>
+<h3>📦 当前容量与预计组数</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%">
+<tr><td><b>实际本金</b></td><td>${capacity['actual_capital']:,.0f}</td><td><b>名义资金</b></td><td>${capacity['nominal_capital']:,.0f}（{capacity['leverage']:.1f}x）</td></tr>
+<tr><td><b>容量档位</b></td><td>{capacity['band_label']} / 成交难度{capacity['difficulty']}</td><td><b>动态上限</b></td><td>{cap_label}</td></tr>
+<tr><td><b>预计总组数</b></td><td>{capacity['total_groups']}组</td><td><b>预计总腿数</b></td><td>{capacity['total_legs']}腿</td></tr>
+</table>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%;margin-top:8px">
+<tr style="background:#f2f2f2">
+  <th>标的</th><th>预计组数</th><th>基准分配</th><th>单批建议</th>
+</tr>
+{capacity_rows}
+</table>
+<h3>🧮 实时持仓 vs 当前允许上限</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;font-family:monospace;width:100%;margin-top:8px">
+<tr style="background:#f2f2f2">
+  <th>标的</th><th>真实持仓</th><th>当前允许上限</th><th>今晚是否可再开</th><th>备注</th>
+</tr>
+{live_position_rows}
+</table>
+{warning_html}
+{guard_html}
+{pressure_html}
+{events_html}
 <p style="color:#888;font-size:12px">自动发送 · 铁鹰量化系统</p>
 """
         return self._send(subject, body)
@@ -519,14 +1241,44 @@ class FutuDataUS:
         from futu import RET_OK
         ret, data = self.quote_ctx.get_order_book(code)
         bid = ask = 0.0
+        bid_qty_10 = ask_qty_10 = 0
         if ret == RET_OK and data:
             bid_list = data.get("Bid", [])
             ask_list = data.get("Ask", [])
             if bid_list:
                 bid = float(bid_list[0][0])
+                for level in bid_list[:10]:
+                    if isinstance(level, (list, tuple)) and len(level) >= 2:
+                        try:
+                            bid_qty_10 += int(float(level[1]))
+                        except Exception:
+                            pass
             if ask_list:
                 ask = float(ask_list[0][0])
-        return {"bid": bid, "ask": ask}
+                for level in ask_list[:10]:
+                    if isinstance(level, (list, tuple)) and len(level) >= 2:
+                        try:
+                            ask_qty_10 += int(float(level[1]))
+                        except Exception:
+                            pass
+        return {"bid": bid, "ask": ask, "bid_qty_10": bid_qty_10, "ask_qty_10": ask_qty_10}
+
+    def get_market_snapshot(self, codes: List[str]) -> Dict[str, Dict]:
+        """批量获取期权快照（bid/ask/volume/open_interest）"""
+        from futu import RET_OK
+        ret, data = self.quote_ctx.get_market_snapshot(codes)
+        if ret != RET_OK or data is None or data.empty:
+            return {}
+        result = {}
+        for _, row in data.iterrows():
+            code = str(row.get("code", ""))
+            result[code] = {
+                "bid": float(row.get("bid_price", 0) or 0),
+                "ask": float(row.get("ask_price", 0) or 0),
+                "volume": int(float(row.get("volume", 0) or 0)),
+                "open_interest": int(float(row.get("open_interest", row.get("option_open_interest", 0)) or 0)),
+            }
+        return result
     
     def close(self):
         self.quote_ctx.close()
@@ -543,6 +1295,92 @@ class IronCondorTraderUS:
         self.dry_run = True  # 默认模拟模式
         self.check_interval = 300  # 5分钟检查一次（守护模式用）
         self.notifier = EmailNotifier()
+
+    def _capacity_band(self, actual_capital: float) -> str:
+        return capacity_band(actual_capital, CAPACITY_CONTROL)
+
+    def _build_capacity_policy(self) -> Dict:
+        return build_capacity_policy(
+            actual_capital=IC_MANUAL_CAPITAL,
+            groups_cap_mult=GROUPS_CAP_MULT,
+            capacity_control=CAPACITY_CONTROL,
+        )
+
+    def _compute_group_limits(self, hv20: float) -> Dict:
+        base_groups = self.config["max_groups"]
+        capacity_policy = self._build_capacity_policy()
+        effective_cap_mult = capacity_policy["cap_mult"]
+        groups_cap = base_groups * effective_cap_mult
+
+        if DYNAMIC_SIZING:
+            total_initial = sum(a["capital"] for a in ASSETS)
+            nominal_capital = IC_MANUAL_CAPITAL * LEVERAGE
+            scale = nominal_capital / max(total_initial, 1)
+            full_max_groups = min(groups_cap, max(base_groups, int(base_groups * scale)))
+        else:
+            total_initial = sum(a["capital"] for a in ASSETS)
+            nominal_capital = IC_MANUAL_CAPITAL * LEVERAGE
+            scale = 1.0
+            full_max_groups = base_groups
+
+        effective_max_groups = max(1, full_max_groups // 2) if hv20 > VIX_DELEVERAGE_HV else full_max_groups
+
+        return {
+            "base_groups": base_groups,
+            "capacity_policy": capacity_policy,
+            "groups_cap": groups_cap,
+            "total_initial": total_initial,
+            "nominal_capital": nominal_capital,
+            "scale": scale,
+            "full_max_groups": full_max_groups,
+            "effective_max_groups": effective_max_groups,
+            "deleveraged": effective_max_groups < full_max_groups,
+        }
+
+    def _get_batch_limit(self, asset_name: str, requested_groups: int) -> int:
+        policy = self._build_capacity_policy()
+        return max(1, min(requested_groups, int(policy["batch_groups"].get(asset_name, requested_groups))))
+
+    def _enrich_leg_liquidity(self, legs: List[Dict]) -> List[Dict]:
+        codes = [leg["code"] for leg in legs]
+        snapshot_map = self.data.get_market_snapshot(codes)
+        enriched = []
+        for leg in legs:
+            snap = snapshot_map.get(leg["code"], {})
+            ob = self.data.get_order_book(leg["code"])
+            bid = snap.get("bid", leg.get("bid_price", ob.get("bid", 0)))
+            ask = snap.get("ask", leg.get("ask_price", ob.get("ask", 0)))
+            mid = (bid + ask) / 2 if bid > 0 and ask > 0 else max(bid, ask, 0.01)
+            spread_pct = ((ask - bid) / mid) if mid > 0 and ask >= bid else 0.0
+            enriched.append({
+                **leg,
+                "bid_price": bid,
+                "ask_price": ask,
+                "volume": int(snap.get("volume", 0) or 0),
+                "open_interest": int(snap.get("open_interest", 0) or 0),
+                "bid_qty_10": int(ob.get("bid_qty_10", 0) or 0),
+                "ask_qty_10": int(ob.get("ask_qty_10", 0) or 0),
+                "spread_pct": spread_pct,
+            })
+        return enriched
+
+    def _check_leg_liquidity(self, legs: List[Dict]) -> Dict:
+        asset_name = self.stock.get("name", "")
+        min_book = CAPACITY_CONTROL["min_relevant_book_qty"].get(asset_name, 1)
+        warnings = []
+        for leg in legs:
+            relevant_book = leg.get("bid_qty_10", 0) if leg.get("side") == "sell" else leg.get("ask_qty_10", 0)
+            if leg.get("side") == "sell" and leg.get("bid_price", 0) <= 0:
+                return {"ok": False, "reason": f"{leg['code']} 无买一价"}
+            if leg.get("side") == "buy" and leg.get("ask_price", 0) <= 0:
+                return {"ok": False, "reason": f"{leg['code']} 无卖一价"}
+            if relevant_book < min_book:
+                return {"ok": False, "reason": f"{leg['code']} 盘口深度不足({relevant_book})"}
+            if leg.get("volume", 0) <= 1:
+                warnings.append(f"{leg['code']} volume={leg.get('volume', 0)}")
+            if leg.get("open_interest", 0) == 0:
+                warnings.append(f"{leg['code']} OI=0")
+        return {"ok": True, "warnings": warnings}
     
     def _get_account_equity(self) -> float:
         """
@@ -577,66 +1415,336 @@ class IronCondorTraderUS:
             logger.error(f"⚠️ 获取账户净值异常: {e}")
             return 0.0
 
-    def check_existing_positions(self) -> tuple:
-        """
-        检查当前是否已有铁鹰持仓（QQQ期权）
-        返回 (group_count, total_legs) 元组
-        """
+    def _remaining_qty(self, tracker: Dict) -> int:
+        return max(0, int(tracker["qty"]) - int(tracker.get("filled_qty", 0)))
+
+    def _clear_tracker_order(self, tracker: Dict):
+        tracker["order_id"] = None
+        tracker["submitted_qty"] = 0
+        tracker["last_price"] = 0.0
+
+    def _place_open_leg_order(self, tracker: Dict, price: float, qty: int, trd_env, acc_id: int) -> Dict:
         from config import FUTU_CONFIG
-        from futu import OpenSecTradeContext, TrdEnv, ModifyOrderOp
+        from futu import OpenSecTradeContext, OrderType, RET_OK
+
+        delay = 0.5
+        last_error = None
+        for attempt in range(5):
+            trade_ctx = None
+            try:
+                trade_ctx = OpenSecTradeContext(
+                    host=FUTU_CONFIG["host"],
+                    port=FUTU_CONFIG["port"],
+                    security_firm="FUTUSECURITIES",
+                )
+                ret, data = trade_ctx.place_order(
+                    code=tracker["code"],
+                    price=price,
+                    qty=qty,
+                    trd_side=tracker["order_side"],
+                    order_type=OrderType.NORMAL,
+                    adjust_limit=0,
+                    trd_env=trd_env,
+                    acc_id=acc_id,
+                )
+                if ret == RET_OK:
+                    return {
+                        "success": True,
+                        "order_id": data.iloc[0]["order_id"],
+                        "price": price,
+                    }
+                last_error = str(data)
+                if "操作过快" in last_error and attempt < 4:
+                    logger.warning(
+                        f"   ⚠️ {tracker['code']} 触发频率限制，{delay:.1f}秒后重试 ({attempt + 1}/5)..."
+                    )
+                    time.sleep(delay)
+                    delay *= 2
+                    continue
+                return {"success": False, "order_id": None, "error": last_error}
+            except Exception as e:
+                last_error = str(e)
+                if attempt < 4:
+                    time.sleep(delay)
+                    delay *= 2
+                    continue
+                return {"success": False, "order_id": None, "error": last_error}
+            finally:
+                if trade_ctx:
+                    trade_ctx.close()
+
+        return {"success": False, "order_id": None, "error": last_error or "max retries exceeded"}
+
+    def _query_order_state(self, trade_ctx, order_id, trd_env, acc_id: int) -> Optional[Dict]:
+        from futu import RET_OK
+
+        ret, od = trade_ctx.order_list_query(
+            order_id=order_id,
+            trd_env=trd_env,
+            acc_id=acc_id,
+        )
+        if ret != RET_OK or od is None or od.empty:
+            return None
+
+        row = od.iloc[0]
+        status = str(row.get("order_status", ""))
+        dealt_qty = int(row.get("dealt_qty", 0) or 0)
+        avg_price = float(
+            row.get("dealt_avg_price", row.get("price", row.get("order_price", 0))) or 0
+        )
+        inactive_status = {"FILLED_ALL", "11", "CANCELLED_ALL", "15", "FAILED", "21", "DELETED", "23"}
+        is_filled = status in {"FILLED_ALL", "11"} or ("FILLED_ALL" in status and dealt_qty > 0)
+        is_inactive = status in inactive_status or any(
+            flag in status for flag in ("FILLED_ALL", "CANCELLED_ALL", "FAILED", "DELETED")
+        )
+        return {
+            "status": status,
+            "dealt_qty": dealt_qty,
+            "avg_price": avg_price,
+            "is_filled": is_filled,
+            "is_inactive": is_inactive,
+            "is_active": not is_inactive,
+        }
+
+    def _cancel_order_with_retry(self, cancel_ctx, order_id, code: str, trd_env, acc_id: int) -> bool:
+        from futu import ModifyOrderOp, RET_OK
+
+        for retry in range(3):
+            try:
+                ret_cancel, data = cancel_ctx.modify_order(
+                    modify_order_op=ModifyOrderOp.CANCEL,
+                    order_id=order_id,
+                    qty=0,
+                    price=0,
+                    trd_env=trd_env,
+                    acc_id=acc_id,
+                )
+                if ret_cancel == RET_OK:
+                    logger.info(f"   ✅ {code} 订单已撤销")
+                    return True
+                err_msg = str(data)
+                if "CANCELLED_ALL" in err_msg or "当前状态为CANCELLED_ALL" in err_msg:
+                    logger.info(f"   ℹ️ {code} 订单已是取消状态")
+                    return True
+                logger.warning(f"   ⚠️ 撤单失败 ({retry + 1}/3): {code}, {err_msg}")
+            except Exception as e:
+                logger.warning(f"   ⚠️ 撤单异常 ({retry + 1}/3): {code}, {e}")
+            time.sleep(1)
+        return False
+
+    def _repair_incomplete_condor(self, trackers: List[Dict], trd_env, acc_id: int) -> Dict:
+        from config import FUTU_CONFIG
+        from futu import OpenSecTradeContext
+
+        asset_name = self.stock.get("name", "?")
+        logger.warning("🧩 检测到未完成铁鹰，启动自动补腿...")
+        start_msg = f"[{asset_name}] 开仓出现未完成铁鹰，启动自动补腿"
+        _append_execution_event(
+            event_type="repair_start",
+            asset=asset_name,
+            level="WARNING",
+            message="启动自动补腿",
+            details="开仓未 4/4 全成，系统开始自动补足缺失腿",
+        )
+        self.notifier.send_alert("WARNING", start_msg, "开仓未 4/4 全成，系统开始自动补足缺失腿")
+
+        query_ctx = OpenSecTradeContext(
+            host=FUTU_CONFIG["host"],
+            port=FUTU_CONFIG["port"],
+            security_firm="FUTUSECURITIES",
+        )
+        cancel_ctx = OpenSecTradeContext(
+            host=FUTU_CONFIG["host"],
+            port=FUTU_CONFIG["port"],
+            security_firm="FUTUSECURITIES",
+        )
 
         try:
-            # Futu API: dry_run 用模拟账户，实盘用真实账户
-            trd_env = TrdEnv.SIMULATE if self.dry_run else TrdEnv.REAL
-            acc_id_key = "sim_acc_id" if self.dry_run else "real_acc_id"
-            acc_id = int(FUTU_CONFIG.get(acc_id_key, "281756481449956811"))
+            for tracker in trackers:
+                order_id = tracker.get("order_id")
+                if not order_id:
+                    continue
+                state = self._query_order_state(query_ctx, order_id, trd_env, acc_id)
+                dealt_qty = min(
+                    (state or {}).get("dealt_qty", 0),
+                    int(tracker.get("submitted_qty", self._remaining_qty(tracker))),
+                )
+                avg_price = (state or {}).get("avg_price", tracker.get("last_price", 0.0))
+                if dealt_qty > 0:
+                    tracker["filled_qty"] += dealt_qty
+                    tracker["filled_notional"] += dealt_qty * avg_price
+                if self._remaining_qty(tracker) > 0 and state and state.get("is_active"):
+                    self._cancel_order_with_retry(cancel_ctx, order_id, tracker["code"], trd_env, acc_id)
+                self._clear_tracker_order(tracker)
 
-            trade_ctx = OpenSecTradeContext(
-                host=FUTU_CONFIG["host"],
-                port=FUTU_CONFIG["port"],
-                filter_trdmarket="US",
-                security_firm="FUTUSECURITIES",
+            for tracker in trackers:
+                while self._remaining_qty(tracker) > 0:
+                    remaining_qty = self._remaining_qty(tracker)
+                    repaired = False
+
+                    for repair_round, wait_seconds in enumerate(OPEN_REPAIR_WAIT_SECONDS):
+                        quote = self.get_bid_ask([tracker["code"]]).get(tracker["code"], {})
+                        bid = quote.get("bid", tracker["leg"].get("bid_price", 0))
+                        ask = quote.get("ask", tracker["leg"].get("ask_price", 0))
+                        aggressive_round = min(repair_round + 1, 2)
+                        repair_price = _escalate_open_price(
+                            tracker["side"] == "buy",
+                            bid,
+                            ask,
+                            aggressive_round,
+                        )
+                        logger.warning(
+                            f"   🔧 补腿 {tracker['code']} 余量 {remaining_qty} 张 | "
+                            f"第{repair_round + 1}轮 @ ${repair_price:.2f} "
+                            f"(bid={bid:.2f} ask={ask:.2f})"
+                        )
+                        result = self._place_open_leg_order(
+                            tracker,
+                            repair_price,
+                            remaining_qty,
+                            trd_env,
+                            acc_id,
+                        )
+                        if not result.get("success"):
+                            logger.warning(
+                                f"   ⚠️ 补腿提交失败: {tracker['code']} | {result.get('error', 'unknown')}"
+                            )
+                            continue
+
+                        tracker["order_id"] = result["order_id"]
+                        tracker["submitted_qty"] = remaining_qty
+                        tracker["last_price"] = result["price"]
+                        time.sleep(wait_seconds)
+
+                        state = self._query_order_state(query_ctx, tracker["order_id"], trd_env, acc_id)
+                        dealt_qty = min((state or {}).get("dealt_qty", 0), remaining_qty)
+                        avg_price = (state or {}).get("avg_price", repair_price)
+                        if dealt_qty > 0:
+                            tracker["filled_qty"] += dealt_qty
+                            tracker["filled_notional"] += dealt_qty * avg_price
+
+                        if self._remaining_qty(tracker) <= 0:
+                            logger.info(f"   ✅ {tracker['code']} 已补齐")
+                            self._clear_tracker_order(tracker)
+                            repaired = True
+                            break
+
+                        if state and state.get("is_active"):
+                            self._cancel_order_with_retry(
+                                cancel_ctx, tracker["order_id"], tracker["code"], trd_env, acc_id
+                            )
+                        self._clear_tracker_order(tracker)
+                        logger.warning(f"   ⚠️ {tracker['code']} 补腿后仍缺 {self._remaining_qty(tracker)} 张")
+
+                    if not repaired:
+                        break
+
+            unresolved = [tracker for tracker in trackers if self._remaining_qty(tracker) > 0]
+            if unresolved:
+                partial_fills = []
+                for tracker in trackers:
+                    if tracker.get("filled_qty", 0) <= 0:
+                        continue
+                    avg_price = (
+                        tracker["filled_notional"] / tracker["filled_qty"]
+                        if tracker["filled_qty"] > 0 else tracker.get("last_price", 0.0)
+                    )
+                    partial_fills.append({
+                        "code": tracker["code"],
+                        "dealt_qty": tracker["filled_qty"],
+                        "qty": tracker["qty"],
+                        "order_id": tracker.get("order_id"),
+                        "status": "FULL_FILLED" if tracker["filled_qty"] >= tracker["qty"] else "PARTIAL_FILLED",
+                        "side": tracker["side"],
+                        "price": avg_price,
+                    })
+                unresolved_codes = [tracker["code"] for tracker in unresolved]
+                failure_details = f"未补齐腿: {', '.join(unresolved_codes)}"
+                _append_execution_event(
+                    event_type="repair_failed",
+                    asset=asset_name,
+                    level="CRITICAL",
+                    message="自动补腿失败",
+                    details=failure_details,
+                    extra={"partial_fills": partial_fills},
+                )
+                self.notifier.send_alert(
+                    "CRITICAL",
+                    f"[{asset_name}] 自动补腿失败",
+                    failure_details,
+                )
+                return {
+                    "success": False,
+                    "reason": f"自动补腿后仍有 {len(unresolved)} 条腿未补齐",
+                    "partial_fills": partial_fills,
+                }
+
+            logger.info("✅ 自动补腿完成，4条腿结构已补齐")
+            repaired_codes = [tracker["code"] for tracker in trackers]
+            details = f"补腿完成: {', '.join(repaired_codes)}"
+            _append_execution_event(
+                event_type="repair_success",
+                asset=asset_name,
+                level="WARNING",
+                message="自动补腿成功",
+                details=details,
             )
-
-            ret, pos_data = trade_ctx.position_list_query(
-                code="",
-                pl_ratio_min=None,
-                pl_ratio_max=None,
-                trd_env=trd_env,
-                acc_id=acc_id,
-                refresh_cache=True,  # SIMULATE 和 REAL 都刷新，确保数据最新
+            self.notifier.send_alert(
+                "WARNING",
+                f"[{asset_name}] 自动补腿成功",
+                details,
             )
-            trade_ctx.close()
+            return {"success": True, "repaired": True, "repair_summary": details}
+        finally:
+            query_ctx.close()
+            cancel_ctx.close()
 
-            if ret != 0 or pos_data is None or pos_data.empty:
+    def check_existing_positions(self) -> tuple:
+        """
+        检查当前是否已有当前标的的铁鹰持仓
+        返回 (group_count, total_legs) 元组
+        """
+        try:
+            positions = self._get_positions_with_expiry()
+            if not positions:
                 logger.info("📋 当前无持仓")
                 return (0, 0)
 
-            # 筛选当前标的期权持仓（动态匹配 ticker name），排除已平仓(qty=0)
-            ticker_name = self.stock["ticker"].split(".")[1]  # "QQQ", "IWM", or "GLD"
-            all_opts = pos_data[pos_data["code"].str.contains(ticker_name, na=False)]
-            qqq_opts = all_opts[all_opts["qty"] != 0]  # 过滤已平仓持仓
-            leg_count = len(qqq_opts)
-            group_count = leg_count // 4  # 每4腿算1组 IC
-            remainder = leg_count % 4
-            
-            logger.info(f"📋 当前{self.stock['name']}期权持仓: {leg_count} 腿 = {group_count} 组 Iron Condor")
-            
-            # 🔧 不平衡头寸检测
-            if remainder != 0:
-                logger.critical("🚨🚨🚨 检测到不平衡头寸！")
-                logger.critical(f"   总腿数 {leg_count} 不是4的倍数（余{remainder}）")
-                logger.critical(f"   这意味着存在不完整的 Iron Condor，可能暴露单向风险！")
-                if not qqq_opts.empty:
-                    for _, row in qqq_opts.iterrows():
-                        logger.critical(f"     🔴 {row['code']}: {row['qty']} 张 | 可卖{row.get('can_sell_qty', 'N/A')} | 成本{row.get('cost_price', 'N/A')}")
-                logger.critical("⚠️  策略将暂停新开仓，请先手动处理不平衡头寸！")
-            
-            if not qqq_opts.empty:
-                for _, row in qqq_opts.iterrows():
-                    logger.info(f"   {row['code']}: {row['qty']} 张 @ {row.get('cost_price', 'N/A')}")
+            from collections import defaultdict
 
-            return (group_count, leg_count)
+            grouped = defaultdict(list)
+            for pos in positions:
+                grouped[str(pos.get("expiry") or "unknown")].append(pos)
+
+            total_legs = len(positions)
+            total_groups = 0
+            imbalanced = False
+
+            logger.info(f"📋 当前{self.stock['name']}期权持仓: {total_legs} 腿")
+            for expiry, legs in grouped.items():
+                abs_qtys = [abs(int(leg.get("qty", 0) or 0)) for leg in legs if int(leg.get("qty", 0) or 0) != 0]
+                expiry_groups = max(abs_qtys) if abs_qtys else 0
+                total_groups += expiry_groups
+                distinct_qtys = sorted(set(abs_qtys))
+
+                logger.info(
+                    f"   到期 {expiry}: {len(legs)} 腿 / {expiry_groups} 组 "
+                    f"(腿数量级={distinct_qtys if distinct_qtys else [0]})"
+                )
+                for leg in legs:
+                    logger.info(f"   {leg['code']}: {leg['qty']} 张 @ {leg.get('cost_price', 'N/A')}")
+
+                if len(legs) != 4 or len(distinct_qtys) > 1:
+                    imbalanced = True
+
+            logger.info(f"📋 当前{self.stock['name']}总计: {total_groups} 组 Iron Condor / {total_legs} 腿")
+
+            if imbalanced:
+                logger.critical("🚨🚨🚨 检测到不平衡头寸！")
+                logger.critical("   可能存在残腿、数量不一致或多组结构不完整")
+                logger.critical("⚠️  策略将暂停新开仓，请先手动处理不平衡头寸！")
+
+            return (total_groups, total_legs)
         except Exception as e:
             logger.error(f"查询持仓失败: {e}")
             return (-1, -1)  # 查询失败时返回特殊值，让调用者暂停开仓
@@ -716,6 +1824,12 @@ class IronCondorTraderUS:
                         net_premium_per_share -= price
             
             if len(strikes) >= 4:
+                contract_count = min(
+                    abs(int(leg.get("qty", 0)))
+                    for leg in legs
+                    if leg.get("qty", 0)
+                )
+
                 # ── 价格穿越止损（优先级高，匹配回测 stop_loss_buffer=1.5）──────
                 # 回测逻辑：stop_put  = sell_put  - 0.5 × put_wing
                 #           stop_call = sell_call + 0.5 × call_wing
@@ -741,7 +1855,7 @@ class IronCondorTraderUS:
                             )
                         }
 
-                # 计算风险指标（用于报告和资金止损）
+                # 计算风险指标（用于报告与策略层止盈/止损）
                 metrics = calculate_ic_metrics(
                     current_price=current_price,
                     sell_put_strike=strikes.get("sell_put", 0),
@@ -750,7 +1864,8 @@ class IronCondorTraderUS:
                     buy_call_strike=strikes.get("buy_call", 0),
                     net_premium_per_share=net_premium_per_share,
                     expiry=expiry,
-                    currency="USD"
+                    currency="USD",
+                    contract_count=contract_count,
                 )
 
                 total_risk_info.append({
@@ -773,21 +1888,53 @@ class IronCondorTraderUS:
         if not total_risk_info:
             return {"triggered": False, "action": "HOLD", "reason": ""}
 
-        # ── 资金回撤止损（匹配回测 stop_loss_pct=0.05）──────────────
-        # 回测：当标的分配资金回撤超5%时平仓（QQQ $18k→$900亏损触发）
-        # 注：回测的5%是从权益峰值起算的回撤；实盘用未实现亏损/标的资金近似
+        # ── 单标的权益峰值回撤止损（与回测 stop_loss_pct=0.05 对齐）─────
         stop_loss_pct  = self.config.get("stop_loss_pct", 0.05)   # 5%，与回测一致
         asset_capital  = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
         total_unrealized_pl = sum(p.get("unrealized_pl", 0) for p in positions)
+        asset_name = self.stock["name"]
+        equity_info = _compute_asset_strategy_equity(
+            asset_name=asset_name,
+            asset_capital=asset_capital,
+            unrealized_pl=total_unrealized_pl,
+        )
+        if self.dry_run:
+            existing_peak_state = _load_asset_risk_state().get(asset_name, {})
+            prev_peak_equity = float(existing_peak_state.get("peak_equity", 0.0) or 0.0)
+            peak_equity = max(
+                prev_peak_equity,
+                equity_info["baseline_equity"],
+                equity_info["current_equity"],
+            )
+        else:
+            peak_state = _update_asset_peak_equity(
+                asset_name=asset_name,
+                baseline_equity=equity_info["baseline_equity"],
+                current_equity=equity_info["current_equity"],
+            )
+            peak_equity = float(
+                peak_state.get("peak_equity", equity_info["baseline_equity"])
+                or equity_info["baseline_equity"]
+            )
+        drawdown_pct = (
+            (equity_info["current_equity"] - peak_equity) / peak_equity
+            if peak_equity > 0 else 0.0
+        )
 
         if total_unrealized_pl < 0:
-            loss_pct = abs(total_unrealized_pl) / asset_capital
-            if loss_pct > stop_loss_pct:
+            if drawdown_pct <= -stop_loss_pct:
                 return {
                     "triggered": True,
                     "action": "CLOSE_ALL",
-                    "reason": f"资金止损: 亏损 {loss_pct*100:.1f}% > {stop_loss_pct*100:.0f}%（${asset_capital:.0f}/标的）",
-                    "details": f"未实现亏损 ${total_unrealized_pl:.0f}"
+                    "reason": (
+                        f"权益回撤止损: 回撤 {abs(drawdown_pct)*100:.1f}% > "
+                        f"{stop_loss_pct*100:.0f}%（峰值 ${peak_equity:.0f} → 当前 ${equity_info['current_equity']:.0f}）"
+                    ),
+                    "details": (
+                        f"基线权益 ${equity_info['baseline_equity']:.0f} / "
+                        f"已实现 ${equity_info['realized_pnl']:+.0f} / "
+                        f"未实现 ${total_unrealized_pl:+.0f}"
+                    ),
                 }
 
         # ── 止盈（回测未建模；实盘保留作运营增强，预期提升资金效率）──
@@ -903,15 +2050,27 @@ class IronCondorTraderUS:
         """获取期权bid/ask价格"""
         prices = {}
         self.data.subscribe(options, ["ORDER_BOOK"])
+        snapshot_map = self.data.get_market_snapshot(options)
         
         for code in options:
             ob = self.data.get_order_book(code)
+            snap = snapshot_map.get(code, {})
+            bid = snap.get("bid", ob["bid"])
+            ask = snap.get("ask", ob["ask"])
             prices[code] = {
-                "bid": ob["bid"],
-                "ask": ob["ask"],
-                "mid": round((ob["bid"] + ob["ask"]) / 2, 2) if ob["bid"] > 0 and ob["ask"] > 0 else 0,
+                "bid": bid,
+                "ask": ask,
+                "mid": round((bid + ask) / 2, 2) if bid > 0 and ask > 0 else 0,
+                "volume": int(snap.get("volume", 0) or 0),
+                "open_interest": int(snap.get("open_interest", 0) or 0),
+                "bid_qty_10": int(ob.get("bid_qty_10", 0) or 0),
+                "ask_qty_10": int(ob.get("ask_qty_10", 0) or 0),
             }
-            logger.info(f"  {code}: bid={ob['bid']:.2f} ask={ob['ask']:.2f}")
+            logger.info(
+                f"  {code}: bid={bid:.2f} ask={ask:.2f} "
+                f"vol={prices[code]['volume']} oi={prices[code]['open_interest']} "
+                f"book10={prices[code]['bid_qty_10']}/{prices[code]['ask_qty_10']}"
+            )
         
         return prices
     
@@ -1036,7 +2195,20 @@ class IronCondorTraderUS:
                 "order_price": order_price,
                 "bid_price": p.get("bid", 0),
                 "ask_price": p.get("ask", 0),
+                "volume": p.get("volume", 0),
+                "open_interest": p.get("open_interest", 0),
+                "bid_qty_10": p.get("bid_qty_10", 0),
+                "ask_qty_10": p.get("ask_qty_10", 0),
+                "expiry": str(target_expiry),
             })
+
+        legs = self._enrich_leg_liquidity(legs)
+        liquidity_check = self._check_leg_liquidity(legs)
+        if not liquidity_check.get("ok"):
+            logger.warning(f"⚠️ 流动性闸门拦截: {liquidity_check.get('reason')}")
+            return {"success": False, "reason": f"流动性不足: {liquidity_check.get('reason')}"}
+        if liquidity_check.get("warnings"):
+            logger.warning(f"⚠️ 腿级流动性预警: {'; '.join(liquidity_check['warnings'])}")
 
         # 8. 计算权利金（使用 side 字段，不依赖列表索引顺序）
         sell_credits = sum(leg["order_price"] for leg in legs if leg["side"] == "sell")
@@ -1056,6 +2228,7 @@ class IronCondorTraderUS:
         # 10. 执行下单或模拟
         if self.dry_run:
             logger.info("\n⚠️ 模拟模式，不执行真实下单")
+            batch_limit = self._get_batch_limit(self.stock.get("name", ""), groups_to_open)
             return {
                 "success": True,
                 "dry_run": True,
@@ -1065,9 +2238,47 @@ class IronCondorTraderUS:
                 "prices": prices,
                 "net_premium": total_premium,
                 "legs": legs,
+                "batch_limit": batch_limit,
             }
         else:
-            result = self.execute_orders(legs, groups_to_open)
+            asset_name = self.stock.get("name", "")
+            batch_limit = self._get_batch_limit(asset_name, groups_to_open)
+            if groups_to_open > batch_limit:
+                logger.warning(f"⚠️ [{asset_name}] 触发分批开仓: {groups_to_open}组 → 每批{batch_limit}组")
+
+            remaining = groups_to_open
+            batch_results = []
+            total_net_premium = 0.0
+            repair_notes = []
+            while remaining > 0:
+                batch_groups = min(remaining, batch_limit)
+                logger.info(f"[{asset_name}] 🚚 执行批次: {batch_groups}组（剩余 {remaining}组）")
+                batch_result = self.execute_orders(legs, batch_groups)
+                batch_results.append(batch_result)
+                if batch_result.get("repair_summary"):
+                    repair_notes.append(batch_result["repair_summary"])
+                if not batch_result.get("success"):
+                    logger.error(f"[{asset_name}] ❌ 批次失败，停止后续批次")
+                    if not total_net_premium:
+                        return batch_result
+                    return {
+                        "success": False,
+                        "reason": batch_result.get("reason", "分批开仓失败"),
+                        "partial_success": True,
+                        "batch_results": batch_results,
+                        "net_premium": total_net_premium,
+                    }
+                total_net_premium += batch_result.get("net_premium", 0)
+                remaining -= batch_groups
+                if remaining > 0:
+                    time.sleep(CAPACITY_CONTROL["inter_batch_sleep_sec"])
+
+            result = {
+                "success": True,
+                "batch_results": batch_results,
+                "net_premium": total_net_premium,
+                "repair_summary": "；".join(repair_notes) if repair_notes else "",
+            }
             if result.get("success"):
                 self.notifier.send_open(
                     expiry=str(target_expiry),
@@ -1106,6 +2317,16 @@ class IronCondorTraderUS:
                     "realized_pnl": "",
                     "close_reason": "",
                 })
+                equity_info = _compute_asset_strategy_equity(
+                    asset_name=asset_name,
+                    asset_capital=self.config.get("capital", INITIAL_CAPITAL / len(ASSETS)),
+                    unrealized_pl=0.0,
+                )
+                _update_asset_peak_equity(
+                    asset_name=asset_name,
+                    baseline_equity=equity_info["baseline_equity"],
+                    current_equity=equity_info["current_equity"],
+                )
                 logger.info(f"📝 [{asset_name}] 开仓记录已写入 trade_history.csv")
             return result
 
@@ -1115,395 +2336,194 @@ class IronCondorTraderUS:
         groups_to_open: 要开的组数（默认1组）
 
         价格策略（3轮）：
-          第1轮：中间价 (bid+ask)/2      → 挂单10分钟
-          第2轮：偏激进中间价            → 挂单10分钟  (sell向bid靠，buy向ask靠，各移动价差的25%)
-          第3轮：直接 sell→bid, buy→ask  → 挂单10分钟（市场价，确保成交）
+          第1轮：中间价 (bid+ask)/2
+          第2轮：偏激进中间价（向市价推进 75%）
+          第3轮：buy→ask*1.03 / sell→bid*0.97
 
-        每轮10分钟未成交则撤单进入下一轮。
+        若仍未 4/4 全成，则自动进入补腿流程，优先补足缺失腿，避免残腿暴露。
         """
         from config import FUTU_CONFIG
-        from futu import OpenSecTradeContext, TrdSide, OrderType, RET_OK, TrdEnv, ModifyOrderOp
+        from futu import OpenSecTradeContext, TrdSide, TrdEnv
 
-        logger.info("\n🚀 开始执行下单（中间价策略，每轮10分钟）...")
+        logger.info("\n🚀 开始执行下单（3轮递进 + 自动补腿）...")
 
         acc_id = int(FUTU_CONFIG.get("real_acc_id", "281756481449956811"))
         trd_env = TrdEnv.REAL
 
         logger.info(f"📋 使用账户: {acc_id} (REAL)")
-        
-        # ========== 改进：串行提交 + 重试机制 ==========
-        
-        # 准备所有腿的订单信息
-        all_legs_order_info = []
+
+        trackers = []
         for leg in legs:
             code = leg["code"]
             side = leg["side"]
-            qty = groups_to_open  # 开仓组数
             order_side = TrdSide.SELL if side == "sell" else TrdSide.BUY
-            
-            # 所有腿用中间价下单（按最佳实践），价格四舍五入到富途要求精度
             bid = leg.get("bid_price", leg.get("bid", 0.0))
             ask = leg.get("ask_price", leg.get("ask", 0.0))
-            raw_mid = (bid + ask) / 2 if bid > 0 and ask > 0 else leg.get("order_price", 0.01)
-            spread = round(ask - bid, 2) if ask > bid > 0 else 0.0
-            first_price = _round_option_price(raw_mid)
-            
-            all_legs_order_info.append({
+            trackers.append({
                 "leg": leg,
                 "code": code,
                 "side": side,
-                "qty": qty,
+                "qty": groups_to_open,
                 "order_side": order_side,
-                "first_price": first_price,
-                "trd_env": trd_env,
-                "acc_id": acc_id,
-            })
-        
-        # 串行提交（带重试机制）
-        def submit_single_leg(order_info, trade_ctx, max_retries=5, initial_delay=0.5):
-            """提交单个订单，带重试机制处理频率限制错误"""
-            leg = order_info["leg"]
-            code = order_info["code"]
-            order_side = order_info["order_side"]
-            qty = order_info["qty"]
-            price = order_info["first_price"]
-            trd_env = order_info["trd_env"]
-            acc_id = order_info["acc_id"]
-
-            import time
-            last_error = None
-            delay = initial_delay
-
-            for attempt in range(max_retries):
-                try:
-                    ret, data = trade_ctx.place_order(
-                        code=code,
-                        price=price,
-                        qty=qty,
-                        trd_side=order_side,
-                        order_type=OrderType.NORMAL,
-                        adjust_limit=0,
-                        trd_env=trd_env,
-                        acc_id=acc_id,
-                    )
-
-                    if ret != RET_OK:
-                        error_str = str(data)
-                        last_error = error_str
-
-                        # 检查是否是"操作过快"错误需要重试
-                        if "操作过快" in error_str and attempt < max_retries - 1:
-                            logger.warning(f"   ⚠️ {code} 触发频率限制，{delay:.1f}秒后重试 ({attempt+1}/{max_retries})...")
-                            time.sleep(delay)
-                            delay *= 2  # 指数退避
-                            continue
-                        else:
-                            return {
-                                "code": code,
-                                "order_id": None,
-                                "success": False,
-                                "error": error_str,
-                            }
-
-                    order_id = data.iloc[0]["order_id"]
-                    return {
-                        "code": code,
-                        "order_id": order_id,
-                        "price": price,
-                        "success": True,
-                    }
-                except Exception as e:
-                    last_error = str(e)
-                    if attempt < max_retries - 1:
-                        time.sleep(delay)
-                        delay *= 2
-                        continue
-                    return {
-                        "code": code,
-                        "order_id": None,
-                        "success": False,
-                        "error": last_error,
-                    }
-
-            return {
-                "code": code,
+                "filled_qty": 0,
+                "filled_notional": 0.0,
                 "order_id": None,
-                "success": False,
-                "error": last_error or "max retries exceeded",
-            }
+                "submitted_qty": 0,
+                "last_price": 0.0,
+                "bid": bid,
+                "ask": ask,
+            })
 
-        # 串行提交（每条腿间隔0.3秒，避免频率限制）
-        logger.info("📝 提交4条腿订单（每条腿间隔0.3秒避开频率限制）...")
-        import time
-        time.sleep(0.2)
+        pending = list(trackers)
+        round_labels = ["第1轮(mid价)", "第2轮(偏激进)", "第3轮(市价缓冲)"]
+        partial_detected = False
 
-        submitted_results = []
-        for order_info in all_legs_order_info:
-            # 每个订单使用独立的交易上下文
-            from futu import OpenSecTradeContext
-            thread_trade_ctx = OpenSecTradeContext(
-                host=FUTU_CONFIG["host"],
-                port=FUTU_CONFIG["port"],
-                security_firm="FUTUSECURITIES",
-            )
-            result = submit_single_leg(order_info, thread_trade_ctx)
-            submitted_results.append(result)
-            thread_trade_ctx.close()
-
-            if result["success"]:
-                logger.info(f"   ✅ {result['code']} 订单已提交: {result['order_id']} @ ${result.get('price', 0):.2f}")
-            else:
-                logger.error(f"   ❌ {result['code']} 提交失败: {result.get('error', 'unknown')}")
-
-            # 每条腿之间间隔0.3秒
-            time.sleep(0.3)
-        
-        # 检查是否有订单提交失败，如果有则全部撤销
-        failed_count = sum(1 for r in submitted_results if not r["success"])
-        if failed_count > 0:
-            logger.warning(f"⚠️ {failed_count}条腿提交失败，撤销已提交的订单...")
-            cancel_ctx = OpenSecTradeContext(
-                host=FUTU_CONFIG["host"],
-                port=FUTU_CONFIG["port"],
-                security_firm="FUTUSECURITIES",
-            )
-            try:
-                for r in submitted_results:
-                    if r["success"] and r.get("order_id"):
-                        try:
-                            cancel_ctx.modify_order(
-                                modify_order_op=ModifyOrderOp.CANCEL,
-                                order_id=r["order_id"],
-                                qty=0, price=0,
-                                trd_env=trd_env,
-                                acc_id=acc_id,
-                            )
-                        except Exception:
-                            pass
-            finally:
-                cancel_ctx.close()
-            return {"success": False, "reason": "部分订单提交失败，已撤销"}
-        
-        # 步骤2：同时监控所有订单（最多等5分钟）
-        logger.info("🔄 同时监控4条腿的成交状态（最多5分钟）...")
-        
-        # 创建一个新的交易上下文用于查询
-        monitor_trade_ctx = OpenSecTradeContext(
+        monitor_ctx = OpenSecTradeContext(
             host=FUTU_CONFIG["host"],
             port=FUTU_CONFIG["port"],
             security_firm="FUTUSECURITIES",
         )
-        
-        all_filled = False
-        cancelled_detected = False
+        cancel_ctx = OpenSecTradeContext(
+            host=FUTU_CONFIG["host"],
+            port=FUTU_CONFIG["port"],
+            security_firm="FUTUSECURITIES",
+        )
 
-        for tick in range(10):  # 最多5分钟（10次×30秒）
-            time.sleep(30)
+        try:
+            for round_num, wait_seconds in enumerate(OPEN_ROUND_WAIT_SECONDS):
+                if not pending:
+                    break
 
-            # 查询所有4条腿的状态（全部遍历完再判断，不提前 break）
-            filled_count = 0
-            partial_count = 0
+                logger.info(f"📝 开仓{round_labels[round_num]}：提交 {len(pending)} 条腿")
+                quote_map = self.get_bid_ask([tracker["code"] for tracker in pending])
+                next_pending = []
 
-            for r in submitted_results:
-                order_id = r["order_id"]
-
-                ret, od = monitor_trade_ctx.order_list_query(
-                    order_id=order_id,
-                    trd_env=trd_env,
-                    acc_id=acc_id,
-                )
-
-                if ret == RET_OK and not od.empty:
-                    status = str(od.iloc[0]["order_status"])
-                    dealt_qty = int(od.iloc[0].get("dealt_qty", 0) or 0)
-                    expected_qty = r.get("qty", 1)
-
-                    # Futu API: FILLED_ALL=11, CANCELLED_ALL=15, FAILED=21, DELETED=23
-                    if status in ["FILLED_ALL", "11"] and dealt_qty >= expected_qty:
-                        # 完全成交
-                        filled_count += 1
-                    elif dealt_qty > 0 and dealt_qty < expected_qty:
-                        # 🔴 部分成交！危险状态
-                        partial_count += 1
-                        logger.warning(f"   ⚠️ {r['code']} 部分成交: {dealt_qty}/{expected_qty}")
-                    elif status in ["CANCELLED_ALL", "15", "FAILED", "21", "DELETED", "23"]:
-                        # 终态：非成交（撤销/失败）
-                        logger.warning(f"⚠️ 订单 {order_id} 终止: {status}")
-                        cancelled_detected = True
-                    # else: 仍在排队/等待，本轮继续
-
-            # ── 内层循环结束，4条腿全部检查完毕，再做决策 ──
-            all_filled = (filled_count == len(submitted_results))
-
-            if all_filled:
-                break  # ✅ 全成交，退出监控
-
-            if partial_count > 0:
-                logger.warning(f"🔴 发现{partial_count}条腿部分成交，提前终止等待")
-                break
-
-            if cancelled_detected:
-                logger.warning("🔴 检测到订单撤销/失败，停止等待")
-                break
-
-            logger.info(f"   ⏳ {(tick+1)*30}s | 已成交: {filled_count}/{len(submitted_results)} | 部分: {partial_count}")
-        
-        monitor_trade_ctx.close()
-        
-        # 步骤3：要么全成，要么全撤
-        if all_filled:
-            logger.info("✅ 4条腿全部成交！铁鹰策略建仓成功")
-            for r in submitted_results:
-                logger.info(f"   📊 {r['code']} @ ${r.get('price', 0):.2f}")
-
-            # 计算净权利金
-            net_premium = 0
-            for i, leg in enumerate(legs):
-                side = leg["side"]
-                price = submitted_results[i].get("price", 0)
-                if side == "sell":
-                    net_premium += price * 100 * groups_to_open
-                else:
-                    net_premium -= price * 100 * groups_to_open
-
-            # ── 记录 IC 持仓代码（避免误碰 Wheel/正股持仓）──
-            opened_codes = [r["code"] for r in submitted_results if r.get("success")]
-            _add_ic_codes(opened_codes)
-            logger.info(f"📝 IC 持仓代码已记录: {opened_codes}")
-
-            return {
-                "success": True,
-                "legs": submitted_results,
-                "net_premium": net_premium,
-                "expiry": legs[0].get("expiry", "unknown"),
-            }
-        else:
-            # 有未成交的，全部撤销
-            logger.warning("⚠️ 部分订单未成交，全部撤销...")
-            
-            # 🔧 Bug修复：创建新的交易上下文执行撤单（原trade_ctx可能已超时断开）
-            from futu import OpenSecTradeContext as OpenSecTradeContext_Cancel
-            cancel_ctx = None
-            cancelled_count = 0
-            partial_fills = []  # 记录已成交的腿
-            
-            # 先检查哪些腿已经（部分）成交了
-            for r in submitted_results:
-                order_id = r.get("order_id")
-                code = r.get("code", "")
-                if not order_id:
-                    continue
-                    
-                # 查询最终状态
-                check_ctx = None
-                try:
-                    check_ctx = OpenSecTradeContext(
-                        host=FUTU_CONFIG["host"],
-                        port=FUTU_CONFIG["port"],
-                        security_firm="FUTUSECURITIES",
-                    )
-                    ret, od = check_ctx.order_list_query(
-                        order_id=order_id,
-                        trd_env=trd_env,
-                        acc_id=acc_id,
-                    )
-                    if ret == RET_OK and not od.empty:
-                        status = str(od.iloc[0]["order_status"])
-                        dealt_qty = int(od.iloc[0].get("dealt_qty", 0) or 0)
-                        qty = r.get("qty", 1)
-                        
-                        if dealt_qty > 0:
-                            if dealt_qty >= qty:
-                                logger.warning(f"🔴 {code} 已完全成交({dealt_qty}/{qty})，无法撤销！残留头寸！")
-                                partial_fills.append({
-                                    "code": code,
-                                    "dealt_qty": dealt_qty,
-                                    "qty": qty,
-                                    "order_id": order_id,
-                                    "status": "FULL_FILLED",
-                                    "side": r.get("side", "unknown"),
-                                    "price": r.get("price", 0),
-                                })
-                            else:
-                                logger.critical(f"🔴🔴🔴 {code} 部分成交({dealt_qty}/{qty})！不平衡头寸！")
-                                partial_fills.append({
-                                    "code": code,
-                                    "dealt_qty": dealt_qty,
-                                    "qty": qty,
-                                    "order_id": order_id,
-                                    "status": "PARTIAL_FILLED",
-                                    "side": r.get("side", "unknown"),
-                                    "price": r.get("price", 0),
-                                })
-                        else:
-                            # 未成交，尝试撤销（带重试机制）
-                            if cancel_ctx is None:
-                                cancel_ctx = OpenSecTradeContext(
-                                    host=FUTU_CONFIG["host"],
-                                    port=FUTU_CONFIG["port"],
-                                    security_firm="FUTUSECURITIES",
-                                )
-                            # 撤单重试机制（最多3次，每次等待1秒）
-                            cancel_success = False
-                            for retry in range(3):
-                                try:
-                                    ret_cancel = cancel_ctx.modify_order(
-                                        modify_order_op=ModifyOrderOp.CANCEL,
-                                        order_id=order_id,
-                                        qty=0, price=0,
-                                        trd_env=trd_env,
-                                        acc_id=acc_id,
-                                    )
-                                    
-                                    if ret_cancel == RET_OK:
-                                        cancelled_count += 1
-                                        logger.info(f"   ✅ {code} 订单已撤销")
-                                        cancel_success = True
-                                        break
-                                    else:
-                                        # 检查返回的错误信息
-                                        err_msg = str(ret_cancel)
-                                        # Futu API: CANCELLED_ALL 字符串或整数 15
-                                        if "CANCELLED_ALL" in err_msg or "当前状态为CANCELLED_ALL" in err_msg or "15" in err_msg:
-                                            # 订单已经是CANCELLED状态，说明之前已经被撤了
-                                            logger.info(f"   ℹ️ 订单 {order_id} 已经是取消状态（之前已撤单）")
-                                            cancelled_count += 1
-                                            cancel_success = True
-                                            break
-                                        logger.warning(f"   ⚠️ 撤单失败 (尝试 {retry+1}/3): {order_id}, ret={ret_cancel}")
-                                        time.sleep(1)  # 等待1秒后重试
-                                except Exception as e:
-                                    logger.warning(f"   ⚠️ 撤单异常 (尝试 {retry+1}/3): {order_id}, error={e}")
-                                    time.sleep(1)
-                            if not cancel_success:
-                                logger.error(f"   ❌ {code} 撤单最终失败: {order_id}")
+                for tracker in pending:
+                    remaining_qty = self._remaining_qty(tracker)
+                    quote = quote_map.get(tracker["code"], {})
+                    bid = quote.get("bid", tracker["bid"])
+                    ask = quote.get("ask", tracker["ask"])
+                    tracker["bid"] = bid
+                    tracker["ask"] = ask
+                    order_price = _escalate_open_price(tracker["side"] == "buy", bid, ask, round_num)
+                    result = self._place_open_leg_order(tracker, order_price, remaining_qty, trd_env, acc_id)
+                    if result.get("success"):
+                        tracker["order_id"] = result["order_id"]
+                        tracker["submitted_qty"] = remaining_qty
+                        tracker["last_price"] = result["price"]
+                        logger.info(
+                            f"   ✅ {tracker['code']} 已提交: {tracker['order_id']} "
+                            f"@ ${result['price']:.2f} x {remaining_qty}"
+                        )
                     else:
-                        logger.error(f"   ⚠️ 无法查询 {code} 订单状态 (ret={ret})")
-                except Exception as e:
-                    logger.error(f"   ❌ {code} 处理异常: {e}")
-                finally:
-                    if check_ctx:
-                        check_ctx.close()
-            
-            if cancel_ctx:
-                cancel_ctx.close()
-            
-            # 报告结果
-            logger.warning(f"📊 撤销结果: {cancelled_count} 个已撤销, {len(partial_fills)} 个残留")
-            
-            if partial_fills:
-                logger.critical("🚨🚨🚨 存在残留头寸！这不是完整的Iron Condor！")
-                logger.critical("   请立即手动检查持仓并在富途APP处理！")
-                for pf in partial_fills:
-                    logger.critical(f"     - {pf['code']} ({pf['side']}): 已成交{pf['dealt_qty']}/{pf['qty']}张 @ ${pf['price']}")
-                
-                return {
-                    "success": False, 
-                    "reason": f"部分订单未成交，{cancelled_count}个已撤销，{len(partial_fills)}个残留头寸",
-                    "partial_fills": partial_fills,  # 返回给调用方处理
-                }
-            
-            return {"success": False, "reason": "部分订单未成交，已全部撤销"}
+                        logger.error(f"   ❌ {tracker['code']} 提交失败: {result.get('error', 'unknown')}")
+                    next_pending.append(tracker)
+                    time.sleep(0.3)
+
+                pending = next_pending
+                logger.info(f"⏳ {round_labels[round_num]} 等待 {wait_seconds}s 成交...")
+                time.sleep(wait_seconds)
+
+                round_pending = []
+                filled_count = 0
+                for tracker in pending:
+                    if not tracker.get("order_id"):
+                        round_pending.append(tracker)
+                        continue
+
+                    state = self._query_order_state(monitor_ctx, tracker["order_id"], trd_env, acc_id)
+                    if not state:
+                        logger.warning(f"   ⚠️ 无法查询 {tracker['code']} 成交状态，转入下一阶段")
+                        if round_num < len(OPEN_ROUND_WAIT_SECONDS) - 1:
+                            self._cancel_order_with_retry(cancel_ctx, tracker["order_id"], tracker["code"], trd_env, acc_id)
+                            self._clear_tracker_order(tracker)
+                        round_pending.append(tracker)
+                        continue
+
+                    dealt_qty = min(state["dealt_qty"], tracker["submitted_qty"])
+                    if dealt_qty > 0:
+                        tracker["filled_qty"] += dealt_qty
+                        tracker["filled_notional"] += dealt_qty * state["avg_price"]
+
+                    remaining_qty = self._remaining_qty(tracker)
+                    if remaining_qty <= 0:
+                        filled_count += 1
+                        logger.info(
+                            f"   ✅ {tracker['code']} 已全成 ({tracker['filled_qty']}/{tracker['qty']}) "
+                            f"@ ${state['avg_price']:.2f}"
+                        )
+                        self._clear_tracker_order(tracker)
+                        continue
+
+                    if dealt_qty > 0:
+                        partial_detected = True
+                        logger.warning(f"   ⚠️ {tracker['code']} 部分成交: {tracker['filled_qty']}/{tracker['qty']}")
+                        round_pending.append(tracker)
+                        continue
+
+                    logger.warning(
+                        f"   ⚠️ {tracker['code']} 未全成 (状态={state['status']}，剩余 {remaining_qty} 张)"
+                    )
+                    if round_num < len(OPEN_ROUND_WAIT_SECONDS) - 1 and state.get("is_active"):
+                        self._cancel_order_with_retry(cancel_ctx, tracker["order_id"], tracker["code"], trd_env, acc_id)
+                        self._clear_tracker_order(tracker)
+                    round_pending.append(tracker)
+
+                if filled_count == len(trackers):
+                    pending = []
+                    break
+                if partial_detected:
+                    logger.warning("🔴 检测到部分成交，停止常规挂单并进入自动补腿")
+                    pending = round_pending
+                    break
+
+                pending = round_pending
+
+            if pending:
+                repair_result = self._repair_incomplete_condor(trackers, trd_env, acc_id)
+                if not repair_result.get("success"):
+                    logger.critical("🚨 自动补腿后仍存在残留头寸，请立即人工复核")
+                    return repair_result
+                repair_summary = repair_result.get("repair_summary", "")
+            else:
+                repair_summary = ""
+        finally:
+            monitor_ctx.close()
+            cancel_ctx.close()
+
+        logger.info("✅ 4条腿全部成交！铁鹰策略建仓成功")
+        submitted_results = []
+        net_premium = 0.0
+        for tracker in trackers:
+            avg_price = (
+                tracker["filled_notional"] / tracker["filled_qty"]
+                if tracker["filled_qty"] > 0 else tracker.get("last_price", 0.0)
+            )
+            submitted_results.append({
+                "code": tracker["code"],
+                "order_id": tracker.get("order_id"),
+                "price": avg_price,
+                "success": True,
+                "qty": tracker["qty"],
+                "side": tracker["side"],
+            })
+            logger.info(f"   📊 {tracker['code']} @ ${avg_price:.2f}")
+            if tracker["side"] == "sell":
+                net_premium += avg_price * 100 * tracker["qty"]
+            else:
+                net_premium -= avg_price * 100 * tracker["qty"]
+
+        opened_codes = [tracker["code"] for tracker in trackers]
+        _add_ic_codes(opened_codes)
+        logger.info(f"📝 IC 持仓代码已记录: {opened_codes}")
+
+        return {
+            "success": True,
+            "legs": submitted_results,
+            "net_premium": net_premium,
+            "expiry": legs[0].get("expiry", "unknown"),
+            "repair_summary": repair_summary,
+        }
 
     # ============ 平仓机制（从港股脚本移植）============
     def _is_today_trading_day(self) -> bool:
@@ -1540,6 +2560,10 @@ class IronCondorTraderUS:
         """
         获取 IC 策略自己开的期权持仓（通过 ic_open_codes.json 精确匹配）。
         不会误读账户中其他标的的 Wheel Sell Put / Covered Call。
+
+        注意：
+        - dry-run 也读取真实账户持仓
+        - dry-run 只做演练，不会真实下单
         """
         import re
         from futu import OpenSecTradeContext, TrdEnv
@@ -1547,42 +2571,62 @@ class IronCondorTraderUS:
 
         positions = []
         try:
-            trd_env = TrdEnv.SIMULATE if self.dry_run else TrdEnv.REAL
-            acc_id_key = "sim_acc_id" if self.dry_run else "real_acc_id"
+            trd_env = TrdEnv.REAL
+            acc_id_key = "real_acc_id"
             acc_id = int(FUTU_CONFIG.get(acc_id_key, "281756481449956811"))
-
-            trade_ctx = OpenSecTradeContext(
-                host=FUTU_CONFIG["host"],
-                port=FUTU_CONFIG["port"],
-                filter_trdmarket="US",
-                security_firm="FUTUSECURITIES",
-            )
-            ret, pos_data = trade_ctx.position_list_query(
-                trd_env=trd_env,
-                acc_id=acc_id,
-                refresh_cache=True,
-            )
-            trade_ctx.close()
-
-            if ret != 0 or pos_data is None or pos_data.empty:
-                return []
 
             # ── 精确过滤：只操作 IC 策略自己记录的代码 ──────────────
             ic_codes = _load_ic_codes()
             ticker_name = self.stock["ticker"].split(".")[1]
+            ic_codes_this_asset = {c for c in ic_codes if ticker_name in c}
 
-            if ic_codes:
-                # 精确匹配：只取本标的（ticker_name）的 IC 代码，
-                # 避免 QQQ Trader 误读 IWM/GLD 代码（三标的代码混存于同一文件）
-                ic_codes_this_asset = {c for c in ic_codes if ticker_name in c}
-                matched = pos_data[pos_data["code"].isin(ic_codes_this_asset)]
-            else:
-                # 首次运行、追踪文件不存在时，退化为名称过滤（兼容旧行为）
-                logger.warning(
-                    "⚠️ ic_open_codes.json 不存在，使用标的名称模糊过滤。"
-                    "如账户中有同标的 Wheel 持仓，请手动确认后再运行。"
+            matched = None
+            max_attempts = 3 if ic_codes_this_asset else 1
+            for attempt in range(1, max_attempts + 1):
+                trade_ctx = OpenSecTradeContext(
+                    host=FUTU_CONFIG["host"],
+                    port=FUTU_CONFIG["port"],
+                    filter_trdmarket="US",
+                    security_firm="FUTUSECURITIES",
                 )
-                matched = pos_data[pos_data["code"].str.contains(ticker_name, na=False)]
+                ret, pos_data = trade_ctx.position_list_query(
+                    trd_env=trd_env,
+                    acc_id=acc_id,
+                    refresh_cache=True,
+                )
+                trade_ctx.close()
+
+                if ret != 0 or pos_data is None or pos_data.empty:
+                    matched = None
+                elif ic_codes:
+                    # 精确匹配：只取本标的（ticker_name）的 IC 代码，
+                    # 避免 QQQ Trader 误读 IWM/GLD 代码（三标的代码混存于同一文件）
+                    matched = pos_data[pos_data["code"].isin(ic_codes_this_asset)]
+                else:
+                    # 首次运行、追踪文件不存在时，退化为名称过滤（兼容旧行为）
+                    logger.warning(
+                        "⚠️ ic_open_codes.json 不存在，使用标的名称模糊过滤。"
+                        "如账户中有同标的 Wheel 持仓，请手动确认后再运行。"
+                    )
+                    matched = pos_data[pos_data["code"].str.contains(ticker_name, na=False)]
+
+                if matched is not None and not matched.empty:
+                    break
+
+                if ic_codes_this_asset and attempt < max_attempts:
+                    logger.warning(
+                        f"[{ticker_name}] ⚠️ 富途持仓查询未匹配到已记录的IC代码，"
+                        f"重试 {attempt}/{max_attempts - 1}"
+                    )
+                    time.sleep(0.8)
+
+            if matched is None or matched.empty:
+                if ic_codes_this_asset:
+                    logger.warning(
+                        f"[{ticker_name}] ⚠️ ic_open_codes.json 记录了 {len(ic_codes_this_asset)} 条腿，"
+                        "但富途当前持仓查询未返回匹配持仓；按0持仓返回，需人工核对是否已平仓或查询异常"
+                    )
+                return []
 
             for _, row in matched.iterrows():
                 qty = int(row.get("qty", 0))
@@ -1789,7 +2833,7 @@ class IronCondorTraderUS:
         return None
 
     def close_all_positions(self, close_reason: str = "") -> Dict:
-        """平仓所有QQQ期权持仓（反向下单）
+        """平仓当前标的的所有铁鹰期权持仓（反向下单）
         close_reason: 平仓原因（用于 trade_history.csv 记录）
         """
         from futu import OpenSecTradeContext, TrdSide, OrderType, TrdEnv, RET_OK
@@ -1812,12 +2856,14 @@ class IronCondorTraderUS:
         acc_id_key = "sim_acc_id" if self.dry_run else "real_acc_id"
         acc_id = int(FUTU_CONFIG.get(acc_id_key, "281756481449956811"))
 
-        trade_ctx = OpenSecTradeContext(
-            host=FUTU_CONFIG["host"],
-            port=FUTU_CONFIG["port"],
-            filter_trdmarket="US",
-            security_firm="FUTUSECURITIES",
-        )
+        trade_ctx = None
+        if not self.dry_run:
+            trade_ctx = OpenSecTradeContext(
+                host=FUTU_CONFIG["host"],
+                port=FUTU_CONFIG["port"],
+                filter_trdmarket="US",
+                security_firm="FUTUSECURITIES",
+            )
         closed = 0
         successfully_closed_codes: List[str] = []
 
@@ -1853,7 +2899,6 @@ class IronCondorTraderUS:
             if self.dry_run:
                 logger.info(f"   [模拟] 平仓订单已提交")
                 closed += 1
-                successfully_closed_codes.append(code)
                 continue
 
             ret, data = trade_ctx.place_order(
@@ -1879,8 +2924,13 @@ class IronCondorTraderUS:
             else:
                 logger.error(f"   ❌ 平仓下单失败: {data}")
 
-        trade_ctx.close()
+        if trade_ctx:
+            trade_ctx.close()
         logger.info(f"🔴 平仓完成：共提交 {closed}/{len(positions)} 腿")
+
+        if self.dry_run:
+            logger.info("🧪 Dry-run 平仓演练完成：未修改 ic_open_codes / trade_history / cooldown 状态")
+            return {"success": True, "dry_run": True, "closed": closed, "total": len(positions)}
 
         # ── 3轮递进价格等待成交（mid → 75%价差 → 市价+3% 缓冲）──────────
         if submitted_orders and not self.dry_run:
@@ -2035,6 +3085,16 @@ class IronCondorTraderUS:
             })
             _clear_open_trade(asset_name)
             logger.info(f"📝 [{asset_name}] 平仓记录已写入 trade_history.csv  realized_pnl=${pre_close_pnl:+,.2f}")
+            equity_info = _compute_asset_strategy_equity(
+                asset_name=asset_name,
+                asset_capital=self.config.get("capital", INITIAL_CAPITAL / len(ASSETS)),
+                unrealized_pl=0.0,
+            )
+            _update_asset_peak_equity(
+                asset_name=asset_name,
+                baseline_equity=equity_info["baseline_equity"],
+                current_equity=equity_info["current_equity"],
+            )
 
         # 平仓成功后记录冷却期开始日期（匹配回测 cooldown_days=5）
         if closed > 0:
@@ -2095,15 +3155,19 @@ class IronCondorTraderUS:
             else:
                 cumulative_20d = 0.0
             
-            logger.info(f"📊 市场条件检查: HV20={hv20:.3f}, 20日累计收益率={cumulative_20d:.3%}")
+            hv20_threshold = self.config.get("hv20_threshold", 0.20)
+            logger.info(
+                f"📊 HV20检查: 当前={hv20:.3f}, 开仓阈值={hv20_threshold:.0%}, "
+                f"降杠杆阈值={VIX_DELEVERAGE_HV:.0%}, 硬止损阈值={VIX_HARD_STOP_HV:.0%}, "
+                f"20日累计收益率={cumulative_20d:.3%}"
+            )
             
             # HV20过滤
-            hv20_threshold = self.config.get("hv20_threshold", 0.20)
             if hv20 > hv20_threshold:
                 return {
                     "can_open": False,
                     "adjust_otm": 0.0,
-                    "reason": f"HV20 {hv20:.3f} > 阈值 {hv20_threshold}（波动率过高）",
+                    "reason": f"触发开仓过滤：HV20={hv20:.1%} > 开仓阈值{hv20_threshold:.0%}",
                     "hv20": hv20,
                     "cumulative_20d": cumulative_20d,
                 }
@@ -2180,7 +3244,7 @@ class IronCondorTraderUS:
                 }
         
         # 规则2：全局止损（单标的亏损 > 20%）
-        # 使用各标的独立资金（QQQ $9k / IWM $3k / GLD $3k）而非总资金
+        # 使用各标的独立资金（QQQ $18k / IWM $6k / GLD $6k）而非总资金
         asset_capital = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
         total_loss_pct = abs(total_unrealized_pl) / asset_capital
         if total_loss_pct > 0.20:
@@ -2211,13 +3275,14 @@ class IronCondorTraderUS:
         hv20 = market_cond.get("hv20", 0.0)
 
         if hv20 >= VIX_HARD_STOP_HV:
-            if not _is_vix_hard_stopped(name):
+            if not self.dry_run and not _is_vix_hard_stopped(name):
                 _set_vix_hard_stop(name)
             positions = self._get_positions_with_expiry()
             if positions:
                 msg = f"HV20={hv20:.1%} >= {VIX_HARD_STOP_HV:.0%}，触发VIX硬止损，强平所有持仓"
                 logger.critical(f"[{name}] 🚨 {msg}")
-                self.notifier.send_alert("CRITICAL", f"[{name}] VIX硬止损触发", msg)
+                if not self.dry_run:
+                    self.notifier.send_alert("CRITICAL", f"[{name}] VIX硬止损触发", msg)
                 return self.close_all_positions(close_reason="VIX_HARD_STOP")
             else:
                 logger.info(f"[{name}] 🚨 VIX硬止损中（HV20={hv20:.1%}），无持仓，等待恢复")
@@ -2227,7 +3292,8 @@ class IronCondorTraderUS:
         # ── VIX 硬止损恢复检查（HV20 必须降至 28% 以下才解除，与回测对齐）──
         if _is_vix_hard_stopped(name):
             if hv20 < VIX_COOLDOWN_HV:
-                _clear_vix_hard_stop(name)
+                if not self.dry_run:
+                    _clear_vix_hard_stop(name)
                 logger.info(f"[{name}] ✅ VIX恢复，HV20={hv20:.1%} < {VIX_COOLDOWN_HV:.0%}，解除硬止损")
             else:
                 logger.info(
@@ -2237,53 +3303,37 @@ class IronCondorTraderUS:
                 return {"success": True, "skipped": True,
                         "reason": f"[{name}] VIX硬止损恢复等待（HV20={hv20:.1%}，需<{VIX_COOLDOWN_HV:.0%}）"}
 
-        # ── 动态组数计算（配置F=20x，与回测对齐）──────────────────
-        base_groups = self.config["max_groups"]
-        groups_cap = base_groups * GROUPS_CAP_MULT
-        if DYNAMIC_SIZING:
-            # 使用手动指定资本（IC_MANUAL_CAPITAL）而非账户总资产 API
-            # 避免账户中其他仓位（Wheel等）污染组数计算
-            total_initial   = sum(a["capital"] for a in ASSETS)    # 名义基准 $30K
-            nominal_capital = IC_MANUAL_CAPITAL * LEVERAGE          # 当前名义资本
-            scale           = nominal_capital / max(total_initial, 1)
-            full_max_groups = min(groups_cap, max(base_groups, int(base_groups * scale)))
-            logger.info(
-                f"[{name}] 📈 动态组数: 指定本金${IC_MANUAL_CAPITAL:,}×{LEVERAGE:.0f}x"
-                f"=${nominal_capital:,.0f} / 基准${total_initial:,} "
-                f"= {scale:.2f}x → {full_max_groups}组 (base={base_groups}, cap={groups_cap})"
-            )
-        else:
-            full_max_groups = base_groups
-
-        # ── 降杠杆控制（HV20 > 22% 时组数减半，与回测对齐）──────────
-        if hv20 > VIX_DELEVERAGE_HV:
-            effective_max_groups = max(1, full_max_groups // 2)
-            logger.warning(
-                f"[{name}] ⚠️ HV20={hv20:.1%} > {VIX_DELEVERAGE_HV:.0%}，"
-                f"降杠杆：max_groups {full_max_groups}→{effective_max_groups}"
-            )
-        else:
-            effective_max_groups = full_max_groups
-
         # ── 风险评估（止盈/止损）────────────────────────
         risk_result = self._evaluate_risk()
         if risk_result.get("action") == "CLOSE_ALL":
             logger.warning(f"[{name}] 🛑 触发自动止损: {risk_result['reason']}")
-            self.notifier.send_alert("CRITICAL", f"[{name}] 触发自动止损: {risk_result['reason']}", risk_result.get("details", ""))
-            return self.close_all_positions(close_reason="STOP_LOSS")
+            if not self.dry_run:
+                self.notifier.send_alert("CRITICAL", f"[{name}] 触发自动止损: {risk_result['reason']}", risk_result.get("details", ""))
+            close_result = self.close_all_positions(close_reason="STOP_LOSS")
+            close_result["reason"] = risk_result.get("reason", "STOP_LOSS")
+            close_result["result_type"] = "close"
+            return close_result
         elif risk_result.get("action") == "PARTIAL_CLOSE":
             logger.warning(f"[{name}] ⚠️ 触发提前平仓: {risk_result['reason']}")
-            self.notifier.send_alert("WARNING", f"[{name}] 提前平仓: {risk_result['reason']}", risk_result.get("details", ""))
-            return self.close_all_positions(close_reason="PROFIT_TARGET")
+            if not self.dry_run:
+                self.notifier.send_alert("WARNING", f"[{name}] 提前平仓: {risk_result['reason']}", risk_result.get("details", ""))
+            close_result = self.close_all_positions(close_reason="PROFIT_TARGET")
+            close_result["reason"] = risk_result.get("reason", "PROFIT_TARGET")
+            close_result["result_type"] = "close"
+            return close_result
 
         # 注意：不再调用 _check_stop_loss()（使用估算权利金$100，易误触发）
-        # _evaluate_risk() 已实现：价格穿越止损（翼宽50%）+ 5%资金止损，与回测一致
+        # _evaluate_risk() 已实现：价格穿越止损（翼宽50%）+ 单标的权益峰值回撤5%，与回测一致
 
         # ── 到期平仓检查 ──────────────────────────────
         if self._should_close_today():
             logger.info(f"[{name}] 🔴 触发到期平仓...")
-            self.notifier.send_alert("WARNING", f"[{name}] 到期前平仓触发", "持仓已到平仓触发日")
-            return self.close_all_positions(close_reason="EXPIRY")
+            if not self.dry_run:
+                self.notifier.send_alert("WARNING", f"[{name}] 到期前平仓触发", "持仓已到平仓触发日")
+            close_result = self.close_all_positions(close_reason="EXPIRY")
+            close_result["reason"] = "到期前平仓触发"
+            close_result["result_type"] = "close"
+            return close_result
 
         # ── 冷却期检查（匹配回测 cooldown_days=5：任意平仓后5天内不开新仓）──
         cooldown_days = self.config.get("cooldown_days", 5)
@@ -2308,7 +3358,8 @@ class IronCondorTraderUS:
         holiday_warning = self._check_holiday_risk()
         if holiday_warning:
             logger.warning(f"[{name}] 📅 {holiday_warning}")
-            self.notifier.send_alert("WARNING", f"[{name}] 长假风险预警", holiday_warning)
+            if not self.dry_run:
+                self.notifier.send_alert("WARNING", f"[{name}] 长假风险预警", holiday_warning)
             return {"success": True, "skipped": True, "reason": f"[{name}] 长假风险预警"}
 
         # ── 开仓检查 ─────────────────────────────────
@@ -2322,9 +3373,35 @@ class IronCondorTraderUS:
             logger.critical(f"[{name}] 🛑 不平衡头寸（{total_legs}腿），暂停新开仓！")
             return {"success": False, "skipped": True, "reason": f"[{name}] 不平衡头寸({total_legs}腿)"}
 
-        if existing >= effective_max_groups:
-            logger.info(f"[{name}] ⚠️ 已有{existing}组持仓，达到上限({effective_max_groups})，跳过")
-            return {"success": True, "skipped": True, "reason": f"[{name}] 已达持仓上限({effective_max_groups}组)"}
+        group_limits = self._compute_group_limits(hv20)
+        base_groups = group_limits["base_groups"]
+        capacity_policy = group_limits["capacity_policy"]
+        groups_cap = group_limits["groups_cap"]
+        total_initial = group_limits["total_initial"]
+        nominal_capital = group_limits["nominal_capital"]
+        scale = group_limits["scale"]
+        full_max_groups = group_limits["full_max_groups"]
+        effective_max_groups = group_limits["effective_max_groups"]
+
+        if self.dry_run:
+            summary_reason = (
+                market_cond.get("reason")
+                if not market_cond.get("can_open", True)
+                else (f"已有{existing}组，达到当前上限" if existing >= effective_max_groups else "可继续观察/开仓")
+            )
+            logger.info(
+                f"[{name}] 🧭 状态摘要: 现有{existing}组 / 当前上限{effective_max_groups}组"
+                f" / 结构上{'可再开' if market_cond.get('can_open', True) and existing < effective_max_groups else '不可再开'}"
+                f" / 原因: {summary_reason}"
+            )
+
+        if not market_cond.get("can_open", True):
+            logger.warning(f"[{name}] 🚫 {market_cond.get('reason', '市场条件不允许开仓')}")
+            return {
+                "success": True,
+                "skipped": True,
+                "reason": f"[{name}] {market_cond.get('reason', '市场条件不允许开仓')}",
+            }
 
         # ── 开盘时间检查（仅美东 9:33 后才允许开仓）────────────
         import pytz
@@ -2334,6 +3411,35 @@ class IronCondorTraderUS:
         if not (et_open <= et_now < et_close):
             logger.info(f"[{name}] ⏰ 当前美东时间 {et_now.strftime('%H:%M')}，不在开仓窗口(09:33-16:00)，跳过开仓")
             return {"success": True, "skipped": True, "reason": f"[{name}] 非开仓时段 (ET {et_now.strftime('%H:%M')})"}
+
+        # ── 动态组数计算（配置F=20x，与回测对齐）──────────────────
+        if DYNAMIC_SIZING:
+            logger.info(
+                f"[{name}] 📈 动态组数: 指定本金${IC_MANUAL_CAPITAL:,}×{LEVERAGE:.0f}x"
+                f"=${nominal_capital:,.0f} / 基准${total_initial:,} "
+                f"= {scale:.2f}x → {full_max_groups}组 (base={base_groups}, cap={groups_cap})"
+            )
+            if capacity_policy.get("auto_downgraded"):
+                logger.warning(
+                    f"[{name}] 🛡️ 容量降档生效：实际本金 ${IC_MANUAL_CAPITAL:,.0f} ≥ "
+                    f"${CAPACITY_CONTROL['auto_downgrade_to_e_actual_usd']:,.0f}，"
+                    f"Config F=20x 自动降为 E=15x"
+                )
+            if IC_MANUAL_CAPITAL >= CAPACITY_CONTROL["hard_review_actual_usd"]:
+                logger.warning(
+                    f"[{name}] 🚨 当前实际本金 ${IC_MANUAL_CAPITAL:,.0f} 已接近当前执行架构舒适上限，"
+                    f"请优先关注分批成交与流动性"
+                )
+        # ── 降杠杆控制（HV20 > 22% 时组数减半，与回测对齐）──────────
+        if group_limits["deleveraged"]:
+            logger.warning(
+                f"[{name}] ⚠️ 触发降杠杆：HV20={hv20:.1%} > 降杠杆阈值{VIX_DELEVERAGE_HV:.0%}，"
+                f"max_groups {full_max_groups}→{effective_max_groups}"
+            )
+
+        if existing >= effective_max_groups:
+            logger.info(f"[{name}] ⚠️ 已有{existing}组持仓，达到上限({effective_max_groups})，跳过")
+            return {"success": True, "skipped": True, "reason": f"[{name}] 已达持仓上限({effective_max_groups}组)"}
 
         # ── 执行开仓 ─────────────────────────────────
         groups_to_open = effective_max_groups - existing
@@ -2366,15 +3472,25 @@ def main():
     logger.info("="*50)
     if args.dry_run:
         logger.info("⚠️ 模拟模式 (--dry-run)")
+        logger.info("🔎 实盘演练口径：只读真实持仓/行情，不提交真实订单，不改平仓状态")
     if args.once:
         logger.info("🔄 单次执行模式 (--once)")
     if args.daemon:
         logger.info("👁️ 常驻运行模式 (--daemon)")
 
+    run_lock = None
+    if not args.dry_run:
+        run_lock = _ProcessFileLock(_MAIN_RUN_LOCK_FILE)
+        if not run_lock.acquire():
+            logger.warning("⚠️ 已有一个实盘 main_ic_us 实例在运行，本次跳过，避免重复开仓")
+            return
+
     # 连接数据源
     data = FutuDataUS()
     if not data.connect():
         logger.error("连接失败")
+        if run_lock:
+            run_lock.release()
         return
 
     check_interval = 300  # 5分钟
@@ -2418,10 +3534,22 @@ def main():
                 if result.get("skipped"):
                     logger.info(f"[{asset['name']}] ⏭️ 跳过: {result.get('reason', '')}")
                     summary_entry.update({"action": "跳过", "reason": result.get("reason", ""), "opened": False, "closed": False})
+                elif result.get("closed", 0):
+                    logger.info(f"[{asset['name']}] 🔴 平仓完成: {result.get('reason', '')}")
+                    summary_entry.update({
+                        "action": "🔴 平仓",
+                        "reason": result.get("reason", "平仓完成"),
+                        "opened": False,
+                        "closed": True,
+                    })
                 else:
                     net_premium = result.get("net_premium", 0)
+                    repair_summary = result.get("repair_summary", "")
+                    reason = f"到期日={result.get('expiry','N/A')}"
+                    if repair_summary:
+                        reason += f"｜{repair_summary}"
                     logger.info(f"[{asset['name']}] ✅ 流程完成  到期日={result.get('expiry','N/A')}  权利金=${net_premium:.2f}")
-                    summary_entry.update({"action": "✅ 开仓", "reason": f"到期日={result.get('expiry','N/A')}", "net_premium": net_premium, "opened": True, "closed": False})
+                    summary_entry.update({"action": "✅ 开仓", "reason": reason, "net_premium": net_premium, "opened": True, "closed": False})
             else:
                 logger.warning(f"[{asset['name']}] ⚠️ 未执行: {result.get('reason','')}")
                 closed = "close" in str(result.get("reason", "")).lower() or result.get("closed", False)
@@ -2469,6 +3597,8 @@ def main():
 
     finally:
         data.close()
+        if run_lock:
+            run_lock.release()
 
 
 if __name__ == "__main__":

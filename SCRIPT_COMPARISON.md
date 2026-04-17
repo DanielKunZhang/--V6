@@ -1,49 +1,33 @@
-# 港股 vs 美股 Iron Condor 脚本对比与改进
+# 当前生产文件地图
 
-## 2026-04-05 改进完成
+## 当前生产入口
 
-### 1. refresh_cache=True 改进（futuapi 最佳实践）
+- `main_ic_us.py`：美股 IC 主程序
+- `scheduler.py`：美东交易日自动调度
+- `start_scheduler.sh`：守护启动入口
+- `ic_monitor.py`：盘后监控
+- `dynamic_composite_backtest.py`：当前回测基准对照
 
-已在两个脚本的所有持仓查询位置添加 `refresh_cache=True`：
+## 当前生产模型
 
-| 脚本 | 位置 |
-|------|------|
-| main_ic.py (港股) | `_check_existing_positions()`, `_get_positions_with_expiry()` |
-| main_ic_us.py (美股) | `check_existing_positions()`, `_get_positions_with_expiry()` |
+- 标的：`QQQ / IWM / GLD`
+- 结构：`P3.0% / C6.0% / Wing9% / DTE45`
+- 资金：`$15k` 实际本金，`2x` 杠杆，`$30k` 名义资金
+- 动态组数：`Config F=20x`
 
-### 2. 非交易日跳过机制对比
+## 历史遗留文件
 
-| 功能 | 港股 (main_ic.py) | 美股 (main_ic_us.py) |
-|------|-------------------|---------------------|
-| 交易日判断 | ✅ `_is_today_trading_day()` 使用 `data.is_hk_trading_day()` | ✅ `_is_today_trading_day()` 使用 `quote_ctx.request_trading_days(market=Market.US)` |
-| check_and_manage 入口 | ✅ 先检查交易日再执行 | ✅ 改进后新增（之前缺失） |
+以下文件仅保留作历史参考，不再作为生产入口：
 
-### 3. 平仓机制对比
+- `main.py`
+- `main_ic.py`
+- `run_live.sh`
+- `run_ic_live.sh`
+- `restart.sh`
+- `com.futuwheel.plist`
 
-| 功能 | 港股 (main_ic.py) | 美股 (main_ic_us.py) |
-|------|-------------------|---------------------|
-| 平仓触发逻辑 | ✅ `_should_close_today()` 使用 `prev_n_trading_day()` 确保在正确的交易日平仓 | ✅ 改进后新增类似逻辑 |
-| 长假预警 | ✅ 港股有完整的长假预警机制 | ✅ 改进后添加 |
-| 平仓核心逻辑 | `today >= close_trigger_day` | `today >= close_trigger_day`（对齐） |
+## 原则
 
-### 4. 主要差异点（正常差异）
-
-| 项目 | 港股 | 美股 |
-|------|------|------|
-| 标的 | HK.00700 (腾讯) | US.QQQ (纳指100) |
-| DTE | 25-30天（月度） | 26天（月度） |
-| OTM | 5% | 10% |
-| Wing | 8% | 8% |
-| 最大组数 | 2组 | 2组 |
-
-### 5. 港股特有功能（暂不需要移植）
-
-- 止损通知（`notifier.notify_alert`）- 美股脚本已预留结构但未接入
-- 平仓前7天预警机制（港股专属：pre_expiry 7天模式）
-
----
-
-## 待办
-
-- [ ] 美股脚本接入 notifier 通知（与港股对齐）
-- [ ] 美股添加 daemon 模式支持（当前只支持 --once）
+- 生产系统一律以美股多标的 IC 为准
+- 港股 / 腾讯 / Wheel 相关脚本不再作为执行入口
+- 如需改生产参数，先在回测中验证，再同步到实盘

@@ -1,98 +1,43 @@
-# 🚀 4月8日实盘启动指南
+# 美股 IC 启动指南
 
-## 启动前准备
+当前生产系统以 `main_ic_us.py` + `scheduler.py` 为准，交易标的为 `QQQ / IWM / GLD`。
 
-### 1️⃣ 配置邮箱密码
-
-编辑 `config.py`，找到这行：
-
-```python
-"email_password": "YOUR_EMAIL_PASSWORD",
-```
-
-改为你的163邮箱SMTP密码（不是登录密码，是SMTP授权码）：
-
-> 在163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启SMTP -> 获取授权码
-
-```python
-"email_password": "xxxxxxyyyyyzzzzz",
-```
-
-### 2️⃣ 确认富途牛牛
-
-- 打开富途牛牛 App
-- 设置 → OpenD API → 启动并登录
-- 确认状态显示"已连接"
-
----
-
-## 4月8日启动流程
+## 启动前检查
 
 ```bash
-cd wheel_tencent
-
-# 启动策略
-./run_live.sh start
-
-# 查看状态
-./run_live.sh status
-
-# 查看日志
-./run_live.sh log
+ls -l .ic_env.local
 ```
 
----
+- 需已配置 `.ic_env.local`，内容示例：`IC_EMAIL_PASSWORD='你的163 SMTP授权码'`
+- 打开富途牛牛 → `OpenD API` → 启动并登录
+- 确认 OpenD 端口 `127.0.0.1:11111`
 
-## 策略参数
-
-| 参数 | 值 |
-|------|-----|
-| 初始资金 | HKD 50,000 |
-| OTM | 5% |
-| Wing | 8% |
-| DTE | 7天 |
-| 检查间隔 | 60秒 |
-
----
-
-## 运行监控
-
-### 每日收益
-策略会在每天收盘后发送邮件汇总，包含：
-- 今日收取的权利金
-- 累计权利金
-- 当日损益
-
-### 交易通知
-开仓/平仓时会自动发邮件通知
-
-### 警报
-如果触发止损或异常，会发邮件警报
-
----
-
-## 停止策略
+## 手动测试
 
 ```bash
-./run_live.sh stop
+cd /Users/zhangkun/WorkBuddy/程序化/量化程序
+python3 main_ic_us.py --once --dry-run
+python3 ic_monitor.py
 ```
 
----
+## 启动生产调度
 
-## 常见问题
+```bash
+cd /Users/zhangkun/WorkBuddy/程序化/量化程序
+bash start_scheduler.sh
+tail -f logs/scheduler_daemon.log
+```
 
-**Q: 收不到邮件？**
-A: 检查 config.py 中的 email_password 是否正确（是SMTP授权码，不是登录密码）
+## 停止调度
 
-**Q: 连接富途失败？**
-A: 确认富途牛牛已打开，OpenD API 已启动并登录
+```bash
+pkill -f "scheduler.py"
+```
 
-**Q: 想暂停策略？**
-A: 运行 `./run_live.sh stop`，下次再用 `./run_live.sh start` 启动
+## 当前生产参数
 
----
-
-⚠️ 风险提示
-- 本策略为历史回测结果，实盘可能有差异
-- 初始资金 5万港币，充分风险后后再加大
-- 遇到极端行情可能导致较大亏损
+- 标的：`QQQ / IWM / GLD`
+- 资金：`$15,000` 实际本金，`2x` 杠杆，`$30,000` 名义资金
+- 配置：`Put 3.0% / Call 6.0% / Wing 9% / DTE 45`
+- 动态组数：`Config F=20x`
+- 风控：`HV20` 三层口径 —— 开仓阈值 `QQQ/IWM 25% / GLD 18%`，降杠杆阈值 `22%`，硬止损 `39%`，恢复 `28%`

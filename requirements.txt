@@ -1,4 +1,4 @@
-# 腾讯 Wheel 策略依赖
+# 当前美股 Iron Condor 系统依赖
 
 # 富途 OpenD API
 futu-api >= 5.0.1201

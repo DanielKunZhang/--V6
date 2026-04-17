@@ -1,6 +1,17 @@
 """
-腾讯 Wheel 策略配置
+富途连接配置 + 历史遗留策略配置
+
+说明：
+- 当前美股 IC 实盘主程序使用 `main_ic_us.py` 与 `scheduler.py`
+- 本文件当前核心用途是提供 `FUTU_CONFIG`
+- 其余港股 / Wheel / 旧版 Iron Condor 配置仅为历史兼容，不代表当前实盘参数
 """
+
+import os
+
+from env_utils import load_local_env
+
+load_local_env()
 
 # ========== 富途 OpenD 连接配置 ==========
 FUTU_CONFIG = {
@@ -14,22 +25,39 @@ FUTU_CONFIG = {
     "real_acc_id": "281756481449956811",         # 真实账户ID（综合账户）
 }
 
-# ========== 标的配置 ==========
+# ========== 当前生产参数（供人工参考，不是主程序读取源） ==========
+CURRENT_PRODUCTION_CONFIG = {
+    "assets": ["US.QQQ", "US.IWM", "US.GLD"],
+    "actual_capital_usd": 15_000,
+    "leverage": 2.0,
+    "nominal_capital_usd": 30_000,
+    "put_otm": 0.03,
+    "call_otm": 0.06,
+    "wing_width": 0.09,
+    "dte": 45,
+    "dynamic_config": "F=20x",
+    "hv20_thresholds": {"QQQ": 0.25, "IWM": 0.25, "GLD": 0.18},
+    "vix_hard_stop_hv": 0.39,
+    "vix_cooldown_hv": 0.28,
+    "vix_deleverage_hv": 0.22,
+}
+
+# ========== 历史兼容配置（仅供旧脚本 import，不代表当前生产） ==========
 STOCK_CONFIG = {
-    "ticker": "HK.00700",    # 腾讯（富途格式）
+    "ticker": "HK.00700",
     "name": "腾讯控股",
     "lot_size": 100,         # 每手100股
     "currency": "HKD",
 }
 
-# ========== Iron Condor 策略参数 (2026-04-06 最终版 - 16年回测验证) ==========
+# ========== 历史港股 IC 配置（兼容旧代码） ==========
 IRON_CONDOR_CONFIG = {
-    "ticker": "HK.00700",          # 腾讯（港股唯一流动性好的期权标的）
-    "otm": 0.05,                   # 5% OTM（回测最优：年化+28.61%）
-    "wing": 0.08,                  # 8% 翼宽（与OTM配合）
-    "dte": 45,                     # 45天到期（2026-04-06长周期回测：DTE45全面优于DTE30）
-    "min_premium": 900,            # 最低权利金 HKD（低于900不开仓）
-    "estimated_credit_per_group": 2500,  # 每组估算权利金 HKD 2500（用于止损计算）
+    "ticker": "HK.00700",
+    "otm": 0.05,
+    "wing": 0.08,
+    "dte": 45,
+    "min_premium": 900,
+    "estimated_credit_per_group": 2500,
 
     # 风险控制参数（仓位控制+硬止损，不用动态OTM）
     "stop_loss_buffer": 1.5,       # 止损缓冲倍数
@@ -38,14 +66,14 @@ IRON_CONDOR_CONFIG = {
     "early_close_days": 2,         # 到期前2天提前平仓
 }
 
-# ========== 仓位管理 ==========
+# ========== 历史仓位管理（兼容旧代码） ==========
 POSITION_CONFIG = {
     "max_premium_per_trade": 5000,    # 单次最大权利金 HKD
     "max_simultaneous_trades": 1,     # 最多同时开仓数（V7b验证: 先只开1组，6万HKD资金）
     "min_days_between_trades": 3,     # 最小开仓间隔天数
 }
 
-# ========== Wheel 策略参数（兼容旧代码） ==========
+# ========== 历史 Wheel 策略参数（兼容旧代码） ==========
 WHEEL_CONFIG = {
     "put": {
         "strike_delta": 0.10,
@@ -66,7 +94,7 @@ WHEEL_CONFIG = {
     },
 }
 
-# ========== 风险管理 ==========
+# ========== 历史风险管理（兼容旧代码） ==========
 RISK_CONFIG = {
     "max_daily_loss": 3000,       # 日内最大亏损 HKD（触发警报）
     "max_monthly_loss": 8000,     # 月度最大亏损 HKD（暂停策略）
@@ -74,25 +102,25 @@ RISK_CONFIG = {
     "emergency_exit": 0.25,       # 紧急止损线（跌破 25% 必须清仓）
 }
 
-# ========== 通知配置 ==========
+# ========== 历史通知配置（兼容旧代码） ==========
 NOTIFY_CONFIG = {
     "enabled": True,
-    "email_password": "YHeYZUqHf5bpR2xe",  # 163邮箱SMTP授权码
-    "wechat_webhook_url": "",  # 企业微信 webhook（不用可留空）
+    "email_password": os.environ.get("IC_EMAIL_PASSWORD", ""),
+    "wechat_webhook_url": "",
 }
 
-# ========== 运行模式 ==========
+# ========== 历史运行模式（兼容旧代码） ==========
 RUN_MODE = {
-    "dry_run": False,              # 实盘模式
-    "initial_capital": 60000,      # 初始资金 HKD 6万
-    "check_interval": 60,          # 检查间隔（秒）
-    "market_open_check": True,     # 只在交易时段检查
+    "dry_run": False,
+    "initial_capital": 60000,
+    "check_interval": 60,
+    "market_open_check": True,
 }
 
-# ========== 日志配置 ==========
+# ========== 历史日志配置（兼容旧代码） ==========
 LOG_CONFIG = {
     "level": "INFO",
     "file": "logs/wheel_bot.log",
-    "max_bytes": 10 * 1024 * 1024,  # 10MB
+    "max_bytes": 10 * 1024 * 1024,
     "backup_count": 5,
 }
