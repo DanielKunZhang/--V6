@@ -28,12 +28,16 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     steps = [
         run([sys.executable, "v6a_real_reconciliation.py", "--tag", tag]),
+        run([sys.executable, "v6a_guarded_runner.py", "--tag", f"{tag}_plan_only"]),
         run([sys.executable, "v6_reporting.py", "--period", "daily", "--tag", tag, "--send-email"]),
     ]
+    critical_ok = steps[0]["returncode"] == 0 and steps[2]["returncode"] == 0
+    plan_review_only = steps[1]["returncode"] in {0, 2}
     payload = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "tag": tag,
-        "status": "PASS" if all(step["returncode"] == 0 for step in steps) else "FAIL",
+        "status": "PASS" if critical_ok and plan_review_only else "FAIL",
+        "note": "Plan-only may return 2 when it finds blockers/no executable orders; daily report still succeeds if reconciliation and email succeed.",
         "steps": steps,
     }
     out = OUT_DIR / f"{tag}.json"

@@ -78,6 +78,31 @@ def as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def zh_status(value: Any) -> str:
+    text = str(value or "")
+    mapping = {
+        "research_or_sim_only": "仅研究/模拟",
+        "eligible_research": "研究合格",
+        "watch": "观察",
+        "research_only": "仅研究",
+        "weak_or_unproven": "证据不足，维持保守分配",
+        "missing_point_in_time_audit": "缺少 point-in-time 审计",
+        "EXECUTED_REAL_RESULTS": "已执行实盘订单",
+        "not_executed": "未执行",
+        "real_pilot_5k_ready_manual_confirm_required": "5,000 美元实盘 pilot 已就绪，后续仍需人工确认",
+    }
+    return mapping.get(text, text)
+
+
+def zh_note(value: Any) -> str:
+    text = str(value or "")
+    replacements = {
+        "V6-B remains SIM/research only until point-in-time/OOS/replay evidence passes.": "V6-B 在 point-in-time、OOS 和 replay 证据通过前，只能研究/模拟。",
+        "V6-B hard blocked: missing_point_in_time_audit": "V6-B 被硬性阻断：缺少 point-in-time 审计。",
+    }
+    return replacements.get(text, text)
+
+
 def period_range(period: str) -> str:
     today = date.today()
     if period == "weekly":
@@ -88,6 +113,15 @@ def period_range(period: str) -> str:
         quarter_month = ((today.month - 1) // 3) * 3 + 1
         return f"{today.replace(month=quarter_month, day=1)} ~ {today}"
     return today.isoformat()
+
+
+def period_label(period: str) -> str:
+    return {
+        "daily": "日报",
+        "weekly": "周报",
+        "monthly": "月报",
+        "quarterly": "季报",
+    }.get(period, period)
 
 
 def summarize_release_gate(path: Path) -> dict[str, Any]:
@@ -262,13 +296,15 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     allocator_metrics_path = resolve_path(policy["artifacts"]["allocator_metrics"])
     allocator_policy_path = resolve_path(policy["artifacts"]["allocator_policy"])
 
+    label = period_label(args.period)
     payload: dict[str, Any] = {
         "generated_at": now_text(),
         "report_date": today_text(),
         "period": args.period,
         "period_range": period_range(args.period),
-        "title": f"V6 Strategy {args.period.title()} Report",
-        "email_subject": f"[V6 Strategy] {args.period.title()} Report - {period_range(args.period)}",
+        "period_label": label,
+        "title": f"V6 策略{label}",
+        "email_subject": f"[V6策略{label}] {period_range(args.period)}",
         "policy_path": rel(resolve_path(args.policy)),
         "v6a": {
             "status": launch_policy.get("status", ""),
@@ -306,7 +342,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     v6b = payload["v6b"]
 
     top_rows = [
-        [row.get("ticker", ""), row.get("score", ""), row.get("status", ""), row.get("theme", "")]
+        [row.get("ticker", ""), row.get("score", ""), zh_status(row.get("status", "")), row.get("theme", "")]
         for row in v6b.get("top_candidates", [])
     ]
     if not top_rows:
@@ -328,8 +364,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"# {payload['title']}",
             "",
             f"- Generated: `{payload['generated_at']}`",
-            f"- Period: `{payload['period_range']}`",
-            f"- 本周动作：{payload['weekly_action']}",
+            f"- 统计区间：`{payload['period_range']}`",
+            f"- 本期动作：{payload['weekly_action']}",
             "",
             "## V6-A 状态",
             "",
@@ -337,44 +373,44 @@ def render_markdown(payload: dict[str, Any]) -> str:
                 ["项目", "状态"],
                 [
                     ["策略", v6a.get("strategy_name", "")],
-                    ["Launch Status", v6a.get("status", "")],
-                    ["Release Gate", "PASS" if gate.get("overall_passed") else "FAIL/MISSING"],
-                    ["Gate Path", gate.get("path", "")],
-                    ["Preview Orders", preview.get("order_count", 0)],
-                    ["Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
-                    ["Preview Symbols", ", ".join(preview.get("symbols", []))],
-                    ["Real Pilot Record", v6a.get("real_pilot", {}).get("status", "not_executed")],
-                    ["Managed State", managed.get("path", "")],
-                    ["Managed Updated", managed.get("updated_at", "")],
-                    ["Pending Orders", managed.get("pending_count", 0)],
+                    ["上线状态", zh_status(v6a.get("status", ""))],
+                    ["上线闸门", "通过" if gate.get("overall_passed") else "失败/缺失"],
+                    ["闸门文件", gate.get("path", "")],
+                    ["预览订单数", preview.get("order_count", 0)],
+                    ["预览买入金额", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
+                    ["预览标的", ", ".join(preview.get("symbols", []))],
+                    ["实盘记录", zh_status(v6a.get("real_pilot", {}).get("status", "not_executed"))],
+                    ["V6-A 独立持仓文件", managed.get("path", "")],
+                    ["持仓更新时间", managed.get("updated_at", "")],
+                    ["待处理订单", managed.get("pending_count", 0)],
                 ],
             ),
             "",
-            "### V6-A Real Managed Positions",
+            "### V6-A 实盘独立持仓",
             "",
-            md_table(["Ticker", "Qty"], position_rows),
+            md_table(["标的", "数量"], position_rows),
             "",
-            "### V6-A Pending Orders",
+            "### V6-A 待处理订单",
             "",
-            md_table(["Ticker", "Side", "Qty", "Status", "Order ID"], pending_rows),
+            md_table(["标的", "方向", "数量", "状态", "订单号"], pending_rows),
             "",
-            "## V6-B / Dynamic Universe",
+            "## V6-B / 动态候选池",
             "",
-            f"- Status: `research_or_sim_only`",
-            f"- Scorecard: `{v6b.get('scorecard_path', '')}`",
-            f"- Live-forward: `{v6b.get('live_forward_path', '')}`",
-            f"- Note: {v6b.get('live_forward_note', '')}",
+            f"- 当前状态：`仅研究/模拟`",
+            f"- 评分卡：`{v6b.get('scorecard_path', '')}`",
+            f"- 前向观察：`{v6b.get('live_forward_path', '')}`",
+            f"- 说明：{zh_note(v6b.get('live_forward_note', ''))}",
             "",
-            md_table(["Ticker", "Score", "Status", "Theme"], top_rows),
+            md_table(["标的", "评分", "状态", "主题"], top_rows),
             "",
-            "## Allocator",
+            "## Allocator / 资金分配",
             "",
             md_table(
                 ["项目", "值"],
                 [
-                    ["Case", allocator.get("allocation_case", "")],
-                    ["Weights", json.dumps(allocator.get("weights", {}), ensure_ascii=False)],
-                    ["Notes", "; ".join(str(item) for item in allocator.get("notes", []))],
+                    ["分配状态", zh_status(allocator.get("allocation_case", ""))],
+                    ["权重", json.dumps(allocator.get("weights", {}), ensure_ascii=False)],
+                    ["说明", "; ".join(zh_note(item) for item in allocator.get("notes", []))],
                 ],
             ),
             "",
@@ -499,54 +535,54 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
   <div style="background:#0f172a;color:#fff;border-radius:18px;padding:24px 24px 22px;">
     <div style="font-size:13px;color:#93c5fd;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">Dingcle Capital · V6 Strategy</div>
     <h1 style="margin:8px 0 6px;font-size:26px;line-height:1.2;">{html_escape(payload['title'])}</h1>
-    <div style="font-size:13px;color:#cbd5e1;">Period: {html_escape(payload['period_range'])} · Generated: {html_escape(payload['generated_at'])}</div>
+    <div style="font-size:13px;color:#cbd5e1;">统计区间：{html_escape(payload['period_range'])} · 生成时间：{html_escape(payload['generated_at'])}</div>
     <div style="margin-top:16px;padding:13px 14px;border-radius:14px;background:#fff;color:#111827;">
       <div style="font-size:12px;color:#6b7280;margin-bottom:5px;">本期结论</div>
-      <div style="font-size:17px;font-weight:800;line-height:1.45;">{html_badge('ACTION', action_tone)} <span style="margin-left:8px;">{html_escape(action)}</span></div>
+      <div style="font-size:17px;font-weight:800;line-height:1.45;">{html_badge('待办', action_tone)} <span style="margin-left:8px;">{html_escape(action)}</span></div>
     </div>
   </div>
 
   <table cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 6px;"><tr>
-    {metric_card("V6-A Release Gate", "PASS" if gate.get("overall_passed") else "FAIL", gate.get("gate_result", ""), gate_tone)}
-    {metric_card("Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}", f"{preview.get('order_count', 0)} orders", "info")}
-    {metric_card("Allocator", f"V6-A {float(weights.get('V6-A', 0)) * 100:.0f}%", f"V6-B {float(weights.get('V6-B', 0)) * 100:.0f}% / V6-C {float(weights.get('V6-C', 0)) * 100:.0f}%", v6b_tone)}
+    {metric_card("V6-A 上线闸门", "通过" if gate.get("overall_passed") else "失败", gate.get("gate_result", ""), gate_tone)}
+    {metric_card("预览买入金额", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}", f"{preview.get('order_count', 0)} 笔订单", "info")}
+    {metric_card("资金分配", f"V6-A {float(weights.get('V6-A', 0)) * 100:.0f}%", f"V6-B {float(weights.get('V6-B', 0)) * 100:.0f}% / V6-C {float(weights.get('V6-C', 0)) * 100:.0f}%", v6b_tone)}
   </tr></table>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
     <h2 style="font-size:18px;margin:0 0 12px;color:#111827;">V6-A 实盘 Pilot 状态</h2>
     {html_table(["项目", "状态"], [
         ["策略", v6a.get("strategy_name", "")],
-        ["Launch Status", html_badge(v6a.get("status", ""), "warn")],
-        ["Release Gate", html_badge("PASS" if gate.get("overall_passed") else "FAIL/MISSING", gate_tone)],
-        ["Preview Symbols", ", ".join(preview.get("symbols", []))],
-        ["Preview Orders", preview.get("order_count", 0)],
-        ["Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
-        ["Real Pilot Record", real_pilot.get("status", "not_executed") or "not_executed"],
-        ["Managed State", managed.get("path", "")],
-        ["Managed Updated", managed.get("updated_at", "")],
-        ["Pending Orders", managed.get("pending_count", 0)],
-        ["Gate File", gate.get("path", "")],
+        ["上线状态", html_badge(zh_status(v6a.get("status", "")), "warn")],
+        ["上线闸门", html_badge("通过" if gate.get("overall_passed") else "失败/缺失", gate_tone)],
+        ["预览标的", ", ".join(preview.get("symbols", []))],
+        ["预览订单数", preview.get("order_count", 0)],
+        ["预览买入金额", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
+        ["实盘记录", zh_status(real_pilot.get("status", "not_executed") or "not_executed")],
+        ["V6-A 独立持仓文件", managed.get("path", "")],
+        ["持仓更新时间", managed.get("updated_at", "")],
+        ["待处理订单", managed.get("pending_count", 0)],
+        ["闸门文件", gate.get("path", "")],
     ])}
     <div style="height:14px;"></div>
-    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">V6-A Real Managed Positions</h3>
-    {html_table(["Ticker", "Qty"], managed_position_rows)}
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">V6-A 实盘独立持仓</h3>
+    {html_table(["标的", "数量"], managed_position_rows)}
     <div style="height:14px;"></div>
-    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">Pending Orders</h3>
-    {html_table(["Ticker", "Side", "Qty", "Status", "Order ID"], managed_pending_rows)}
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">待处理订单</h3>
+    {html_table(["标的", "方向", "数量", "状态", "订单号"], managed_pending_rows)}
   </div>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
-    <h2 style="font-size:18px;margin:0 0 6px;color:#111827;">V6-B Dynamic Universe</h2>
-    <p style="font-size:14px;color:#4b5563;line-height:1.55;margin:0 0 14px;">V6-B 当前仍是 research/simulation only。它的任务是成为未来动态候选池来源，不是直接下单策略。</p>
-    {html_table(["Ticker", "Score", "Status", "Theme"], candidate_rows)}
+    <h2 style="font-size:18px;margin:0 0 6px;color:#111827;">V6-B 动态候选池</h2>
+    <p style="font-size:14px;color:#4b5563;line-height:1.55;margin:0 0 14px;">V6-B 当前仍是仅研究/模拟。它的任务是成为未来动态候选池来源，不是直接下单策略。</p>
+    {html_table(["标的", "评分", "状态", "主题"], candidate_rows)}
   </div>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
     <h2 style="font-size:18px;margin:0 0 12px;color:#111827;">Allocator / 风控分配</h2>
     {html_table(["项目", "值"], [
-        ["Case", html_badge(allocator.get("allocation_case", ""), "warn" if allocator.get("allocation_case") == "weak_or_unproven" else "info")],
-        ["Weights", json.dumps(weights, ensure_ascii=False)],
-        ["Notes", notes or "-"],
+        ["分配状态", html_badge(zh_status(allocator.get("allocation_case", "")), "warn" if allocator.get("allocation_case") == "weak_or_unproven" else "info")],
+        ["权重", json.dumps(weights, ensure_ascii=False)],
+        ["说明", zh_note(notes) if notes else "-"],
     ])}
   </div>
 
@@ -556,7 +592,7 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
   </div>
 
   <div style="font-size:12px;color:#6b7280;margin-top:18px;line-height:1.45;">
-    Report paths: {html_escape(payload.get("policy_path", ""))}. This email is read-only and cannot trigger live orders.
+    报告配置：{html_escape(payload.get("policy_path", ""))}。本邮件只读，不会触发交易。
   </div>
 </div>
 </body>

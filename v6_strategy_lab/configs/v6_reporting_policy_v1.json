@@ -15,33 +15,33 @@
   },
   "reminders": {
     "daily": [
-      "Check whether V6-A/V6-B jobs ran as expected.",
-      "Check whether any order, quote, account, or OpenD exception appeared.",
-      "Do not make strategy-level changes from daily noise."
+      "检查 V6-A / V6-B 任务是否按预期运行。",
+      "检查是否出现订单、行情、账户或 OpenD 异常。",
+      "不要因为单日噪音修改策略层规则。"
     ],
     "weekly": [
-      "Review V6-A target vs actual positions.",
-      "Review weekly return, max drawdown, worst day, and execution drift.",
-      "Review whether V6-B live-forward data remains clean.",
-      "Decide whether to continue, pause, or refresh release gate."
+      "复核 V6-A 理论目标仓位与实际 managed state 是否一致。",
+      "复核本周收益、最大回撤、最差单日和执行偏差。",
+      "复核 V6-B 前向观察数据是否干净。",
+      "决定继续、暂停，还是刷新 release gate。"
     ],
     "monthly": [
-      "Run Missing Opportunity Review for Dynamic Universe.",
-      "Refresh V6-B point-in-time candidates if evidence supports it.",
-      "Do not promote V6-B without standalone, V6-A comparison, allocator, and replay evidence."
+      "做一次动态候选池的漏网机会复盘。",
+      "如证据支持，刷新 V6-B point-in-time 候选池。",
+      "没有 standalone、V6-A 对比、allocator 和 replay 证据前，不提升 V6-B 权重。"
     ],
     "quarterly": [
-      "Run deterministic replay, release gate, black swan windows, rolling 3y/5y, robustness, and live tradability checks.",
-      "Review V6 Engine parameters and Core Pool candidates.",
-      "Any production change must update V6_STRATEGY_LAB.md, AI Wiki, and SYSTEM_OVERVIEW."
+      "运行 deterministic replay、release gate、黑天鹅窗口、滚动 3y/5y、鲁棒性和实盘可交易性检查。",
+      "复核 V6 Engine 参数和 Core Pool 候选池。",
+      "任何生产级修改都必须同步更新 V6_STRATEGY_LAB.md、AI Wiki 和 SYSTEM_OVERVIEW。"
     ]
   },
   "boundaries": [
-    "Reporting is read-only and must not place orders.",
-    "Email output is a reminder and cannot be used as an automatic trading trigger.",
-    "V6-A real pilot still requires explicit manual confirmation before each first live execution stage.",
-    "V6-B remains research/simulation only until point-in-time, OOS, replay, allocator, and tradability evidence pass.",
-    "Allocator changes capital weights only after evidence; it is a risk-control layer, not a performance-chasing layer."
+    "报告系统只读，不能下单。",
+    "邮件只是提醒，不能作为自动交易触发器。",
+    "V6-A 实盘 pilot 的下一阶段仍需要明确人工确认。",
+    "V6-B 在 point-in-time、OOS、replay、allocator 和可交易性证据通过前，只能研究/模拟。",
+    "Allocator 只有在证据充分后才调整资金权重；它是风控层，不是追涨层。"
   ],
   "email": {
     "default_provider": "reuse_v3_notifier",
