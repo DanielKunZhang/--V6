@@ -85,7 +85,12 @@ v6_strategy_lab/configs/v6_reporting_policy_v1.json
 backtest_results/v6_reporting/
 ```
 
-邮件默认关闭；只有显式传入 `--send-email` 且设置 `V6_EMAIL_*` 环境变量时才会尝试发送。
+邮件默认关闭；只有显式传入 `--send-email` 才会尝试发送。
+
+发送逻辑：
+
+1. 优先复用 V3 的 `notifier.EmailNotifier`，读取本地 `.ic_env.local` 中已有的邮箱授权配置，默认收件人为 `quanyi_zk@163.com`。
+2. 如果 V3 notifier 不可用，再 fallback 到 `V6_EMAIL_*` 环境变量。
 
 邮件最小字段：
 

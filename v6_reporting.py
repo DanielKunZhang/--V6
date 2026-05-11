@@ -4,9 +4,11 @@ from __future__ import annotations
 import argparse
 import csv
 import html
+import importlib
 import json
 import os
 import smtplib
+import sys
 from datetime import date, datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -359,7 +361,37 @@ pre {{ white-space: pre-wrap; word-break: break-word; background: #fff; border: 
 """
 
 
-def send_email(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
+def send_email_via_v3_notifier(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
+    try:
+        if str(ROOT) not in sys.path:
+            sys.path.insert(0, str(ROOT))
+        env_utils = importlib.import_module("env_utils")
+        env_utils.load_local_env()
+        notifier_module = importlib.import_module("notifier")
+        notifier = notifier_module.EmailNotifier()
+        sent = bool(notifier.send(payload["email_subject"], html_content, is_html=True))
+        return {
+            "attempted": True,
+            "sent": sent,
+            "provider": "v3_notifier",
+            "enabled": bool(getattr(notifier, "enabled", False)),
+            "sender": str(getattr(notifier, "sender", "")),
+            "recipient": str(getattr(notifier, "recipient", "")),
+            "error": "",
+        }
+    except Exception as exc:
+        return {
+            "attempted": True,
+            "sent": False,
+            "provider": "v3_notifier",
+            "enabled": False,
+            "sender": "",
+            "recipient": "",
+            "error": str(exc),
+        }
+
+
+def send_email_via_v6_env(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
     required = {
         "smtp_server": os.environ.get("V6_EMAIL_SMTP_SERVER", ""),
         "smtp_port": os.environ.get("V6_EMAIL_SMTP_PORT", "465"),
@@ -369,7 +401,15 @@ def send_email(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
     }
     missing = [key for key, value in required.items() if not str(value).strip()]
     if missing:
-        return {"attempted": True, "sent": False, "error": f"missing_env:{','.join(missing)}"}
+        return {
+            "attempted": True,
+            "sent": False,
+            "provider": "v6_env",
+            "enabled": False,
+            "sender": str(required.get("sender", "")),
+            "recipient": str(required.get("recipient", "")),
+            "error": f"missing_env:{','.join(missing)}",
+        }
     msg = MIMEMultipart("alternative")
     msg["Subject"] = payload["email_subject"]
     msg["From"] = required["sender"]
@@ -379,9 +419,50 @@ def send_email(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
         with smtplib.SMTP_SSL(required["smtp_server"], int(required["smtp_port"])) as server:
             server.login(required["sender"], required["password"])
             server.sendmail(required["sender"], [required["recipient"]], msg.as_string())
-        return {"attempted": True, "sent": True, "error": ""}
+        return {
+            "attempted": True,
+            "sent": True,
+            "provider": "v6_env",
+            "enabled": True,
+            "sender": str(required["sender"]),
+            "recipient": str(required["recipient"]),
+            "error": "",
+        }
     except Exception as exc:
-        return {"attempted": True, "sent": False, "error": str(exc)}
+        return {
+            "attempted": True,
+            "sent": False,
+            "provider": "v6_env",
+            "enabled": True,
+            "sender": str(required["sender"]),
+            "recipient": str(required["recipient"]),
+            "error": str(exc),
+        }
+
+
+def send_email(payload: dict[str, Any], html_content: str) -> dict[str, Any]:
+    """Send V6 report email.
+
+    V6 reuses the existing V3 notifier first so the same local `.ic_env.local`
+    password setup works. Dedicated V6_EMAIL_* variables remain as fallback.
+    """
+    v3_result = send_email_via_v3_notifier(payload, html_content)
+    if v3_result.get("sent"):
+        return v3_result
+    v6_result = send_email_via_v6_env(payload, html_content)
+    if v6_result.get("sent"):
+        v6_result["fallback_from"] = v3_result
+        return v6_result
+    return {
+        "attempted": True,
+        "sent": False,
+        "provider": "v3_notifier_then_v6_env",
+        "enabled": bool(v3_result.get("enabled")) or bool(v6_result.get("enabled")),
+        "sender": str(v3_result.get("sender") or v6_result.get("sender", "")),
+        "recipient": str(v3_result.get("recipient") or v6_result.get("recipient", "")),
+        "error": f"v3={v3_result.get('error') or 'not_sent'}; v6={v6_result.get('error') or 'not_sent'}",
+        "attempts": [v3_result, v6_result],
+    }
 
 
 def write_outputs(payload: dict[str, Any], markdown: str, html_content: str, output_dir: Path, tag: str) -> dict[str, str]:

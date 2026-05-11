@@ -106,7 +106,15 @@ The report summarizes:
 
 ## Optional Email
 
-Email is disabled by default. To send email, all environment variables must be set:
+Email is disabled by default. V6 first reuses the existing V3 notifier, which loads local email config through `.ic_env.local` and sends to `quanyi_zk@163.com`.
+
+Run:
+
+```bash
+python3 v6_reporting.py --period weekly --send-email
+```
+
+If the V3 notifier is unavailable, V6 falls back to dedicated `V6_EMAIL_*` variables:
 
 ```bash
 export V6_EMAIL_SMTP_SERVER="smtp.example.com"

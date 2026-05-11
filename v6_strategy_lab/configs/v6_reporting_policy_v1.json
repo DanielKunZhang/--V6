@@ -43,7 +43,14 @@
     "V6-B remains research/simulation only until point-in-time, OOS, replay, allocator, and tradability evidence pass.",
     "Allocator changes capital weights only after evidence; it is a risk-control layer, not a performance-chasing layer."
   ],
-  "email_env": {
+  "email": {
+    "default_provider": "reuse_v3_notifier",
+    "default_recipient": "quanyi_zk@163.com",
+    "fallback_provider": "v6_email_env",
+    "send_requires_explicit_flag": "--send-email",
+    "boundary": "Email is read-only and must not trigger trading."
+  },
+  "email_env_fallback": {
     "smtp_server": "V6_EMAIL_SMTP_SERVER",
     "smtp_port": "V6_EMAIL_SMTP_PORT",
     "sender": "V6_EMAIL_SENDER",
