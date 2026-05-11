@@ -15,12 +15,13 @@ import pandas as pd
 from attack_engine_live_order_preview import (
     DEFAULT_FUTU_HOME_DIR,
     V3_REPO,
-    fetch_account,
-    fetch_live_quotes,
+    _account_worker,
+    _quote_worker,
     latest_weights_by_candidate,
     composite_equal_weights,
     normalize_code,
     positive_first,
+    run_worker_with_timeout,
     scale_weights,
 )
 
@@ -28,6 +29,7 @@ from attack_engine_live_order_preview import (
 ROOT = Path(__file__).parent
 OUT_DIR = ROOT / "backtest_results" / "attack_engine_sim_executor"
 DEFAULT_DAILY = ROOT / "backtest_results" / "attack_engine_replay" / "attack_replay_daily_20260506_live_refreshed.csv"
+DEFAULT_STRATEGY_NAME = "V6-A ATTACK_EQUAL_REPLAY"
 
 
 def as_float(value: Any, default: float = math.nan) -> float:
@@ -61,6 +63,40 @@ def current_us_positions(account_snapshot: Dict[str, Any]) -> Dict[str, int]:
     return out
 
 
+def load_managed_state(path: Path, *, strategy_name: str) -> Dict[str, Any]:
+    if not path.exists():
+        return {
+            "strategy": strategy_name,
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "updated_at": "",
+            "positions": {},
+            "pending_orders": [],
+        }
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if str(payload.get("strategy", "")) != strategy_name:
+        raise SystemExit(f"managed state strategy mismatch: {payload.get('strategy')} != {strategy_name}")
+    payload.setdefault("positions", {})
+    payload.setdefault("pending_orders", [])
+    return payload
+
+
+def write_managed_state(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
+
+
+def current_managed_positions(path: Path, *, strategy_name: str) -> Dict[str, int]:
+    state = load_managed_state(path, strategy_name=strategy_name)
+    positions: Dict[str, int] = {}
+    for code, qty in dict(state.get("positions", {}) or {}).items():
+        norm = normalize_code(code)
+        value = as_float(qty, 0.0)
+        if value > 0:
+            positions[norm] = int(math.floor(value))
+    return positions
+
+
 def build_target_qty(
     weights: Dict[str, float],
     quotes: Dict[str, Any],
@@ -90,8 +126,9 @@ def build_transition_orders(
     max_gross: float,
     max_order_value: float,
     liquidate_non_target_us_positions: bool,
+    current_positions_override: Dict[str, int] | None = None,
 ) -> pd.DataFrame:
-    current = current_us_positions(account_snapshot)
+    current = dict(current_positions_override) if current_positions_override is not None else current_us_positions(account_snapshot)
     target = build_target_qty(weights, quotes, strategy_capital, max_gross)
     codes = set(target)
     if liquidate_non_target_us_positions:
@@ -179,6 +216,59 @@ def place_sim_orders(orders: pd.DataFrame, *, host: str, port: int, acc_id: str,
     return results
 
 
+def order_id_from_detail(result: Dict[str, Any]) -> str:
+    detail = result.get("detail", [])
+    if isinstance(detail, list) and detail:
+        return str(detail[0].get("order_id", ""))
+    return ""
+
+
+def validate_sells_against_managed_state(orders: pd.DataFrame, state: Dict[str, Any]) -> None:
+    positions = state.get("positions", {}) if isinstance(state.get("positions"), dict) else {}
+    for _, row in orders.iterrows():
+        if str(row["side"]).upper() != "SELL":
+            continue
+        code = normalize_code(row["code"])
+        sell_qty = float(row["preview_qty"])
+        managed_qty = float(positions.get(code, 0.0))
+        if sell_qty > managed_qty + 1e-9:
+            raise SystemExit(f"refuse to sell unmanaged V6 SIM shares: {code} sell={sell_qty} managed={managed_qty}")
+
+
+def update_managed_state_with_results(
+    path: Path,
+    *,
+    strategy_name: str,
+    orders: pd.DataFrame,
+    results: List[Dict[str, Any]],
+    execute: bool,
+) -> Dict[str, Any]:
+    state = load_managed_state(path, strategy_name=strategy_name)
+    validate_sells_against_managed_state(orders, state)
+    if not execute:
+        return state
+
+    pending = list(state.get("pending_orders", []) or [])
+    for result in results:
+        if not result.get("ok"):
+            continue
+        pending.append(
+            {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "code": normalize_code(result.get("code")),
+                "side": str(result.get("side", "")).upper(),
+                "qty": int(float(result.get("qty", 0))),
+                "limit_price": float(result.get("price", 0.0)),
+                "ok": bool(result.get("ok", False)),
+                "order_id": order_id_from_detail(result),
+                "status": "SUBMITTED_NEEDS_RECONCILIATION" if result.get("ok") else "SUBMIT_FAILED",
+            }
+        )
+    state["pending_orders"] = pending
+    write_managed_state(path, state)
+    return state
+
+
 def write_report(path: Path, orders: pd.DataFrame, results: List[Dict[str, Any]], execute: bool) -> None:
     lines = [
         "# V6 Sim Executor",
@@ -223,23 +313,59 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=11111)
     parser.add_argument("--sim-acc-id", default="19005590")
     parser.add_argument("--home-dir", default=str(DEFAULT_FUTU_HOME_DIR))
+    parser.add_argument("--quote-timeout-sec", type=float, default=12.0)
+    parser.add_argument("--account-timeout-sec", type=float, default=12.0)
     parser.add_argument("--liquidate-non-target-us-positions", action="store_true")
+    parser.add_argument("--net-managed-positions", action="store_true")
+    parser.add_argument("--managed-positions-state", default="")
+    parser.add_argument("--strategy-name", default=DEFAULT_STRATEGY_NAME)
+    parser.add_argument("--update-managed-state", action="store_true")
     parser.add_argument("--execute-sim", action="store_true")
     parser.add_argument("--tag", default="latest")
     args = parser.parse_args()
 
+    managed_state_path = Path(args.managed_positions_state) if args.managed_positions_state else None
+    managed_state = None
+    current_override = None
+    if args.net_managed_positions:
+        if managed_state_path is None:
+            raise SystemExit("--net-managed-positions requires --managed-positions-state")
+        managed_state = load_managed_state(managed_state_path, strategy_name=args.strategy_name)
+        current_override = current_managed_positions(managed_state_path, strategy_name=args.strategy_name)
+
     latest = latest_weights_by_candidate(Path(args.daily))
     weights = composite_equal_weights(latest)
     quote_codes = sorted({code for code in weights if code != "CASH"} | {"US.AMZN", "US.AVGO", "US.SOXX"})
-    quotes = fetch_live_quotes(quote_codes, host=args.host, port=args.port, home_dir=Path(args.home_dir))
+    quotes = run_worker_with_timeout(
+        _quote_worker,
+        {"tickers": quote_codes, "host": args.host, "port": args.port, "home_dir": args.home_dir},
+        args.quote_timeout_sec,
+        {
+            "ok": False,
+            "quotes": {},
+            "warnings": [f"quote_timeout:{args.quote_timeout_sec:.0f}s"],
+            "snapshot_time": "",
+        },
+    )
     if not quotes.get("ok"):
         raise SystemExit(f"quote fetch failed: {quotes.get('warnings')}")
-    account = fetch_account(
-        host=args.host,
-        port=args.port,
-        acc_id=args.sim_acc_id,
-        trd_env="SIMULATE",
-        home_dir=Path(args.home_dir),
+    account = run_worker_with_timeout(
+        _account_worker,
+        {
+            "host": args.host,
+            "port": args.port,
+            "acc_id": args.sim_acc_id,
+            "trd_env": "SIMULATE",
+            "home_dir": args.home_dir,
+        },
+        args.account_timeout_sec,
+        {
+            "ok": False,
+            "warnings": [f"account_timeout:{args.account_timeout_sec:.0f}s"],
+            "positions": [],
+            "capital": {},
+            "account": {},
+        },
     )
     if account.get("warnings"):
         raise SystemExit(f"account warnings: {account.get('warnings')}")
@@ -252,12 +378,23 @@ def main() -> None:
         max_gross=args.max_gross,
         max_order_value=args.max_order_value,
         liquidate_non_target_us_positions=args.liquidate_non_target_us_positions,
+        current_positions_override=current_override,
     )
+    if managed_state is not None:
+        validate_sells_against_managed_state(orders, managed_state)
     results = (
         place_sim_orders(orders, host=args.host, port=args.port, acc_id=args.sim_acc_id, home_dir=Path(args.home_dir))
         if args.execute_sim
         else []
     )
+    if managed_state_path is not None and args.update_managed_state:
+        update_managed_state_with_results(
+            managed_state_path,
+            strategy_name=args.strategy_name,
+            orders=orders,
+            results=results,
+            execute=bool(args.execute_sim),
+        )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     orders_path = OUT_DIR / f"v6_sim_orders_{args.tag}.csv"

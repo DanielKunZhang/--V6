@@ -12,8 +12,8 @@ V6 Strategy Lab 的目标不是证明 V6-A 永远正确，而是建立一个小�
 
 - 主策略：`V6-A ATTACK_EQUAL_REPLAY`
 - 策略属性：美股高进攻动量 + 防守切换
-- 当前阶段：`REAL_PILOT_READY_MANUAL_CONFIRM`
-- 当前定位：`$5,000` 小额实盘 pilot 已完成前置 preview / release gate / guarded executor；尚未下单，不允许自动全量运行
+- 当前阶段：`SIM_FIRST_CLOSED_LOOP_ACTIVE`
+- 当前定位：`$5,000` V6-A 已在 Futu SIM 通过 managed state 完成下单、成交、reconciliation 闭环；真实小额 pilot 仍需人工明确发起
 
 ## V6 长期研发方向
 
@@ -30,10 +30,11 @@ Allocator = 风控与资金分配器，根据近期表现、相关性、回撤�
 
 研发路线：
 
-1. `阶段 1：V6-B 单独回测`：只验证 Radar 动态池能不能赚钱，不能污染 V6-A baseline。
-2. `阶段 2：V6-A vs V6-B 对比`：比较收益、回撤、Sharpe、OOS、rolling、黑天鹅、换手、可交易性。
-3. `阶段 3：V6-A + V6-B 组合`：测试 `70/30`、`50/50`、动态权重等组合。
-4. `阶段 4：V6-B 稳定贡献后升级`：只有通过 deterministic replay、release gate、live preview 和模拟盘后，才允许进入 V6 资源池优化层。
+1. `阶段 0：V6-A SIM-first 闭环`：先保证 V6-A baseline 的目标仓位、下单、退出、reconciliation 和 managed state 都能在模拟盘稳定运行。
+2. `阶段 1：V6-B 单独回测`：只验证 Radar 动态池能不能赚钱，不能污染 V6-A baseline。
+3. `阶段 2：V6-A vs V6-B 对比`：比较收益、回撤、Sharpe、OOS、rolling、黑天鹅、换手、可交易性。
+4. `阶段 3：V6-A + V6-B 组合`：测试 `70/30`、`50/50`、动态权重等组合。
+5. `阶段 4：V6-B 稳定贡献后升级`：只有通过 deterministic replay、release gate、live preview 和模拟盘后，才允许进入 V6 资源池优化层。
 
 关键原则：
 
@@ -62,6 +63,7 @@ V6 不追求“全自动频繁自我优化”。当前采用 `定期提醒 + 人
 - 每月邮件提醒：是否需要更新 V6-B Dynamic Pool，是否需要做 Missing Opportunity Review。
 - 每季度邮件提醒：是否进入 Engine / Core Pool / Allocator revalidation。
 - 任何 production 级调整，都必须先写入 `V6_STRATEGY_LAB.md`、AI Wiki 系统卡、Overview，再进入执行。
+- 2026-05-11 起，V6-B SIM 暂停扩张；优先把 V6-A SIM-first 闭环跑稳定，V6-B 回到回测与动态 universe 生成器研发。
 
 ## 邮件报告要求
 
