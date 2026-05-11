@@ -19,6 +19,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 DEFAULT_POLICY = ROOT / "v6_strategy_lab" / "configs" / "v6_reporting_policy_v1.json"
 DEFAULT_OUTPUT_DIR = ROOT / "backtest_results" / "v6_reporting"
+DEFAULT_V6A_REAL_STATE = ROOT / "backtest_results" / "v6a_state" / "v6a_managed_positions_real_281756481449956811.json"
 
 
 def now_text() -> str:
@@ -142,6 +143,20 @@ def summarize_real_pilot(path: Path) -> dict[str, Any]:
     payload = read_json(path)
     if not payload:
         return {"exists": False, "path": rel(path)}
+    if isinstance(payload, list):
+        ok_count = sum(1 for row in payload if isinstance(row, dict) and row.get("ok"))
+        return {
+            "exists": True,
+            "path": rel(path),
+            "generated_at": "",
+            "status": "EXECUTED_REAL_RESULTS",
+            "armed": True,
+            "order_rows": len(payload),
+            "ok_order_rows": ok_count,
+            "note": "executor_results_list",
+        }
+    if not isinstance(payload, dict):
+        return {"exists": True, "path": rel(path), "status": "unrecognized_payload", "armed": False, "order_rows": 0}
     results = payload.get("execution_results", [])
     return {
         "exists": True,
@@ -151,6 +166,23 @@ def summarize_real_pilot(path: Path) -> dict[str, Any]:
         "armed": bool(payload.get("cycle", {}).get("armed", False)),
         "order_rows": len(results) if isinstance(results, list) else 0,
         "note": "plan_only_or_latest_executor_payload",
+    }
+
+
+def summarize_managed_state(path: Path) -> dict[str, Any]:
+    payload = read_json(path)
+    if not payload:
+        return {"exists": False, "path": rel(path), "positions": {}, "pending_orders": [], "pending_count": 0}
+    positions = payload.get("positions", {}) if isinstance(payload.get("positions"), dict) else {}
+    pending = payload.get("pending_orders", []) if isinstance(payload.get("pending_orders"), list) else []
+    return {
+        "exists": True,
+        "path": rel(path),
+        "strategy": str(payload.get("strategy", "")),
+        "updated_at": str(payload.get("updated_at", "")),
+        "positions": positions,
+        "pending_orders": pending,
+        "pending_count": len(pending),
     }
 
 
@@ -247,6 +279,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "release_gate": summarize_release_gate(release_gate_path),
             "preview": summarize_preview(preview_report_path, preview_orders_path),
             "real_pilot": summarize_real_pilot(real_pilot_latest) if real_pilot_latest else {"exists": False, "path": ""},
+            "managed_state": summarize_managed_state(DEFAULT_V6A_REAL_STATE),
         },
         "v6b": summarize_v6b(scorecard_path, live_forward_path),
         "allocator": run_allocator(allocator_policy_path, allocator_metrics_path),
@@ -268,6 +301,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     v6a = payload["v6a"]
     gate = v6a["release_gate"]
     preview = v6a["preview"]
+    managed = v6a.get("managed_state", {})
     allocator = payload["allocator"]
     v6b = payload["v6b"]
 
@@ -277,6 +311,17 @@ def render_markdown(payload: dict[str, Any]) -> str:
     ]
     if not top_rows:
         top_rows = [["-", "-", "-", "-"]]
+    position_rows = [[code, qty] for code, qty in sorted(dict(managed.get("positions", {}) or {}).items())] or [["-", "-"]]
+    pending_rows = [
+        [
+            row.get("ticker") or row.get("code") or "",
+            row.get("side", ""),
+            row.get("qty", ""),
+            row.get("last_status") or row.get("status", ""),
+            row.get("order_id", ""),
+        ]
+        for row in managed.get("pending_orders", [])
+    ] or [["-", "-", "-", "-", "-"]]
 
     return "\n".join(
         [
@@ -299,8 +344,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
                     ["Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
                     ["Preview Symbols", ", ".join(preview.get("symbols", []))],
                     ["Real Pilot Record", v6a.get("real_pilot", {}).get("status", "not_executed")],
+                    ["Managed State", managed.get("path", "")],
+                    ["Managed Updated", managed.get("updated_at", "")],
+                    ["Pending Orders", managed.get("pending_count", 0)],
                 ],
             ),
+            "",
+            "### V6-A Real Managed Positions",
+            "",
+            md_table(["Ticker", "Qty"], position_rows),
+            "",
+            "### V6-A Pending Orders",
+            "",
+            md_table(["Ticker", "Side", "Qty", "Status", "Order ID"], pending_rows),
             "",
             "## V6-B / Dynamic Universe",
             "",
@@ -394,6 +450,7 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     gate = v6a["release_gate"]
     preview = v6a["preview"]
     real_pilot = v6a.get("real_pilot", {})
+    managed = v6a.get("managed_state", {})
     v6b = payload["v6b"]
     allocator = payload["allocator"]
     weights = allocator.get("weights", {})
@@ -411,6 +468,20 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
         ]
         for row in top_candidates
     ] or [["-", "-", "-", "-"]]
+    managed_position_rows = [
+        [f'<strong>{html_escape(code)}</strong>', qty]
+        for code, qty in sorted(dict(managed.get("positions", {}) or {}).items())
+    ] or [["-", "-"]]
+    managed_pending_rows = [
+        [
+            row.get("ticker") or row.get("code") or "",
+            row.get("side", ""),
+            row.get("qty", ""),
+            html_badge(str(row.get("last_status") or row.get("status", "")), "warn"),
+            row.get("order_id", ""),
+        ]
+        for row in managed.get("pending_orders", [])
+    ] or [["-", "-", "-", "-", "-"]]
     boundary_items = "".join(
         f'<li style="margin:6px 0;color:#374151;line-height:1.45;">{html_escape(item)}</li>'
         for item in payload.get("boundaries", [])
@@ -451,8 +522,17 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
         ["Preview Orders", preview.get("order_count", 0)],
         ["Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
         ["Real Pilot Record", real_pilot.get("status", "not_executed") or "not_executed"],
+        ["Managed State", managed.get("path", "")],
+        ["Managed Updated", managed.get("updated_at", "")],
+        ["Pending Orders", managed.get("pending_count", 0)],
         ["Gate File", gate.get("path", "")],
     ])}
+    <div style="height:14px;"></div>
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">V6-A Real Managed Positions</h3>
+    {html_table(["Ticker", "Qty"], managed_position_rows)}
+    <div style="height:14px;"></div>
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">Pending Orders</h3>
+    {html_table(["Ticker", "Side", "Qty", "Status", "Order ID"], managed_pending_rows)}
   </div>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
