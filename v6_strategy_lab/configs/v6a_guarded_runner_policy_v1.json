@@ -38,6 +38,9 @@
     "allow_sell_orders": true,
     "allow_buy_orders": true,
     "net_existing_positions": false,
+    "net_managed_positions": true,
+    "managed_positions_state_file": "backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json",
+    "update_managed_state_after_execution": true,
     "require_regular_market_hours_for_real": true,
     "require_fresh_preview_for_real": true
   },
@@ -48,7 +51,9 @@
     "block_if_quote_has_warnings": true,
     "block_if_total_notional_exceeds_policy": true,
     "block_if_any_order_value_invalid": true,
-    "block_if_no_executable_orders": true
+    "block_if_no_executable_orders": true,
+    "block_if_sell_exceeds_managed_state": true,
+    "block_if_managed_state_strategy_mismatch": true
   },
   "audit": {
     "output_dir": "backtest_results/v6a_guarded_runner",
@@ -59,6 +64,8 @@
     "Default mode is plan_only and never places real orders.",
     "Real execution requires --execute-real and the exact manual confirmation phrase.",
     "This runner creates an auditable decision record before any V6-A order.",
+    "V6-A can only sell positions recorded in its own managed_positions_state file.",
+    "V6-A must not net or sell unrelated long-term/value-investing holdings in the same Futu account.",
     "V6-B remains a separate simulation/research sleeve and is not executed by this runner."
   ]
 }

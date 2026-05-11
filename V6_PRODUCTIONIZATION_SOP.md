@@ -65,6 +65,34 @@ V6-A exits through target portfolio changes:
 - If risk-off/defensive mode is selected, exposure shifts toward defensive assets such as `BIL`, `GLD`, or cash.
 - The runner must not invent discretionary per-stock take-profit/stop-loss rules unless a separate challenger proves them superior.
 
+This is intentional. V6-A is the historical `ATTACK_EQUAL_REPLAY` strategy that produced the accepted backtest results. Its exit logic is signal/weight/risk-regime based, not fixed single-stock stop-profit/stop-loss.
+
+## Managed State Boundary
+
+V6-A must maintain a separate managed position state:
+
+```text
+backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json
+```
+
+Rules:
+
+- V6-A may only sell shares recorded in this managed state.
+- V6-A must not net or sell unrelated long-term/value-investing holdings in the same Futu account.
+- If a ticker exists both as a long-term holding and as a V6 holding, V6 can only manage the quantity recorded in V6 state.
+- If state strategy name mismatches `V6-A ATTACK_EQUAL_REPLAY`, execution must block.
+- If a sell order exceeds managed quantity, execution must block.
+- Real order submissions are recorded as pending orders first.
+- Filled orders are promoted into managed positions only after reconciliation.
+
+Reconciliation:
+
+```bash
+python3 v6a_real_reconciliation.py
+```
+
+This queries real Futu orders and converts filled V6 pending orders into V6 managed positions. It does not infer V6 positions from unrelated account holdings.
+
 ## V6-B Simulation
 
 Policy:

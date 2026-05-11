@@ -228,6 +228,20 @@ def current_position_qty(account_snapshot: Dict[str, Any], tickers: Iterable[str
     return out
 
 
+def managed_position_qty(path: Path, tickers: Iterable[str]) -> Dict[str, float]:
+    wanted = {normalize_code(ticker) for ticker in tickers}
+    out = {ticker: 0.0 for ticker in wanted}
+    if not path.exists():
+        return out
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    positions = payload.get("positions", {}) if isinstance(payload.get("positions"), dict) else {}
+    for code, qty in positions.items():
+        normalized = normalize_code(code)
+        if normalized in out:
+            out[normalized] += as_float(qty, 0.0)
+    return out
+
+
 def resolve_account_cash(account_snapshot: Dict[str, Any]) -> Dict[str, float]:
     capital = dict(account_snapshot.get("capital", {}) or {})
     account = dict(account_snapshot.get("account", {}) or {})
@@ -260,10 +274,17 @@ def build_order_preview(
     max_order_value: float,
     min_order_value: float,
     net_existing_positions: bool,
+    managed_positions_state: Path | None,
+    net_managed_positions: bool,
 ) -> pd.DataFrame:
     scaled = scale_weights(weights, max_gross)
     tickers = sorted(ticker for ticker in scaled if ticker != "CASH")
-    current_qty = current_position_qty(account_snapshot, tickers) if net_existing_positions else {ticker: 0.0 for ticker in tickers}
+    if net_managed_positions and managed_positions_state is not None:
+        current_qty = managed_position_qty(managed_positions_state, tickers)
+    elif net_existing_positions:
+        current_qty = current_position_qty(account_snapshot, tickers)
+    else:
+        current_qty = {ticker: 0.0 for ticker in tickers}
     rows = []
     for ticker in tickers:
         quote = quotes.get(ticker, {})
@@ -287,7 +308,7 @@ def build_order_preview(
                 "target_value": round(target_value, 2),
                 "current_qty_used_for_netting": round(float(current_qty.get(ticker, 0.0)), 6),
                 "target_qty": int(target_qty),
-                "preview_qty": int(capped_qty),
+                "preview_qty": int(abs(capped_qty)),
                 "order_price": round(float(order_price), 4),
                 "preview_order_value": round(float(order_value), 2),
                 "bid": round(as_float(quote.get("bid"), 0.0), 4),
@@ -310,6 +331,8 @@ def write_report(
     strategy_capital: float,
     max_gross: float,
     net_existing_positions: bool,
+    net_managed_positions: bool,
+    managed_positions_state: Path | None,
     signal_date: str,
 ) -> None:
     cash = resolve_account_cash(account_snapshot)
@@ -323,6 +346,8 @@ def write_report(
         f"- Strategy capital: `{strategy_capital:,.2f}`",
         f"- Max gross exposure: `{max_gross:.2f}x`",
         f"- Net existing account positions: `{net_existing_positions}`",
+        f"- Net V6 managed positions: `{net_managed_positions}`",
+        f"- Managed state: `{managed_positions_state or ''}`",
         f"- Quote snapshot time: `{quote_result.get('snapshot_time', '')}`",
         f"- Account deployable cash estimate: `{fmt_usd(cash.get('deployable_cash_usd'))}`",
         f"- Total preview buy notional: `{fmt_usd(total_preview_buy)}`",
@@ -383,6 +408,8 @@ def main() -> None:
     parser.add_argument("--max-order-value", type=float, default=5000.0)
     parser.add_argument("--min-order-value", type=float, default=25.0)
     parser.add_argument("--net-existing-positions", action="store_true")
+    parser.add_argument("--net-managed-positions", action="store_true")
+    parser.add_argument("--managed-positions-state", default="")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=11111)
     parser.add_argument("--acc-id", default="")
@@ -436,6 +463,8 @@ def main() -> None:
         max_order_value=args.max_order_value,
         min_order_value=args.min_order_value,
         net_existing_positions=args.net_existing_positions,
+        managed_positions_state=Path(args.managed_positions_state) if args.managed_positions_state else None,
+        net_managed_positions=args.net_managed_positions,
     )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -455,6 +484,8 @@ def main() -> None:
         strategy_capital=args.strategy_capital,
         max_gross=args.max_gross,
         net_existing_positions=args.net_existing_positions,
+        net_managed_positions=args.net_managed_positions,
+        managed_positions_state=Path(args.managed_positions_state) if args.managed_positions_state else None,
         signal_date=signal_date,
     )
 

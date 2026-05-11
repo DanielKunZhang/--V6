@@ -136,6 +136,9 @@ def build_preview_command(policy: dict[str, Any], preview_tag: str) -> list[str]
     ]
     if policy["execution"].get("net_existing_positions", False):
         command.append("--net-existing-positions")
+    if policy["execution"].get("net_managed_positions", True):
+        command.append("--net-managed-positions")
+        command.extend(["--managed-positions-state", policy["execution"]["managed_positions_state_file"]])
     return command
 
 
@@ -201,7 +204,13 @@ def build_executor_command(policy: dict[str, Any], preview_tag: str, gate_tag: s
         str(cap["max_order_value_usd"]),
         "--tag",
         exec_tag,
+        "--managed-positions-state",
+        policy["execution"]["managed_positions_state_file"],
+        "--strategy-name",
+        policy["strategy"],
     ]
+    if policy["execution"].get("update_managed_state_after_execution", True):
+        command.append("--update-managed-state")
     if execute_real:
         command.extend(["--armed", "--confirm", confirm])
     return command
@@ -225,6 +234,22 @@ def load_preview_json(path: Path) -> dict[str, Any]:
     return load_json(path)
 
 
+def load_managed_state(policy: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_path(policy["execution"]["managed_positions_state_file"])
+    if not path.exists():
+        return {
+            "exists": False,
+            "path": rel(path),
+            "strategy": policy["strategy"],
+            "positions": {},
+            "pending_orders": [],
+        }
+    payload = load_json(path)
+    payload["exists"] = True
+    payload["path"] = rel(path)
+    return payload
+
+
 def order_summary(orders: pd.DataFrame) -> dict[str, Any]:
     if orders.empty:
         return {"count": 0, "buy_notional": 0.0, "sell_notional": 0.0, "total_notional": 0.0, "rows": []}
@@ -244,6 +269,8 @@ def evaluate_blockers(policy: dict[str, Any], *, gate_payload: dict[str, Any], o
     blockers: list[str] = []
     guards = policy["risk_guards"]
     cap = policy["capital"]
+    managed_state = load_managed_state(policy)
+    managed_positions = managed_state.get("positions", {}) if isinstance(managed_state.get("positions"), dict) else {}
     summary = order_summary(orders)
 
     if guards.get("block_if_release_gate_fails", True) and gate_payload.get("gate_result") != "PASS":
@@ -260,6 +287,18 @@ def evaluate_blockers(policy: dict[str, Any], *, gate_payload: dict[str, Any], o
         blockers.append(f"account_warnings:{account.get('warnings')}")
     if guards.get("block_if_quote_has_warnings", True) and quotes.get("warnings"):
         blockers.append(f"quote_warnings:{quotes.get('warnings')}")
+    if guards.get("block_if_managed_state_strategy_mismatch", True) and managed_state.get("exists"):
+        if str(managed_state.get("strategy", "")) != str(policy["strategy"]):
+            blockers.append("managed_state_strategy_mismatch")
+    if guards.get("block_if_sell_exceeds_managed_state", True) and not orders.empty:
+        for row in orders.to_dict("records"):
+            if str(row.get("side", "")).upper() != "SELL":
+                continue
+            ticker = str(row.get("ticker", "")).upper()
+            sell_qty = as_float(row.get("preview_qty"), 0.0)
+            managed_qty = as_float(managed_positions.get(ticker), 0.0)
+            if sell_qty > managed_qty + 1e-9:
+                blockers.append(f"sell_exceeds_managed_state:{ticker}:sell={sell_qty}:managed={managed_qty}")
     return blockers
 
 
@@ -399,6 +438,7 @@ def main() -> None:
             "program_investable_capital_usd": account.get("program_investable_capital_usd", 0),
             "warnings": account.get("warnings", []),
         },
+        "managed_state": load_managed_state(policy),
         "quote_summary": {
             "ok": quotes.get("ok", False),
             "snapshot_time": quotes.get("snapshot_time", ""),
