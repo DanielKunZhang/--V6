@@ -1,0 +1,53 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-11",
+  "purpose": "Read-only V6 status reporting policy. Reports may remind and summarize, but must not trigger orders.",
+  "artifacts": {
+    "v6_live_launch_policy": "v6_live_launch_policy.json",
+    "release_gate": "backtest_results/attack_engine_release_gate/attack_engine_release_gate_real_pilot_5k_20260511_final_gate_7d.json",
+    "live_preview_report": "backtest_results/attack_engine_live_preview/attack_live_order_preview_report_real_pilot_5k_20260511_final_preview.md",
+    "live_preview_orders": "backtest_results/attack_engine_live_preview/attack_live_order_preview_orders_real_pilot_5k_20260511_final_preview.csv",
+    "real_pilot_dir": "backtest_results/attack_engine_real_pilot_executor",
+    "v6b_scorecard": "v6_strategy_lab/scorecards/v6b_scorecard_20260511_live_forward_seed.json",
+    "v6b_live_forward_results": "backtest_results/v6b_live_forward_sim/v6b_live_forward_results_20260511_plan_only.json",
+    "allocator_policy": "v6_strategy_lab/configs/v6_allocator_policy_v1.json",
+    "allocator_metrics": "v6_strategy_lab/configs/v6_allocator_sample_metrics.csv"
+  },
+  "reminders": {
+    "daily": [
+      "Check whether V6-A/V6-B jobs ran as expected.",
+      "Check whether any order, quote, account, or OpenD exception appeared.",
+      "Do not make strategy-level changes from daily noise."
+    ],
+    "weekly": [
+      "Review V6-A target vs actual positions.",
+      "Review weekly return, max drawdown, worst day, and execution drift.",
+      "Review whether V6-B live-forward data remains clean.",
+      "Decide whether to continue, pause, or refresh release gate."
+    ],
+    "monthly": [
+      "Run Missing Opportunity Review for Dynamic Universe.",
+      "Refresh V6-B point-in-time candidates if evidence supports it.",
+      "Do not promote V6-B without standalone, V6-A comparison, allocator, and replay evidence."
+    ],
+    "quarterly": [
+      "Run deterministic replay, release gate, black swan windows, rolling 3y/5y, robustness, and live tradability checks.",
+      "Review V6 Engine parameters and Core Pool candidates.",
+      "Any production change must update V6_STRATEGY_LAB.md, AI Wiki, and SYSTEM_OVERVIEW."
+    ]
+  },
+  "boundaries": [
+    "Reporting is read-only and must not place orders.",
+    "Email output is a reminder and cannot be used as an automatic trading trigger.",
+    "V6-A real pilot still requires explicit manual confirmation before each first live execution stage.",
+    "V6-B remains research/simulation only until point-in-time, OOS, replay, allocator, and tradability evidence pass.",
+    "Allocator changes capital weights only after evidence; it is a risk-control layer, not a performance-chasing layer."
+  ],
+  "email_env": {
+    "smtp_server": "V6_EMAIL_SMTP_SERVER",
+    "smtp_port": "V6_EMAIL_SMTP_PORT",
+    "sender": "V6_EMAIL_SENDER",
+    "password": "V6_EMAIL_PASSWORD",
+    "recipient": "V6_EMAIL_RECIPIENT"
+  }
+}
