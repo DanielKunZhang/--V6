@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-11",
+  "strategy": "V6-B Dynamic Universe Live-Forward SIM",
+  "default_mode": "plan_only",
+  "scorecard": "v6_strategy_lab/scorecards/v6b_scorecard_20260511_live_forward_seed.json",
+  "capital": {
+    "strategy_capital_usd": 5000,
+    "max_order_value_usd": 2500,
+    "top_n": 3,
+    "max_same_track": 2
+  },
+  "selection": {
+    "required_status": "eligible_research",
+    "liquidate_non_target_us_positions": false
+  },
+  "futu": {
+    "host": "127.0.0.1",
+    "port": 11111,
+    "sim_acc_id": "19005590",
+    "trd_env": "SIMULATE"
+  },
+  "release_boundary": {
+    "live_trading_allowed": false,
+    "requires_point_in_time_backtest": true,
+    "requires_oos_validation": true,
+    "requires_v6a_comparison": true,
+    "requires_allocator_nonzero_weight": true,
+    "requires_manual_upgrade_decision": true
+  },
+  "audit": {
+    "output_dir": "backtest_results/v6b_live_forward_sim",
+    "latest_payload": "latest_v6b_payload.json",
+    "latest_report": "latest_v6b_report.md"
+  },
+  "boundaries": [
+    "V6-B is a dynamic universe validation sleeve, not a live strategy.",
+    "V6-B may run in SIMULATE/live-forward only until historical point-in-time validation is complete.",
+    "V6-B cannot place real orders and cannot change V6-A production rules directly.",
+    "Promotion requires standalone validation, V6-A comparison, allocator approval, and manual CIO confirmation."
+  ]
+}

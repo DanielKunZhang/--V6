@@ -1,0 +1,64 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-11",
+  "strategy": "V6-A ATTACK_EQUAL_REPLAY",
+  "default_mode": "plan_only",
+  "capital": {
+    "strategy_capital_usd": 5000,
+    "max_gross": 1.0,
+    "max_total_notional_usd": 5000,
+    "max_order_value_usd": 5000,
+    "min_order_value_usd": 25
+  },
+  "data": {
+    "daily_replay_csv": "backtest_results/attack_engine_replay/attack_replay_daily_20260506_live_refreshed.csv",
+    "replay_composite_csv": "backtest_results/attack_engine_replay/attack_replay_composite_20260506_live_refreshed.csv",
+    "replay_summary_csv": "backtest_results/attack_engine_replay/attack_replay_summary_20260506_live_refreshed.csv",
+    "max_signal_age_days": 7,
+    "max_quote_age_minutes": 20
+  },
+  "futu": {
+    "host": "127.0.0.1",
+    "port": 11111,
+    "real_acc_id": "281756481449956811",
+    "trd_env": "REAL"
+  },
+  "release_gate": {
+    "min_full_ann": 25.0,
+    "min_oos_ann": 18.0,
+    "max_full_dd": -30.0,
+    "min_oos_sharpe": 0.8,
+    "min_equity_pct": 70.0,
+    "min_rolling_3y_ann": 0.0,
+    "min_quote_count": 5
+  },
+  "execution": {
+    "auto_real_orders_allowed": false,
+    "manual_confirm_phrase": "EXECUTE_V6A_REAL_5000",
+    "allow_sell_orders": true,
+    "allow_buy_orders": true,
+    "net_existing_positions": false,
+    "require_regular_market_hours_for_real": true,
+    "require_fresh_preview_for_real": true
+  },
+  "risk_guards": {
+    "block_if_release_gate_fails": true,
+    "block_if_preview_has_warnings": true,
+    "block_if_account_has_warnings": true,
+    "block_if_quote_has_warnings": true,
+    "block_if_total_notional_exceeds_policy": true,
+    "block_if_any_order_value_invalid": true,
+    "block_if_no_executable_orders": true
+  },
+  "audit": {
+    "output_dir": "backtest_results/v6a_guarded_runner",
+    "latest_json": "latest_run.json",
+    "latest_md": "latest_run.md"
+  },
+  "boundaries": [
+    "Default mode is plan_only and never places real orders.",
+    "Real execution requires --execute-real and the exact manual confirmation phrase.",
+    "This runner creates an auditable decision record before any V6-A order.",
+    "V6-B remains a separate simulation/research sleeve and is not executed by this runner."
+  ]
+}

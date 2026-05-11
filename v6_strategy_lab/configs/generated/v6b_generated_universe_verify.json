@@ -1,0 +1,112 @@
+{
+  "version": "2026-05-10",
+  "strategy_id": "V6-B_RADAR_MOMENTUM_CHALLENGER_POINT_IN_TIME",
+  "status": "research_only",
+  "description": "Generated from point-in-time Radar universe and scorecard. Not approved for live trading.",
+  "as_of": "2026-05-10",
+  "source_universe": "V6B_RADAR_POINT_IN_TIME_SEED",
+  "source_scorecard": "v6b_scorecard",
+  "base_pool": [
+    "US.AMZN",
+    "US.AVGO",
+    "US.GOOGL",
+    "US.META",
+    "US.MSFT",
+    "US.NVDA"
+  ],
+  "semi_etf_pool": [
+    "US.SOXX",
+    "US.SMH"
+  ],
+  "radar_tracks": {
+    "bottleneck_diffusion": [
+      "US.MU",
+      "US.WDC",
+      "US.AMKR",
+      "US.AMBA",
+      "US.CEVA"
+    ],
+    "core_reacceleration": [
+      "US.AMD",
+      "US.ANET",
+      "US.TSM"
+    ],
+    "turnaround_momentum": [
+      "US.INTC"
+    ]
+  },
+  "defensive_pool": {
+    "US.BIL": 0.35,
+    "US.GLD": 0.45,
+    "CASH": 0.2
+  },
+  "candidate_pool_variants": {
+    "v6a_base_only": [
+      "US.AMZN",
+      "US.AVGO",
+      "US.GOOGL",
+      "US.META",
+      "US.MSFT",
+      "US.NVDA"
+    ],
+    "v6b_eligible_only": [
+      "US.AMZN",
+      "US.AVGO",
+      "US.GOOGL",
+      "US.META",
+      "US.MSFT",
+      "US.NVDA",
+      "US.AMD",
+      "US.TSM",
+      "US.MU",
+      "US.SOXX",
+      "US.SMH"
+    ],
+    "v6b_watch_plus": [
+      "US.AMZN",
+      "US.AVGO",
+      "US.GOOGL",
+      "US.META",
+      "US.MSFT",
+      "US.NVDA",
+      "US.AMD",
+      "US.ANET",
+      "US.TSM",
+      "US.MU",
+      "US.WDC",
+      "US.INTC",
+      "US.AMKR",
+      "US.SOXX",
+      "US.SMH"
+    ],
+    "v6b_full_active": [
+      "US.AMZN",
+      "US.AVGO",
+      "US.GOOGL",
+      "US.META",
+      "US.MSFT",
+      "US.NVDA",
+      "US.AMD",
+      "US.ANET",
+      "US.TSM",
+      "US.MU",
+      "US.WDC",
+      "US.INTC",
+      "US.AMKR",
+      "US.AMBA",
+      "US.CEVA",
+      "US.SOXX",
+      "US.SMH"
+    ]
+  },
+  "release_gate": {
+    "must_beat_or_complement_v6a": true,
+    "min_oos_sharpe_delta_vs_v6a": 0.0,
+    "min_combo_ann_return_improvement_pct": 3.0,
+    "max_drawdown_worse_than_v6a_pct": 5.0,
+    "requires_deterministic_replay": true,
+    "requires_no_lookahead_audit": true,
+    "requires_live_tradability_check": true
+  },
+  "operating_rule": "Generated config is for research backtest only. Universe membership must be re-generated for each as_of date; do not manually backfill winners."
+}

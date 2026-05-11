@@ -1,0 +1,197 @@
+{
+  "generated": "2026-05-10T18:33:51",
+  "status": "research_only",
+  "policy": "V6B_ENTRY_SIZING_POLICY_V1",
+  "universe": "V6B_RADAR_POINT_IN_TIME_SEED",
+  "rows": [
+    {
+      "ticker": "US.TSM",
+      "track": "core_reacceleration",
+      "entry_date": "2026-05-10",
+      "score": 78.0,
+      "factors": {
+        "theme_strength": 85.0,
+        "fundamental_validation": 85.0,
+        "expectation_revision": 75.0,
+        "price_momentum": 70.0,
+        "liquidity_tradability": 95.0,
+        "crowding_valuation_risk": 60.0,
+        "anti_thesis_clarity": 80.0,
+        "portfolio_fit": 75.0
+      },
+      "notes": "High-quality manufacturing anchor; geopolitical risk remains.",
+      "source": "2026-05-10 Radar three-track revision",
+      "reason": "High-quality AI manufacturing anchor; strong ecosystem position.",
+      "anti_thesis": "AI wafer demand or advanced-node pricing deteriorates; geopolitical risk dominates.",
+      "status": "eligible_research"
+    },
+    {
+      "ticker": "US.MU",
+      "track": "bottleneck_diffusion",
+      "entry_date": "2026-05-10",
+      "score": 77.75,
+      "factors": {
+        "theme_strength": 85.0,
+        "fundamental_validation": 70.0,
+        "expectation_revision": 80.0,
+        "price_momentum": 90.0,
+        "liquidity_tradability": 95.0,
+        "crowding_valuation_risk": 40.0,
+        "anti_thesis_clarity": 75.0,
+        "portfolio_fit": 70.0
+      },
+      "notes": "HBM/memory cycle; high upside but cyclical and crowded.",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "HBM / memory cycle beneficiary; potential second-order AI infrastructure repricing.",
+      "anti_thesis": "HBM supply expands faster than demand or pricing power normalizes.",
+      "status": "eligible_research"
+    },
+    {
+      "ticker": "US.AMD",
+      "track": "core_reacceleration",
+      "entry_date": "2026-05-10",
+      "score": 77.5,
+      "factors": {
+        "theme_strength": 85.0,
+        "fundamental_validation": 70.0,
+        "expectation_revision": 75.0,
+        "price_momentum": 85.0,
+        "liquidity_tradability": 95.0,
+        "crowding_valuation_risk": 45.0,
+        "anti_thesis_clarity": 80.0,
+        "portfolio_fit": 80.0
+      },
+      "notes": "Core re-acceleration candidate; strong but crowded.",
+      "source": "2026-05-10 AMD/INTC missing opportunity review",
+      "reason": "First-order AI accelerator leader; missed by earlier Radar priority design despite strong momentum and estimate revision relevance.",
+      "anti_thesis": "AI accelerator growth or margin trajectory fails to validate; momentum breaks without fundamental revision support.",
+      "status": "eligible_research"
+    },
+    {
+      "ticker": "US.ANET",
+      "track": "core_reacceleration",
+      "entry_date": "2026-05-10",
+      "score": 74.25,
+      "factors": {
+        "theme_strength": 80.0,
+        "fundamental_validation": 70.0,
+        "expectation_revision": 70.0,
+        "price_momentum": 75.0,
+        "liquidity_tradability": 90.0,
+        "crowding_valuation_risk": 55.0,
+        "anti_thesis_clarity": 75.0,
+        "portfolio_fit": 85.0
+      },
+      "notes": "AI networking/fabric expression; complements mega AI pool.",
+      "source": "2026-05-10 Radar three-track revision",
+      "reason": "AI networking / fabric leader candidate; direct beneficiary of data-center scale-out.",
+      "anti_thesis": "AI networking order momentum slows or valuation embeds too much forward growth.",
+      "status": "watch"
+    },
+    {
+      "ticker": "US.WDC",
+      "track": "bottleneck_diffusion",
+      "entry_date": "2026-05-10",
+      "score": 71.5,
+      "factors": {
+        "theme_strength": 75.0,
+        "fundamental_validation": 65.0,
+        "expectation_revision": 70.0,
+        "price_momentum": 80.0,
+        "liquidity_tradability": 80.0,
+        "crowding_valuation_risk": 50.0,
+        "anti_thesis_clarity": 75.0,
+        "portfolio_fit": 70.0
+      },
+      "notes": "Storage-cycle repricing candidate.",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "AI data storage / HDD roadmap / storage-cycle repricing candidate.",
+      "anti_thesis": "Storage pricing, demand, or AI data growth narrative fails to translate into earnings.",
+      "status": "watch"
+    },
+    {
+      "ticker": "US.INTC",
+      "track": "turnaround_momentum",
+      "entry_date": "2026-05-10",
+      "score": 67.25,
+      "factors": {
+        "theme_strength": 65.0,
+        "fundamental_validation": 45.0,
+        "expectation_revision": 60.0,
+        "price_momentum": 85.0,
+        "liquidity_tradability": 95.0,
+        "crowding_valuation_risk": 45.0,
+        "anti_thesis_clarity": 80.0,
+        "portfolio_fit": 55.0
+      },
+      "notes": "Turnaround momentum only; not a quality holding.",
+      "source": "2026-05-10 AMD/INTC missing opportunity review",
+      "reason": "Turnaround momentum candidate driven by policy, capital structure, foundry cycle, or semiconductor beta.",
+      "anti_thesis": "Turnaround milestones fail; revenue/profit inflection does not appear; capital intensity overwhelms recovery narrative.",
+      "status": "watch"
+    },
+    {
+      "ticker": "US.AMKR",
+      "track": "bottleneck_diffusion",
+      "entry_date": "2026-05-10",
+      "score": 60.0,
+      "factors": {
+        "theme_strength": 70.0,
+        "fundamental_validation": 50.0,
+        "expectation_revision": 55.0,
+        "price_momentum": 55.0,
+        "liquidity_tradability": 65.0,
+        "crowding_valuation_risk": 60.0,
+        "anti_thesis_clarity": 70.0,
+        "portfolio_fit": 65.0
+      },
+      "notes": "Needs stronger AI/HPC packaging proof.",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Advanced packaging watch candidate; requires stronger AI/HPC customer and revenue evidence.",
+      "anti_thesis": "No clear AI/HPC advanced-packaging revenue validation.",
+      "status": "watch"
+    },
+    {
+      "ticker": "US.AMBA",
+      "track": "bottleneck_diffusion",
+      "entry_date": "2026-05-10",
+      "score": 56.75,
+      "factors": {
+        "theme_strength": 65.0,
+        "fundamental_validation": 45.0,
+        "expectation_revision": 50.0,
+        "price_momentum": 55.0,
+        "liquidity_tradability": 55.0,
+        "crowding_valuation_risk": 65.0,
+        "anti_thesis_clarity": 70.0,
+        "portfolio_fit": 55.0
+      },
+      "notes": "Edge AI expectation-gap; slower validation.",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Edge AI expectation-gap candidate; low coverage but slower validation path.",
+      "anti_thesis": "Edge AI design wins do not convert to material revenue acceleration.",
+      "status": "research_only"
+    },
+    {
+      "ticker": "US.CEVA",
+      "track": "bottleneck_diffusion",
+      "entry_date": "2026-05-10",
+      "score": 52.75,
+      "factors": {
+        "theme_strength": 60.0,
+        "fundamental_validation": 40.0,
+        "expectation_revision": 45.0,
+        "price_momentum": 50.0,
+        "liquidity_tradability": 45.0,
+        "crowding_valuation_risk": 70.0,
+        "anti_thesis_clarity": 70.0,
+        "portfolio_fit": 50.0
+      },
+      "notes": "Small-cap IP optionality; tradability and validation weak.",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Edge AI IP small-cap candidate; optionality but limited immediate proof.",
+      "anti_thesis": "IP licensing cycle remains slow or market ignores the theme.",
+      "status": "research_only"
+    }
+  ]
+}

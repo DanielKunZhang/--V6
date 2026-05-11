@@ -1,0 +1,2 @@
+candidate_id,hypothesis_id,status,full_ann_ret,oos_ann_ret,recent_ann_ret,full_max_dd,oos_max_dd,oos_sharpe,rolling_3y_worst_ann,rolling_5y_worst_ann,crisis_worst_dd,min_equity_pct,turnover,tradability,correlation_to_v6a,verdict,notes
+V6-A,H000,primary,29.80,36.43,54.24,-21.13,-21.13,1.18,7.20,10.64,-16.37,94.41,,,1.00,primary_baseline,ATTACK_EQUAL_REPLAY current baseline

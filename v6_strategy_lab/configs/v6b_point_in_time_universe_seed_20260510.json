@@ -1,0 +1,106 @@
+{
+  "version": "2026-05-10",
+  "universe_id": "V6B_RADAR_POINT_IN_TIME_SEED",
+  "status": "research_seed",
+  "description": "Point-in-time seed for V6-B Radar dynamic universe. This file is not enough for historical backtest before 2026-05-10; it defines the format and current live-forward pool.",
+  "rules": {
+    "no_lookahead": true,
+    "ticker_active_from_entry_date_only": true,
+    "requires_source_and_reason": true,
+    "requires_exit_reason_if_exit_date_exists": true,
+    "right_tail_options_default": "disabled",
+    "radar_front_book_default": "disabled"
+  },
+  "entries": [
+    {
+      "ticker": "US.AMD",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "core_reacceleration",
+      "source": "2026-05-10 AMD/INTC missing opportunity review",
+      "reason": "First-order AI accelerator leader; missed by earlier Radar priority design despite strong momentum and estimate revision relevance.",
+      "anti_thesis": "AI accelerator growth or margin trajectory fails to validate; momentum breaks without fundamental revision support.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.ANET",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "core_reacceleration",
+      "source": "2026-05-10 Radar three-track revision",
+      "reason": "AI networking / fabric leader candidate; direct beneficiary of data-center scale-out.",
+      "anti_thesis": "AI networking order momentum slows or valuation embeds too much forward growth.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.TSM",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "core_reacceleration",
+      "source": "2026-05-10 Radar three-track revision",
+      "reason": "High-quality AI manufacturing anchor; strong ecosystem position.",
+      "anti_thesis": "AI wafer demand or advanced-node pricing deteriorates; geopolitical risk dominates.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.MU",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "bottleneck_diffusion",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "HBM / memory cycle beneficiary; potential second-order AI infrastructure repricing.",
+      "anti_thesis": "HBM supply expands faster than demand or pricing power normalizes.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.WDC",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "bottleneck_diffusion",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "AI data storage / HDD roadmap / storage-cycle repricing candidate.",
+      "anti_thesis": "Storage pricing, demand, or AI data growth narrative fails to translate into earnings.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.INTC",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "turnaround_momentum",
+      "source": "2026-05-10 AMD/INTC missing opportunity review",
+      "reason": "Turnaround momentum candidate driven by policy, capital structure, foundry cycle, or semiconductor beta.",
+      "anti_thesis": "Turnaround milestones fail; revenue/profit inflection does not appear; capital intensity overwhelms recovery narrative.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.AMKR",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "bottleneck_diffusion",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Advanced packaging watch candidate; requires stronger AI/HPC customer and revenue evidence.",
+      "anti_thesis": "No clear AI/HPC advanced-packaging revenue validation.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.AMBA",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "bottleneck_diffusion",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Edge AI expectation-gap candidate; low coverage but slower validation path.",
+      "anti_thesis": "Edge AI design wins do not convert to material revenue acceleration.",
+      "status": "active_research"
+    },
+    {
+      "ticker": "US.CEVA",
+      "entry_date": "2026-05-10",
+      "exit_date": null,
+      "track": "bottleneck_diffusion",
+      "source": "2026-05-10 Radar AI supply-chain review",
+      "reason": "Edge AI IP small-cap candidate; optionality but limited immediate proof.",
+      "anti_thesis": "IP licensing cycle remains slow or market ignores the theme.",
+      "status": "active_research"
+    }
+  ]
+}

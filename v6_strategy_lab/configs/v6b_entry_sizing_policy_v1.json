@@ -1,0 +1,67 @@
+{
+  "version": "2026-05-10",
+  "policy_id": "V6B_ENTRY_SIZING_POLICY_V1",
+  "status": "research_only",
+  "description": "V6-B buy eligibility, selection, sizing, exit, and scoring policy. This is not a live trading policy.",
+  "buy_eligibility": {
+    "requires_v6b_standalone_pass": true,
+    "requires_v6a_comparison_pass": true,
+    "requires_point_in_time_audit": true,
+    "requires_allocator_weight_gt_zero": true,
+    "requires_risk_on_regime": true,
+    "requires_latest_preview": true,
+    "requires_live_tradability": true
+  },
+  "selection": {
+    "source": "point_in_time_radar_universe",
+    "top_n_min": 2,
+    "top_n_max": 4,
+    "max_same_track_names": 2,
+    "exclude_if_missing_price_days_lt": 260,
+    "exclude_if_avg_dollar_volume_lt_usd": 20000000,
+    "exclude_if_earnings_event_risk_blocked": true
+  },
+  "sizing": {
+    "allocator_controls_total_v6b_budget": true,
+    "target_names": 3,
+    "max_single_name_pct_of_v6b_sleeve": 0.4,
+    "max_single_name_pct_of_total_account": 0.03,
+    "min_single_name_pct_of_total_account": 0.005,
+    "volatility_scale": true,
+    "drawdown_brake": true
+  },
+  "exit": {
+    "trend_break": "exit_or_reduce_if_rank_falls_and_trend_breaks",
+    "score_cut": 60,
+    "hard_exit_score": 50,
+    "anti_thesis_trigger": "exit",
+    "risk_off_regime": "switch_to_defensive",
+    "stale_research_days": 45
+  },
+  "score_thresholds": {
+    "eligible": 75,
+    "watch": 60,
+    "blocked": 50
+  },
+  "score_weights": {
+    "theme_strength": 15,
+    "fundamental_validation": 15,
+    "expectation_revision": 15,
+    "price_momentum": 20,
+    "liquidity_tradability": 10,
+    "crowding_valuation_risk": 10,
+    "anti_thesis_clarity": 10,
+    "portfolio_fit": 5
+  },
+  "score_field_scale": "0-100 per factor; weighted average becomes final score.",
+  "default_factor_scores": {
+    "theme_strength": 50,
+    "fundamental_validation": 50,
+    "expectation_revision": 50,
+    "price_momentum": 50,
+    "liquidity_tradability": 50,
+    "crowding_valuation_risk": 50,
+    "anti_thesis_clarity": 50,
+    "portfolio_fit": 50
+  }
+}

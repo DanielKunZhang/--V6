@@ -1,0 +1,49 @@
+{
+  "version": "2026-05-10",
+  "allocator_id": "V6_ALLOCATOR_V1_RULE_BASED",
+  "status": "research_only",
+  "description": "Simple rule-based allocator for V6-A, V6-B, and future V6-C sleeves. Do not use for live trading without release gate.",
+  "default_weights": {
+    "V6-A": 1.0,
+    "V6-B": 0.0,
+    "V6-C": 0.0
+  },
+  "candidate_weights": {
+    "weak_or_unproven": {
+      "V6-A": 1.0,
+      "V6-B": 0.0,
+      "V6-C": 0.0
+    },
+    "high_corr_watchlist": {
+      "V6-A": 0.8,
+      "V6-B": 0.2,
+      "V6-C": 0.0
+    },
+    "low_corr_complement": {
+      "V6-A": 0.7,
+      "V6-B": 0.3,
+      "V6-C": 0.0
+    },
+    "stable_upgrade": {
+      "V6-A": 0.5,
+      "V6-B": 0.5,
+      "V6-C": 0.0
+    }
+  },
+  "thresholds": {
+    "min_oos_sharpe_delta": 0.0,
+    "min_oos_ann_delta_for_high_corr": 3.0,
+    "max_drawdown_worse_pct": 5.0,
+    "low_correlation_threshold": 0.75,
+    "high_correlation_threshold": 0.85,
+    "stable_upgrade_min_windows": 3
+  },
+  "hard_blocks": [
+    "missing_point_in_time_audit",
+    "missing_oos",
+    "missing_replay",
+    "live_tradability_failed",
+    "drawdown_worse_than_threshold",
+    "execution_abnormal"
+  ]
+}
