@@ -330,32 +330,155 @@ def render_markdown(payload: dict[str, Any]) -> str:
     )
 
 
+def html_escape(value: Any) -> str:
+    return html.escape(str(value if value is not None else ""))
+
+
+def html_badge(text: str, tone: str = "neutral") -> str:
+    colors = {
+        "good": ("#dcfce7", "#166534"),
+        "warn": ("#fef3c7", "#92400e"),
+        "bad": ("#fee2e2", "#991b1b"),
+        "info": ("#dbeafe", "#1e40af"),
+        "neutral": ("#f3f4f6", "#374151"),
+    }
+    bg, fg = colors.get(tone, colors["neutral"])
+    return (
+        f'<span style="display:inline-block;padding:4px 10px;border-radius:999px;'
+        f'background:{bg};color:{fg};font-size:12px;font-weight:700;">{html_escape(text)}</span>'
+    )
+
+
+def html_table(headers: list[str], rows: list[list[Any]]) -> str:
+    head = "".join(
+        f'<th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;'
+        f'font-size:12px;color:#6b7280;background:#f9fafb;">{html_escape(header)}</th>'
+        for header in headers
+    )
+    body_rows = []
+    for row in rows:
+        cells = "".join(
+            f'<td style="padding:11px 12px;border-bottom:1px solid #f1f5f9;'
+            f'font-size:14px;color:#111827;vertical-align:top;">{cell if str(cell).startswith("<") else html_escape(cell)}</td>'
+            for cell in row
+        )
+        body_rows.append(f"<tr>{cells}</tr>")
+    return (
+        '<table role="table" cellpadding="0" cellspacing="0" style="width:100%;'
+        'border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff;">'
+        f"<thead><tr>{head}</tr></thead><tbody>{''.join(body_rows)}</tbody></table>"
+    )
+
+
+def metric_card(label: str, value: str, sub: str = "", tone: str = "neutral") -> str:
+    colors = {
+        "good": "#16a34a",
+        "warn": "#d97706",
+        "bad": "#dc2626",
+        "info": "#2563eb",
+        "neutral": "#111827",
+    }
+    return f"""
+    <td style="width:33.33%;padding:6px;">
+      <div style="border:1px solid #e5e7eb;border-radius:14px;background:#fff;padding:16px;min-height:86px;">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">{html_escape(label)}</div>
+        <div style="font-size:22px;line-height:1.15;font-weight:800;color:{colors.get(tone, colors['neutral'])};">{html_escape(value)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:6px;">{html_escape(sub)}</div>
+      </div>
+    </td>
+    """
+
+
 def render_html(payload: dict[str, Any], markdown: str) -> str:
-    escaped = html.escape(markdown)
-    action = html.escape(payload.get("weekly_action", ""))
+    v6a = payload["v6a"]
+    gate = v6a["release_gate"]
+    preview = v6a["preview"]
+    real_pilot = v6a.get("real_pilot", {})
+    v6b = payload["v6b"]
+    allocator = payload["allocator"]
+    weights = allocator.get("weights", {})
+    action = str(payload.get("weekly_action", ""))
+    action_tone = "bad" if action.startswith("禁止") else "warn" if "需要用户确认" in action else "good"
+    gate_tone = "good" if gate.get("overall_passed") else "bad"
+    v6b_tone = "warn" if weights.get("V6-B", 0) in {0, 0.0, "0", "0.0"} else "info"
+    top_candidates = v6b.get("top_candidates", [])
+    candidate_rows = [
+        [
+            f'<strong>{html_escape(row.get("ticker", ""))}</strong>',
+            row.get("score", ""),
+            html_badge(str(row.get("status", "")), "good" if row.get("status") == "eligible_research" else "neutral"),
+            row.get("theme", "") or "-",
+        ]
+        for row in top_candidates
+    ] or [["-", "-", "-", "-"]]
+    boundary_items = "".join(
+        f'<li style="margin:6px 0;color:#374151;line-height:1.45;">{html_escape(item)}</li>'
+        for item in payload.get("boundaries", [])
+    )
+    notes = "; ".join(str(item) for item in allocator.get("notes", []))
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(payload['title'])}</title>
-<style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f8fafc; color: #111827; }}
-main {{ max-width: 980px; margin: 32px auto; padding: 0 20px 48px; }}
-.hero {{ background: #0f172a; color: #fff; padding: 24px; border-radius: 18px; }}
-.action {{ margin-top: 14px; display: inline-block; background: #f59e0b; color: #111827; padding: 8px 12px; border-radius: 999px; font-weight: 700; }}
-pre {{ white-space: pre-wrap; word-break: break-word; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; line-height: 1.55; }}
-</style>
 </head>
-<body>
-<main>
-  <section class="hero">
-    <h1>{html.escape(payload['title'])}</h1>
-    <div>Generated: {html.escape(payload['generated_at'])}</div>
-    <div class="action">本周动作：{action}</div>
-  </section>
-  <pre>{escaped}</pre>
-</main>
+<body style="margin:0;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+<div style="max-width:920px;margin:0 auto;padding:22px 14px 42px;">
+  <div style="background:#0f172a;color:#fff;border-radius:18px;padding:24px 24px 22px;">
+    <div style="font-size:13px;color:#93c5fd;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">Dingcle Capital · V6 Strategy</div>
+    <h1 style="margin:8px 0 6px;font-size:26px;line-height:1.2;">{html_escape(payload['title'])}</h1>
+    <div style="font-size:13px;color:#cbd5e1;">Period: {html_escape(payload['period_range'])} · Generated: {html_escape(payload['generated_at'])}</div>
+    <div style="margin-top:16px;padding:13px 14px;border-radius:14px;background:#fff;color:#111827;">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:5px;">本期结论</div>
+      <div style="font-size:17px;font-weight:800;line-height:1.45;">{html_badge('ACTION', action_tone)} <span style="margin-left:8px;">{html_escape(action)}</span></div>
+    </div>
+  </div>
+
+  <table cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 6px;"><tr>
+    {metric_card("V6-A Release Gate", "PASS" if gate.get("overall_passed") else "FAIL", gate.get("gate_result", ""), gate_tone)}
+    {metric_card("Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}", f"{preview.get('order_count', 0)} orders", "info")}
+    {metric_card("Allocator", f"V6-A {float(weights.get('V6-A', 0)) * 100:.0f}%", f"V6-B {float(weights.get('V6-B', 0)) * 100:.0f}% / V6-C {float(weights.get('V6-C', 0)) * 100:.0f}%", v6b_tone)}
+  </tr></table>
+
+  <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
+    <h2 style="font-size:18px;margin:0 0 12px;color:#111827;">V6-A 实盘 Pilot 状态</h2>
+    {html_table(["项目", "状态"], [
+        ["策略", v6a.get("strategy_name", "")],
+        ["Launch Status", html_badge(v6a.get("status", ""), "warn")],
+        ["Release Gate", html_badge("PASS" if gate.get("overall_passed") else "FAIL/MISSING", gate_tone)],
+        ["Preview Symbols", ", ".join(preview.get("symbols", []))],
+        ["Preview Orders", preview.get("order_count", 0)],
+        ["Preview Buy Notional", f"${preview.get('estimated_buy_notional_usd', 0):,.2f}"],
+        ["Real Pilot Record", real_pilot.get("status", "not_executed") or "not_executed"],
+        ["Gate File", gate.get("path", "")],
+    ])}
+  </div>
+
+  <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
+    <h2 style="font-size:18px;margin:0 0 6px;color:#111827;">V6-B Dynamic Universe</h2>
+    <p style="font-size:14px;color:#4b5563;line-height:1.55;margin:0 0 14px;">V6-B 当前仍是 research/simulation only。它的任务是成为未来动态候选池来源，不是直接下单策略。</p>
+    {html_table(["Ticker", "Score", "Status", "Theme"], candidate_rows)}
+  </div>
+
+  <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
+    <h2 style="font-size:18px;margin:0 0 12px;color:#111827;">Allocator / 风控分配</h2>
+    {html_table(["项目", "值"], [
+        ["Case", html_badge(allocator.get("allocation_case", ""), "warn" if allocator.get("allocation_case") == "weak_or_unproven" else "info")],
+        ["Weights", json.dumps(weights, ensure_ascii=False)],
+        ["Notes", notes or "-"],
+    ])}
+  </div>
+
+  <div style="margin-top:18px;background:#fffbeb;border:1px solid #fde68a;border-radius:16px;padding:18px;">
+    <h2 style="font-size:18px;margin:0 0 10px;color:#92400e;">执行边界</h2>
+    <ul style="padding-left:20px;margin:0;">{boundary_items}</ul>
+  </div>
+
+  <div style="font-size:12px;color:#6b7280;margin-top:18px;line-height:1.45;">
+    Report paths: {html_escape(payload.get("policy_path", ""))}. This email is read-only and cannot trigger live orders.
+  </div>
+</div>
 </body>
 </html>
 """
