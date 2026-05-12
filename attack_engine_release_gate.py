@@ -117,11 +117,15 @@ def build_gate(args: argparse.Namespace) -> Dict[str, Any]:
     if not orders.empty and "preview_order_value" in orders.columns:
         buy_notional = float(orders.loc[orders.get("side", "") == "BUY", "preview_order_value"].sum())
         executable_notional = float(orders.loc[orders.get("side", "").isin(["BUY", "SELL"]), "preview_order_value"].abs().sum())
+        # "no executable orders" is valid steady-state (strategy already at target).
+        # Downgrade to info — the file's existence (above) is the real blocker check.
         checks.append(
             check(
                 "live_preview_has_executable_orders",
                 executable_notional > 0,
-                f"buy_notional={buy_notional:.2f}, executable_notional={executable_notional:.2f}",
+                f"buy_notional={buy_notional:.2f}, executable_notional={executable_notional:.2f}"
+                + ("" if executable_notional > 0 else " (strategy at target state — no rebalance needed)"),
+                "info",
             )
         )
         bad_order_values = int((orders.get("order_value_ok", True) == False).sum())

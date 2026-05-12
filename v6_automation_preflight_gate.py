@@ -342,28 +342,31 @@ def check_spread(policy: dict, futu_data: dict | None, preview_orders: list[dict
 # ── check 8: release gate freshness ──────────────────────────────────────────
 
 def check_release_gate_freshness(policy: dict) -> tuple[dict, dict | None]:
-    fresh_cfg  = policy.get("freshness", {})
-    runs_dir   = ROOT / fresh_cfg.get("runner_runs_dir", "backtest_results/v6a_guarded_runner/runs")
-    max_age    = int(fresh_cfg.get("max_signal_age_days", 7))
+    fresh_cfg   = policy.get("freshness", {})
+    gate_dir    = ROOT / fresh_cfg.get("release_gate_artifact_dir", "backtest_results/v6a_guarded_runner")
+    max_age     = int(fresh_cfg.get("max_signal_age_days", 7))
 
-    if not runs_dir.exists():
-        return make_check("release_gate_freshness", "FAIL", "BLOCKER",
-                          f"Runner runs directory not found: {runs_dir}"), None
+    # Primary: use latest_run.json maintained by the guarded runner
+    latest_path = gate_dir / "latest_run.json"
+    runner = read_json(latest_path)
 
-    # Find latest plan_only runner file (files may have a prefix like v6a_guarded_runner_)
-    plan_files = [
-        f for f in sorted(runs_dir.glob("*v6_daily_auto_*plan_only*.json"),
-                          key=lambda f: f.stat().st_mtime, reverse=True)
-    ]
-    if not plan_files:
-        return make_check("release_gate_freshness", "FAIL", "BLOCKER",
-                          "No plan_only runner files found"), None
+    # Fallback: scan runs/ for newest file
+    if runner is None:
+        runs_dir = gate_dir / "runs"
+        if runs_dir.exists():
+            all_runs = sorted(runs_dir.glob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True)
+            for f in all_runs:
+                candidate = read_json(f)
+                if candidate and "decision" in candidate:
+                    runner = candidate
+                    runner["_file"] = f.name
+                    break
 
-    latest = plan_files[0]
-    runner = read_json(latest)
     if runner is None:
         return make_check("release_gate_freshness", "FAIL", "BLOCKER",
-                          f"Could not parse latest runner file: {latest.name}"), None
+                          f"No runner output found at {latest_path} or in {gate_dir}/runs/"), None
+
+    source_label = runner.get("_file", latest_path.name)
 
     generated_at = runner.get("generated_at", "")
     try:
@@ -376,23 +379,22 @@ def check_release_gate_freshness(policy: dict) -> tuple[dict, dict | None]:
         return make_check(
             "release_gate_freshness", "FAIL", "BLOCKER",
             f"Latest runner is {age_days} days old (max {max_age}). "
-            f"Re-run guarded runner to get fresh signal. File: {latest.name}"
+            f"Re-run guarded runner to refresh signal. Source: {source_label}"
         ), runner
 
-    # Check that the runner itself passed its release gate
+    # Check that the runner itself passed its release gate.
+    # "no_executable_orders" is acceptable — strategy is at target state, no rebalance needed.
     blockers = runner.get("blockers", [])
-    # "no_executable_orders" is acceptable (no trades needed today)
     critical_blockers = [b for b in blockers if b not in ("no_executable_orders",)]
     if critical_blockers:
         return make_check(
             "release_gate_freshness", "FAIL", "BLOCKER",
-            f"Latest runner has unresolved blocker(s): {critical_blockers}. "
-            f"File: {latest.name}"
+            f"Latest runner has unresolved blocker(s): {critical_blockers}. Source: {source_label}"
         ), runner
 
     return make_check(
         "release_gate_freshness", "PASS", "BLOCKER",
-        f"Latest runner: {latest.name} (age={age_days}d, decision={runner.get('decision')}, "
+        f"Latest runner: {source_label} (age={age_days}d, decision={runner.get('decision')}, "
         f"blockers={blockers})"
     ), runner
 
