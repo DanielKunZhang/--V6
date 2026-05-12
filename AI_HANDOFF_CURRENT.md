@@ -130,6 +130,17 @@ plist: /Users/zhangkun/Library/LaunchAgents/com.dingcle.morning-brief.plist
 /Users/zhangkun/WorkBuddy/程序化/量化程序/events_calendar.json
 ```
 
+## 双 AI 对照锁定的 V6 优化方向（2026-05-12）
+
+Claude 和 GPT 独立分析交叉验证后锁定，作为后续所有 V6 工程实现的行动纲领：
+
+1. **V6-A 执行质量和真实摩擦验证做满** — 收集真实滑点、换手、摩擦数据，建立可信 live OOS 记录
+2. **V6-B 做成真正的动态 universe refresh engine** — 不只是 Radar 清单，要有完整回测+OOS+可交易性核查
+3. **扩展低相关 sleeve / challenger** — 不只押一个 alpha 来源，机构强大来自多因子低相关组合
+4. **Allocator + Regime 做成正式治理层** — 负责权重分配，不负责追涨，必须有 regime 依据
+
+> 定位共识：做"在某个细分中频方向里很强"的系统，不默认全市场全周期顶级大厂模型。真正护城河是 **Engine + Universe + Allocator + 风控工程 + 协作知识库** 整套持续迭代系统。详见 `V6_STRATEGY_LAB.md` 的"双 AI 对照锁定"章节。
+
 ## V6 近期优先级（2026-05-12 确认）
 
 以下 4 件事是当前 V6 迭代重点（Claude + GPT 共同确认）：
