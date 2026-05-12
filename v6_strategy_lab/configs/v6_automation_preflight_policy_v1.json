@@ -1,0 +1,67 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-12",
+  "strategy": "V6-A ATTACK_EQUAL_REPLAY",
+  "description": "Preflight gate policy — must PASS before any automatic real order placement.",
+
+  "kill_switch": {
+    "enabled": true,
+    "reason": "manual_review",
+    "updated_at": "2026-05-12",
+    "updated_by": "user"
+  },
+
+  "futu": {
+    "host": "127.0.0.1",
+    "port": 11111,
+    "real_acc_id": "281756481449956811",
+    "trd_env": "REAL",
+    "target_symbols": [
+      "US.AMZN", "US.AVGO", "US.BIL", "US.GLD", "US.GOOGL"
+    ]
+  },
+
+  "managed_state": {
+    "file": "backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json",
+    "expected_strategy": "V6-A ATTACK_EQUAL_REPLAY",
+    "allowed_ticker_prefix": "US."
+  },
+
+  "cash": {
+    "min_cash_buffer_usd": 100,
+    "block_all_if_buys_unfunded": true
+  },
+
+  "order_size": {
+    "max_total_notional_usd": 5000,
+    "max_order_value_usd": 5000,
+    "min_order_value_usd": 25,
+    "allow_full_exit_below_min": true
+  },
+
+  "slippage": {
+    "max_spread_pct_core": 0.30,
+    "max_spread_pct_defensive_etf": 0.10,
+    "defensive_etf_tickers": ["US.BIL", "US.GLD"],
+    "warning_slippage_pct": 0.50,
+    "critical_slippage_pct": 1.00
+  },
+
+  "freshness": {
+    "max_signal_age_days": 7,
+    "release_gate_artifact_dir": "backtest_results/v6a_guarded_runner",
+    "runner_runs_dir": "backtest_results/v6a_guarded_runner/runs"
+  },
+
+  "trading_session": {
+    "auto_execution_only_during_regular_hours": true,
+    "regular_hours_start": "09:30",
+    "regular_hours_end": "16:00",
+    "timezone": "America/New_York"
+  },
+
+  "output": {
+    "dir": "backtest_results/v6_automation_preflight",
+    "latest_json": "latest.json"
+  }
+}

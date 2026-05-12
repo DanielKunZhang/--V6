@@ -9,14 +9,23 @@
 
 新 AI 接入时，优先读取这些文件：
 
-1. `/Users/zhangkun/Desktop/AI个人投资公司/投资系统全景图_SYSTEM_OVERVIEW.html`
-2. `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html`
-3. `/Users/zhangkun/Desktop/AI个人投资公司/知识库_v1/README.md`
-4. `/Users/zhangkun/Desktop/AI个人投资公司/知识库_v1/00_System/总索引.md`
-5. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_STRATEGY_LAB.md`
-6. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_PRODUCTIONIZATION_SOP.md`
-7. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_GITHUB_AND_REPORTING_SOP.md`
-8. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_HANDOFF_CURRENT.md`
+1. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_HANDOFF_CURRENT.md`（本文件）
+2. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_COLLAB_LOG.md`（⭐ 双向协作日志，最近的决策和变更都在这里）
+3. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_STRATEGY_LAB.md`
+4. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_PRODUCTIONIZATION_SOP.md`
+5. `/Users/zhangkun/Desktop/AI个人投资公司/知识库_v1/README.md`
+6. `/Users/zhangkun/Desktop/AI个人投资公司/投资系统全景图_SYSTEM_OVERVIEW.html`
+
+## AI 协作同步机制
+
+Claude 和 GPT 通过 `AI_COLLAB_LOG.md` 共享协作状态，避免知识分叉。
+
+同步规则：
+- Claude：每次会话结束前将关键产出写入 `AI_COLLAB_LOG.md`
+- GPT 产出：用户运行 `python collab_sync.py add-gpt "内容"` 追加
+- GPT 读取：每次新会话时上传 `AI_COLLAB_EXPORT_FOR_GPT.md`（运行 `python collab_sync.py export` 生成）
+
+collab_sync.py 工具位置：`/Users/zhangkun/WorkBuddy/程序化/量化程序/collab_sync.py`
 
 ## 投资系统当前定位
 
@@ -85,6 +94,61 @@ V6-A 退出机制：
 - 工程层会生成 SELL。
 - SELL 只能卖 V6 managed state 记录的仓位。
 - 当前没有开启无人值守自动 SELL。
+
+## 全投资体系早间监控（morning_brief）
+
+`morning_brief.py` 是覆盖整个投资体系的早间运营入口，**不只是 V6**。
+
+功能覆盖：
+- [V6] reconciliation 状态 + managed positions + 换仓信号
+- [价值投资] 全资产口径持仓权重监控（超目标/建仓中/正常 三色告警）
+- [估值] 事件日历（events_calendar.json）
+- [Radar] K线额度状态
+- [待办] AI_COLLAB_LOG.md 近 14 天待办
+
+持仓数据源（全资产口径 ~38.9万USD）：
+```text
+/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html
+```
+用户定期手动更新此文件，morning_brief 自动解析 `<section id="targets">` 表格。
+包含：富途账户 + 腾讯RSU + A股 + 港股通。
+
+运行：
+```bash
+python3 morning_brief.py              # 生成 + 发送邮件至 quanyi_zk@163.com
+python3 morning_brief.py --no-email   # 只打印，不发邮件
+```
+
+launchd 任务（北京时间 09:00 自动运行）：
+```text
+com.dingcle.morning-brief
+plist: /Users/zhangkun/Library/LaunchAgents/com.dingcle.morning-brief.plist
+```
+
+事件日历维护：
+```text
+/Users/zhangkun/WorkBuddy/程序化/量化程序/events_calendar.json
+```
+
+## V6 近期优先级（2026-05-12 确认）
+
+以下 4 件事是当前 V6 迭代重点（Claude + GPT 共同确认）：
+
+1. **换手率测算**：replay 历史信号，统计年化换手率和单次换仓成本
+2. **Pilot 第 2 周末执行质量复盘**（2026-05-26）：评估滑点/舍入/成交时间
+3. **K 线额度恢复后启动 V6-B standalone 回测**（~2026-06-01）：AMD/MU/TSM/ANET/WDC/INTC
+4. **文档化 4 个自动化前置场景**（见下节）
+
+## V6 自动化前置场景（待文档化）
+
+在 V6 进入无人值守自动执行之前，以下 4 个异常场景需要明确处理方案：
+
+| 场景 | 触发条件 | 期望行为 |
+|------|---------|---------|
+| OpenD 挂了 | guarded runner 无法连接 | 跳过执行，告警邮件，次日重试 |
+| 订单未成交 | 下单后 N 分钟无成交 | 发告警，等待人工处理，不重复下单 |
+| 账户余额不足 | 可用资金不够覆盖买入 | 仅执行有资金覆盖的 SELL，BUY 跳过并告警 |
+| 滑点超预期 | 成交价偏离信号价 > X% | reconciliation 标记，日报显示，不自动回撤 |
 
 ## 常用 V6 命令
 
