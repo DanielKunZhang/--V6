@@ -245,3 +245,25 @@ V6-A 出现以下情况时，进入降权或暂停讨论：
 - Strategy Lab 不直接下单。
 - 所有 challenger 都必须先 research，再 replay，再 preview，再 sim。
 - 任何替换主策略的决定必须有报告证据。
+
+## 当前实现规格
+
+以下规格由 GPT 负责定义，由 Claude 负责实现。它们不改变 V6-A engine，不授权自动实盘交易，只为 pilot 复盘和自动化前置评估提供证据。
+
+| 规格 | 目的 | 状态 |
+| --- | --- | --- |
+| `v6_strategy_lab/specs/2026-05-12_v6a_turnover_cost_audit_spec.md` | 测算 V6-A 历史换手率、交易成本敏感性、小账户可行性 | 待 Claude 实现 |
+| `v6_strategy_lab/specs/2026-05-12_v6a_pilot_review_dashboard_spec.md` | 为 2026-05-26 两周 pilot 复盘建立证据看板 | 待 Claude 实现 |
+| `v6_strategy_lab/specs/2026-05-12_v6_automation_preflight_gate_spec.md` | 把 OpenD 宕机、未成交、资金不足、滑点超标、kill switch 做成自动化前置 gate | 待 Claude 实现 |
+
+实现顺序：
+
+1. `turnover_cost_audit`
+2. `pilot_review_dashboard`
+3. `automation_preflight_gate`
+
+验收口径：
+
+- 先出报告，再讨论是否进入小额自动化。
+- 自动化 gate 实现完成前，不开启无人值守真实交易。
+- 所有实现结果必须通过 `AI_COLLAB_EXPORT_FOR_GPT.md` 回传给 GPT review。
