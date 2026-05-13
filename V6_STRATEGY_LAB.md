@@ -290,6 +290,33 @@ backtest_results/v6_reporting/
      - 但当前仍不能直接切生产 baseline，必须先补 `turnover/cost re-audit`、`parameter neighbor robustness`、`formal side-by-side review board`
    - 首轮解读报告：`v6_strategy_lab/reports/2026-05-13_v6a_parameter_challenger_first_read_v1.md`
 
+14. `2026-05-13 Weekly Review -> Research Backlog` 闭环已落地
+   - 周复盘脚本：`python3 v6_weekly_review_board.py --tag <tag>`
+   - 输出：
+     - `backtest_results/v6_weekly_review/`
+     - `backtest_results/v6_research_backlog/`
+   - 作用：
+     - 把 `latest daily/weekly report`、`pilot review`、`preflight gate`、`V6-A challenger`、`V6-B track search` 收敛成一张 `Weekly Review Board`
+     - 再把结果映射成 rule-based `research backlog`
+   - 关键原则：
+     - 复盘结果反哺的是 `研究队列`，不是直接改生产系统
+     - 这样 V6 才是 `有治理的自进化`，不是 `情绪驱动的乱调参`
+
+15. `2026-05-13 V6-A balanced challenger` 首个稳健性检查已完成
+   - 脚本：`python3 v6a_parameter_neighbor_robustness.py --label 'mom60 top3 trend150 mkt200 dd10 rebal10' --tag 20260513_balanced_v1`
+   - 结果：`stable_neighbor_cluster`
+   - 读数：
+     - 邻域样本 `11`
+     - `11 / 11` 都属于 `promising_core_upgrade` 或 `full_sample_upgrade`
+     - 邻域中位数：`AnnΔ +7.6% / SharpeΔ +0.21 / MaxDD 改善 3.7%`
+   - 当前解释：
+     - `mom60 top3 trend150 mkt200 rebal10` 不是孤立尖峰
+     - 它比 raw-best 的 `top2` 候选更符合当前 `V6 = relatively safer annual return enhancer` 的定位
+   - 阶段结论：
+     - `balanced V6-A challenger` 应进入正式 follow-up
+     - 下一步优先做 `turnover/cost re-audit` 和 `baseline vs challenger side-by-side board`
+   - 汇总报告：`v6_strategy_lab/reports/2026-05-13_v6_weekly_review_and_v6a_robustness_v1.md`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。

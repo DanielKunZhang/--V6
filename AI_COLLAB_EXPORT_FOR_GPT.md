@@ -106,6 +106,10 @@
 - [2026-05-13] [发现] `V6-A parameter challenger` 首轮 432 组 bounded search 显示：当前 baseline `mom60 top3 trend100 mkt150 rebal5` 很可能不是最优 anchor。最强 raw challenger 为 `mom120 top2 trend150 mkt200 rebal10`（`AnnR +37.5% / MaxDD -26.3% / Sharpe 1.09 / OOS Sharpe 1.35`）；更平衡的 core-upgrade 候选为 `mom60 top3 trend150 mkt200 rebal10`（`AnnR +34.0% / MaxDD -22.3% / Sharpe 1.11 / OOS Sharpe 1.52`）。
 - [2026-05-13] [决策] 当前不建议直接切换生产 baseline，但建议正式提升 `V6-A parameter challenger` 为 active formal research，并要求后续补三项证据：`turnover/cost re-audit`、`parameter neighbor robustness`、`baseline vs challenger side-by-side review board`。
 - [2026-05-13] [决策] V6 复盘机制正式固定为四层：`Daily Ops Review`、`Weekly System Review`、`Monthly Research Review`、`Quarterly Governance Review`。当前阶段最重要的新工件是 `Weekly V6 Review Board`，因为 V6 是中低频系统，不应照搬高频团队的日内密集复盘模式。
+- [2026-05-13] [代码] 已新增 `v6_weekly_review_board.py`，能把 `latest reporting + pilot review + preflight + V6-A challenger + V6-B track search` 自动生成 `Weekly V6 Review Board`，并同步输出 rule-based `research backlog`。
+- [2026-05-13] [发现] 第一版自动 backlog 共 6 项，优先级收敛为：`P0 execution_quality`、`P1 v6a_parameter_challenger`、`P1 v6b_core_reaccel`、`P2 turnaround secondary`、`P2 bottleneck freeze`、`P3 review cadence`。复盘结果已经开始真正反哺研究队列，而不是停留在口头反思。
+- [2026-05-13] [代码] 已新增 `v6a_parameter_neighbor_robustness.py`，用于对 `V6-A` 候选做本地参数邻域稳健性检查。
+- [2026-05-13] [发现] `balanced V6-A challenger`（`mom60 top3 trend150 mkt200 dd10 rebal10`）的首个 robustness verdict 为 `stable_neighbor_cluster`：邻域样本 `11`，其中 `11/11` 仍属于 upgrade 候选，中位数约 `AnnΔ +7.6% / SharpeΔ +0.21 / MaxDD 改善 3.7%`。这说明它不是孤立尖峰，当前比 raw-best `top2` 候选更符合 `V6 = relatively safer annual return enhancer` 的主叙事。
 - [今日Claude补] [待办] V6-B下一步研究方向：(1)~2026-06-01 Futu额度刷新后，以AMD/MU/TSM/ANET为优先跑point-in-time真实回测；(2)研究V6-B是否需要独立Engine参数（更高dd_stop容忍周期波动，更长mom_days把握半导体大周期）；(3)COHR等历史较短的标的等更多数据再评估；(4)V6-B不能直接复用V6-A Engine参数是本次最重要的工程发现，需要在V6-B设计文档中明确。
 - [今日Claude补] [决策] 新建 `Options Overlay Lab` 独立实验仓规则卡，明确其边界：不属于 V6、不属于 Radar 默认彩票期权 SOP、不属于 Wheel；当前仅允许小额手动 `call debit spread`，用于 `10-20` 笔真实小样本验证后再讨论半自动/自动化。
 - [今日Claude补] [文件] 已生成 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md`，作为后续所有小额期权实验仓的统一更新入口。

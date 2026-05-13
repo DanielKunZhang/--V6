@@ -131,3 +131,7 @@
 - [2026-05-13] [发现] `V6-A parameter challenger` 首轮 bounded search（432 组）结果显著：当前 baseline 并非明显最优 anchor。最强 raw challenger 为 `mom120 top2 trend150 mkt200 rebal10`（`AnnR +37.5% / MaxDD -26.3% / Sharpe 1.09`）；更平衡的 core-upgrade 候选为 `mom60 top3 trend150 mkt200 rebal10`（`AnnR +34.0% / MaxDD -22.3% / Sharpe 1.11 / OOS Sharpe 1.52`）。
 - [2026-05-13] [决策] 当前不直接切换生产 baseline，但正式提升 `V6-A parameter challenger` 为 active formal research。下一步必须补：`turnover/cost re-audit`、`parameter neighbor robustness`、`baseline vs challenger side-by-side review board`。
 - [2026-05-13] [决策] V6 复盘节奏固定为：`Daily Ops Review`、`Weekly System Review`、`Monthly Research Review`、`Quarterly Governance Review`。在当前阶段，最重要的新工件是 `Weekly V6 Review Board`，不需要照搬高频团队的日复盘密度。
+- [2026-05-13] [代码] 新增 `v6_weekly_review_board.py`，把 `latest reporting + pilot review + preflight + V6-A challenger + V6-B track search` 自动汇总成 `Weekly V6 Review Board`，并同步输出 `research backlog`。
+- [2026-05-13] [发现] 第一版自动 backlog 共 6 项，优先级合理收敛为：`P0 execution_quality`、`P1 v6a_parameter_challenger`、`P1 v6b_core_reaccel`、`P2 turnaround`、`P2 bottleneck freeze`、`P3 review cadence`。这意味着 V6 复盘已经开始真正反哺研究队列。
+- [2026-05-13] [代码] 新增 `v6a_parameter_neighbor_robustness.py`，对 `V6-A` 候选做本地参数邻域稳健性检查。
+- [2026-05-13] [发现] `balanced V6-A challenger`（`mom60 top3 trend150 mkt200 dd10 rebal10`）首个 robustness 结论为 `stable_neighbor_cluster`：邻域 `11/11` 都仍是 upgrade 候选，中位数约 `AnnΔ +7.6% / SharpeΔ +0.21 / MaxDD 改善 3.7%`。当前应优先推进这一条，而不是急于切去更激进的 raw-best `top2` 候选。
