@@ -115,3 +115,5 @@
   - `/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/v6b_rough_test/v6b_rough_test_lookahead_recheck_20260513.md`
   - `/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/v6b_rough_test/v6b_rough_test_entry_date_respected_20260513_strict.md`
 - [今日GPT补] [决策] 当前结论锁定：lookahead rough test 只回答“这类票与 V6-A 参数是否大致兼容”；entry-date-respected probe 只回答“去掉提前激活后结论收缩多少”；正式 V6-B 历史验证仍必须等待 `synthetic historical Radar generator` 或足够长的 point-in-time snapshot 序列。
+- [2026-05-13] [决策] `CRDO` 不再走 `Lane B` 近月 `220/230 call spread`；正式迁移到 `Lane A: Long-Dated Call`，核心原因是用户更看重 `更大右尾 + 更简单执行`，不再优先 capped upside 的短期结构。
+- [2026-05-13] [文件] 新建 `/Users/zhangkun/Desktop/AI个人投资公司/Radar_Lane_A_长期Call执行卡_v1.md`，将 `CRDO` 设为首个 `Lane A` 活跃案例；原 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md` 中的 `CRDO` 已归档为 `Archived -> Lane A`。

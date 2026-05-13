@@ -88,6 +88,8 @@
 - [今日GPT补] [代码] `v6b_rough_test_yahoo.py` 已新增 `--respect-entry-dates` 与 `--cache-only`，可用当前 seed 的 `entry_date` 屏蔽 V6-B 名单在 2026-05-10 之前的提前激活；未入 seed 的 watch extra 在该模式下默认不活跃。
 - [今日GPT补] [发现] apples-to-apples 对照：lookahead 版本（`v6b_rough_test_lookahead_recheck_20260513.md`）下，`V6-B core_reaccel` 为 `AnnR +27.6% / Sharpe 0.79 / MaxDD -34.4%`；entry-date 版本（`v6b_rough_test_entry_date_respected_20260513_strict.md`）下，同池压缩为 `AnnR +9.0% / Sharpe 0.57 / MaxDD -9.3%`。`V6-AB blended` 在 entry-date 模式下与 `V6-A baseline` 基本一致，说明先前 uplift 主要来自过早激活名单。
 - [今日GPT补] [决策] 当前结论锁定：lookahead rough test 只回答“这类票与 V6-A 参数是否大致兼容”；entry-date-respected probe 只回答“去掉提前激活后结论收缩多少”；正式 V6-B 历史验证仍必须等待 `synthetic historical Radar generator` 或足够长的 point-in-time snapshot 序列。
+- [2026-05-13] [决策] `CRDO` 不再走 `Lane B` 近月 `220/230 call spread`；正式迁移到 `Lane A: Long-Dated Call`，原因是用户更看重 `更大右尾 + 更简单执行`，不再优先 capped upside 的短期结构。
+- [2026-05-13] [文件] 新建 `/Users/zhangkun/Desktop/AI个人投资公司/Radar_Lane_A_长期Call执行卡_v1.md`，将 `CRDO` 设为首个 `Lane A` 活跃案例；原 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md` 中的 `CRDO` 已归档为 `Archived -> Lane A`。
 - [今日Claude补] [待办] V6-B下一步研究方向：(1)~2026-06-01 Futu额度刷新后，以AMD/MU/TSM/ANET为优先跑point-in-time真实回测；(2)研究V6-B是否需要独立Engine参数（更高dd_stop容忍周期波动，更长mom_days把握半导体大周期）；(3)COHR等历史较短的标的等更多数据再评估；(4)V6-B不能直接复用V6-A Engine参数是本次最重要的工程发现，需要在V6-B设计文档中明确。
 - [今日Claude补] [决策] 新建 `Options Overlay Lab` 独立实验仓规则卡，明确其边界：不属于 V6、不属于 Radar 默认彩票期权 SOP、不属于 Wheel；当前仅允许小额手动 `call debit spread`，用于 `10-20` 笔真实小样本验证后再讨论半自动/自动化。
 - [今日Claude补] [文件] 已生成 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md`，作为后续所有小额期权实验仓的统一更新入口。
