@@ -1,0 +1,35 @@
+{
+  "policy_id": "V6A_CORE_REPLAY_BRIDGE_V1",
+  "status": "research_only",
+  "description": "Bridge the V6-A core baseline/challenger lane into deterministic replay artifacts that can later be wired into a guarded runner.",
+  "sample": {
+    "start": "2018-01-01",
+    "end": "2026-05-12",
+    "reference": "Metrics remain evaluated on the same 2018-2025 research window used by the balanced challenger board, while latest replay rows extend to 2026-05-12 for signal freshness."
+  },
+  "candidates": [
+    {
+      "candidate_id": "V6A_CORE_BASELINE",
+      "label": "v6a_core_baseline",
+      "source": "baseline_policy"
+    },
+    {
+      "candidate_id": "V6A_CORE_BALANCED",
+      "label": "mom60 top3 trend150 mkt200 dd10 rebal10",
+      "source": "balanced_challenger_review_board",
+      "params": {
+        "top_n": 3,
+        "mom_days": 60,
+        "trend_ma": 150,
+        "market_ma": 200,
+        "dd_stop": 0.1,
+        "rebal": 10
+      }
+    }
+  ],
+  "boundaries": [
+    "Does not change the current V6-A ATTACK live pilot.",
+    "Does not grant live-trading approval by itself.",
+    "Exists to create runner-compatible parity artifacts for the V6-A core lane."
+  ]
+}

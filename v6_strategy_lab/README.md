@@ -18,8 +18,9 @@ V6 Strategy Lab 是 V6 的研究与治理层，不是执行层。
 ## 当前主线
 
 - 主策略：`V6-A ATTACK_EQUAL_REPLAY`
-- 当前阶段：`SIMULATE_TESTING`
-- 当前目标：先完成模拟盘执行闭环，再进入小额真实 pilot 讨论
+- 当前阶段：`REAL_MANUAL_PILOT_ACTIVE`
+- 当前目标：先把 `$5,000` real manual pilot 的执行质量证据做满，再进入自动化层级与资金扩容讨论；并同步完善 V6-B 动态 universe 与 Allocator 治理层
+- 并行升级线：`V6-A core replay bridge` 已建立，用于 `v6a_core_baseline` 与 `balanced challenger` 的 runner-compatible parity 验证；该桥接层不改动当前 live ATTACK pilot
 
 ## 推荐流程
 

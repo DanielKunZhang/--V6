@@ -33,6 +33,7 @@ V6 的收益目标必须分层管理，不能把 `35%+` 年化当作默认预期
 - 策略属性：美股高进攻动量 + 防守切换
 - 当前阶段：`REAL_MANUAL_PILOT_ACTIVE`
 - 当前定位：`$5,000` V6-A 已进入 Futu real manual pilot；managed state、reconciliation、日报、preflight gate 已打通，但 kill switch 仍保持 `ON`，无人值守自动实盘仍未开启
+- 并行升级线：`V6-A core engine baseline/challenger` 已通过 `replay bridge` 独立产出 runner-compatible artifacts；当前与 legacy `ATTACK_EQUAL_REPLAY` live sleeve 分轨管理，避免把参数升级和执行验证混成一步
 
 ## 双 AI 对照锁定的后续优化方向（2026-05-12）
 
@@ -340,6 +341,28 @@ backtest_results/v6_reporting/
      - `balanced challenger implementation / replay / preview`
      - `baseline promotion discussion`
    - 评审板：`v6_strategy_lab/reports/2026-05-13_v6a_baseline_vs_balanced_review_board_v1.md`
+
+18. `2026-05-13 V6-A core replay bridge` 已落地
+   - 脚本：`python3 v6a_core_deterministic_replay.py --config v6_strategy_lab/configs/v6a_core_replay_bridge_v1.json --tag 20260513_bridge_v1`
+   - 新工件：
+     - `v6a_core_deterministic_replay.py`
+     - `v6_strategy_lab/configs/v6a_core_replay_bridge_v1.json`
+     - `backtest_results/v6a_core_replay/v6a_core_replay_manifest_20260513_bridge_v1.json`
+     - `v6_strategy_lab/reports/2026-05-13_v6a_core_replay_bridge_board_v1.md`
+   - 关键结论：
+     - `balanced challenger` 在 replay bridge 中仍领先：`Full Ann +34.0% / MaxDD -22.3% / Sharpe 1.11 / OOS Ann +44.2% / OOS Sharpe 1.30`
+     - baseline 为：`Full Ann +26.2% / MaxDD -26.1% / Sharpe 0.88 / OOS Ann +36.8% / OOS Sharpe 1.13`
+     - 换手 / 再平衡继续改善：`5.25x / 25.2次年` 对比 baseline `9.01x / 50.4次年`
+   - release-style 读数：
+     - `balanced challenger` 通过当前数值 gate，且 `rolling_3y_worst_ann = +0.78%`
+     - baseline 仍卡在 `rolling_3y_worst_ann = -4.73%`
+     - 两者当前都不能宣称 preview-ready，因为 bridge 最新 replay row 仅到 `2026-05-05`，`signal freshness` 仍需补
+   - 当前解释：
+     - 这一步确认 `balanced challenger > current V6-B` 是近端 production-path 优先级上的正确判断
+     - 也确认 `ATTACK_EQUAL_REPLAY live pilot` 与 `V6-A core baseline/challenger` 不是同一条线，后续必须分轨治理
+   - 下一步：
+     - `execution-quality evidence` 继续按原 ATTACK live sleeve 跑到 `2026-05-26`
+     - `balanced challenger` 进入 `single-candidate runner wiring / dry-run preview` 队列
 
 今天不能做的事：
 
