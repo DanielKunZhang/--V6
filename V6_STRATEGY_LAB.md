@@ -106,6 +106,8 @@ V6-B 的正式定义应为：
 - `V6-B` 不是整个 V6 Universe；它是动态候选池来源层，负责给 V6 Universe 提供新标的。
 - Radar 是 `Research Input`，不是前台持仓层；V6-B 是动态 universe generator，最终下单仍由 V6 Engine + Allocator 决定。
 - 任何新增 universe 都要证明增量收益，而不是因为最近涨过就加入历史回测。
+- `V6-A` 是 baseline core pool，但不是永久冻结名单；它应低频维护，像指数委员会一样慢变，而不是像 Radar 一样快变。
+- `V6-B` 不应演化成“一主题一策略”；正确方向是 `统一 engine skeleton + 少数 track-aware execution profiles`。
 
 ## V6 调整治理：自动 vs 人工
 
@@ -115,7 +117,7 @@ V6 不追求“全自动频繁自我优化”。当前采用 `定期提醒 + 人
 | --- | --- | --- | --- |
 | `V6 Engine Core` | 半年或重大 regime 变化才考虑 | 不自动调整 | 只允许用 challenger 报告晋级，不能因短期表现差直接改生产规则 |
 | `V6 Engine Parameters` | 季度复核 | 半自动研究，人工确认 | 可测试动量窗口、趋势窗口、再平衡频率、回撤阈值、top N，但必须走 OOS / rolling / black swan / robustness |
-| `V6-A Core Pool` | 季度/半年低频复核 | 半自动扫描，人工确认 | 类似指数成分股维护；mega 也会变，但不能月度追热点替换 |
+| `V6-A Core Pool` | 季度/半年低频复核 | 半自动扫描，人工确认 | 类似指数成分股维护；`慢变`，不是 `永远不变`；只允许因结构性失效、长期领导权转移或治理/可交易性问题调整 |
 | `V6-B Dynamic Pool` | 周度观察，月度正式更新 | 半自动生成候选，人工确认入池 | 用 Radar、漏网复盘、主题扩散、预期上修和动量确认生成 point-in-time universe |
 | `Allocator` | 周/月复核 | 先规则化，后续可半自动 | 作为风控层决定 Core / Dynamic / Defensive 权重，不是收益追逐器 |
 
@@ -243,6 +245,13 @@ backtest_results/v6_reporting/
      - `V6-B` 的历史候选池重建链路已经打通
      - 但在当前 engine 下，`V6-B` 仍未证明应获得 allocator 权重
      - 下一步必须分轨做独立 engine 设计，不应继续优先研究 mixed pool
+
+10. `2026-05-13 V6 engine profiles / core governance` 口径已补充
+   - `V6-A` 不应理解为“永远不变的池子”，而应理解为 `低频维护的核心池`
+   - 允许调整的原因只包括：`结构性失效`、`长期领导权转移`、`治理/可交易性变化`
+   - `V6-B` 不应变成“一主题一策略”的集合；正确落地方向是 `动态资源池 + track-aware execution profiles`
+   - profile policy：`v6_strategy_lab/configs/v6_engine_profile_selector_v1.json`
+   - 治理说明：`v6_strategy_lab/reports/2026-05-13_v6_engine_profiles_and_core_pool_governance_v1.md`
 
 今天不能做的事：
 

@@ -1,0 +1,96 @@
+{
+  "policy_id": "V6_ENGINE_PROFILE_SELECTOR_V1",
+  "status": "research_only",
+  "description": "Unified V6 engine skeleton with a small number of track-aware execution profiles. Not a separate strategy-per-theme framework.",
+  "engine_skeleton": {
+    "shared_principles": [
+      "risk_on_risk_off",
+      "relative_strength_ranking",
+      "top_n_selection",
+      "drawdown_brake",
+      "defensive_switch",
+      "allocator_governance"
+    ],
+    "forbidden": [
+      "theme_specific_one_off_strategy",
+      "unbounded_parameter_sprawl",
+      "manual_backfit_to_recent_winners"
+    ]
+  },
+  "profile_selector_rule": {
+    "selector_source": "universe_track",
+    "fallback_profile": "v6a_core_baseline",
+    "max_active_profiles_in_production_before_full_validation": 2
+  },
+  "profiles": {
+    "v6a_core_baseline": {
+      "applies_to": [
+        "V6-A core pool"
+      ],
+      "objective": "Stable baseline engine for mega-cap core leaders.",
+      "parameters": {
+        "top_n": 3,
+        "asset_mom_days": 60,
+        "trend_ma_days": 100,
+        "market_ma_days": 150,
+        "dd_stop": 0.10,
+        "rebal_days": 5
+      },
+      "boundary": "Default production profile unless challenger evidence promotes another profile."
+    },
+    "core_reaccel_profile": {
+      "applies_to": [
+        "core_reacceleration"
+      ],
+      "objective": "Handle first-order leaders with stronger cyclicality and larger intermediate swings.",
+      "parameters_research_range": {
+        "top_n": [2, 3],
+        "asset_mom_days": [60, 120],
+        "trend_ma_days": [100, 120],
+        "market_ma_days": [150, 180],
+        "dd_stop": [0.10, 0.12, 0.15],
+        "rebal_days": [5, 10]
+      },
+      "status": "research_only"
+    },
+    "bottleneck_diffusion_profile": {
+      "applies_to": [
+        "bottleneck_diffusion"
+      ],
+      "objective": "Handle second-order diffusion names that can surge in trend windows but suffer deeper air pockets.",
+      "parameters_research_range": {
+        "top_n": [2, 3],
+        "asset_mom_days": [60, 120],
+        "trend_ma_days": [100, 150],
+        "market_ma_days": [150, 200],
+        "dd_stop": [0.10, 0.15, 0.18],
+        "rebal_days": [5, 10, 21]
+      },
+      "extra_research_focus": [
+        "regime_filter",
+        "exposure_cap",
+        "theme_exhaustion_exit"
+      ],
+      "status": "research_only"
+    },
+    "turnaround_momentum_profile": {
+      "applies_to": [
+        "turnaround_momentum"
+      ],
+      "objective": "Handle lower-quality but high-momentum turnarounds with tighter admission and stricter exits.",
+      "parameters_research_range": {
+        "top_n": [1, 2],
+        "asset_mom_days": [60, 120],
+        "trend_ma_days": [100, 150],
+        "market_ma_days": [150, 200],
+        "dd_stop": [0.08, 0.10, 0.12],
+        "rebal_days": [5, 10]
+      },
+      "extra_research_focus": [
+        "quality_gate",
+        "position_cap"
+      ],
+      "status": "research_only"
+    }
+  }
+}
