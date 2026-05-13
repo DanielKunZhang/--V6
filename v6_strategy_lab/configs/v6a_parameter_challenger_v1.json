@@ -1,0 +1,18 @@
+{
+  "policy_id": "V6A_PARAMETER_CHALLENGER_V1",
+  "status": "research_only",
+  "description": "Bounded V6-A base-only parameter challenger around the existing baseline. Objective is safer annual-return lift, not unconstrained optimization.",
+  "parameter_research_range": {
+    "top_n": [2, 3, 4],
+    "asset_mom_days": [60, 120],
+    "trend_ma_days": [100, 120, 150],
+    "market_ma_days": [150, 180, 200],
+    "dd_stop": [0.08, 0.10, 0.12, 0.15],
+    "rebal_days": [5, 10]
+  },
+  "gate_rules": {
+    "safe_upgrade_max_dd_worse": 0.05,
+    "require_non_negative_sharpe_delta": true,
+    "prefer_non_negative_oos_sharpe_delta": true
+  }
+}

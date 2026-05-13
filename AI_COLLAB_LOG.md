@@ -127,3 +127,7 @@
 - [2026-05-13] [发现] attribution-corrected profile search 结论：`core_reaccel overlay` 仍有真实增量（最佳约 `Ann +5.3% / Sharpe +0.08 / MaxDD 改善 1.7%` 相对 same-parameter base-only）；`turnaround overlay` 只有小幅真实增量（约 `Ann +1.3% / Sharpe +0.03`，且轨道稀疏）；`bottleneck overlay` 未通过归因检验（约 `Ann +0.4% / Sharpe -0.13 / MaxDD 恶化 6.5%`）。
 - [2026-05-13] [决策] V6-B 当前优先级重排为：`core_reaccel formal challenger > turnaround secondary research > bottleneck freeze`。`bottleneck` 暂不具备 allocator 讨论资格。
 - [2026-05-13] [待办] 新增独立工作流：`V6-A parameter challenger`。原因是 same-parameter 对照表明，部分 uplift 来自 V6-A base-only 的 engine profile 改善，而不是动态轨道本身。
+- [2026-05-13] [代码] 新增 `H007_v6a_parameter_challenger` 假设、`v6a_parameter_challenger_v1.json` 配置与 `v6a_parameter_challenger.py` 搜索脚本；同时新增 `V6 review mechanism v1` 与 `v6_weekly_review_board_template.md`，正式把复盘机制和 V6-A 参数 challenger 工件化。
+- [2026-05-13] [发现] `V6-A parameter challenger` 首轮 bounded search（432 组）结果显著：当前 baseline 并非明显最优 anchor。最强 raw challenger 为 `mom120 top2 trend150 mkt200 rebal10`（`AnnR +37.5% / MaxDD -26.3% / Sharpe 1.09`）；更平衡的 core-upgrade 候选为 `mom60 top3 trend150 mkt200 rebal10`（`AnnR +34.0% / MaxDD -22.3% / Sharpe 1.11 / OOS Sharpe 1.52`）。
+- [2026-05-13] [决策] 当前不直接切换生产 baseline，但正式提升 `V6-A parameter challenger` 为 active formal research。下一步必须补：`turnover/cost re-audit`、`parameter neighbor robustness`、`baseline vs challenger side-by-side review board`。
+- [2026-05-13] [决策] V6 复盘节奏固定为：`Daily Ops Review`、`Weekly System Review`、`Monthly Research Review`、`Quarterly Governance Review`。在当前阶段，最重要的新工件是 `Weekly V6 Review Board`，不需要照搬高频团队的日复盘密度。

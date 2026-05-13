@@ -263,8 +263,32 @@ backtest_results/v6_reporting/
    - 战略含义：
      - `V6-B` 当前不是“多条轨都能直接带来提升”，而是 `只有少数轨道在同参数对照下仍能证明真实增量`。
      - 下一步优先级应调整为：`core_reaccel formal challenger > turnaround secondary research > bottleneck freeze`。
-     - 另外需要单独开 `V6-A parameter challenger`，因为同参数对照显示，一部分 uplift 其实来自 base-only 的 engine profile 变化。
+   - 另外需要单独开 `V6-A parameter challenger`，因为同参数对照显示，一部分 uplift 其实来自 base-only 的 engine profile 变化。
    - 归因报告：`v6_strategy_lab/reports/2026-05-13_v6b_profile_search_attribution_v1.md`
+
+12. `2026-05-13 V6 review mechanism v1` 已固定
+   - 结论：V6 应该有正式复盘机制，但不应照搬高频团队的日内密集复盘。
+   - 正确节奏：
+     - `Daily Ops Review`：抓执行 / 运维异常，不做策略判断
+     - `Weekly System Review`：作为主复盘单位
+     - `Monthly Research Review`：把现象转成 challenger / freeze / promote 队列
+     - `Quarterly Governance Review`：决定 baseline 是否维持 / 升级 / 降权 / 暂停
+   - 当前最该正式补上的工件是：`Weekly V6 Review Board`
+   - 说明文档：`v6_strategy_lab/reports/2026-05-13_v6_review_mechanism_v1.md`
+
+13. `2026-05-13 V6-A parameter challenger v1` 已启动
+   - 假设：`v6_strategy_lab/hypotheses/H007_v6a_parameter_challenger.md`
+   - 配置：`v6_strategy_lab/configs/v6a_parameter_challenger_v1.json`
+   - 脚本：`python3 v6a_parameter_challenger.py --manifest v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/manifest.json --start 2018-01-01 --end 2025-12-31 --tag 20260513_v1`
+   - 首轮结果：
+     - 当前 baseline `mom60 top3 trend100 mkt150 rebal5` 并非明显最优 anchor
+     - `mom120 top2 trend150 mkt200 rebal10` 给出最强 raw challenger：`AnnR +37.5% / MaxDD -26.3% / Sharpe 1.09`
+     - `mom60 top3 trend150 mkt200 rebal10` 给出更平衡的 core-upgrade 读数：`AnnR +34.0% / MaxDD -22.3% / Sharpe 1.11 / OOS Sharpe 1.52`
+   - 当前解释：
+     - `V6-A` 本身存在真实参数升级空间
+     - 这意味着后续收益增强不一定只能来自 `V6-B`
+     - 但当前仍不能直接切生产 baseline，必须先补 `turnover/cost re-audit`、`parameter neighbor robustness`、`formal side-by-side review board`
+   - 首轮解读报告：`v6_strategy_lab/reports/2026-05-13_v6a_parameter_challenger_first_read_v1.md`
 
 今天不能做的事：
 
