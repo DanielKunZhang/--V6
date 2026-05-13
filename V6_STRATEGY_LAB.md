@@ -31,8 +31,8 @@ V6 的收益目标必须分层管理，不能把 `35%+` 年化当作默认预期
 
 - 主策略：`V6-A ATTACK_EQUAL_REPLAY`
 - 策略属性：美股高进攻动量 + 防守切换
-- 当前阶段：`SIM_FIRST_CLOSED_LOOP_ACTIVE`
-- 当前定位：`$5,000` V6-A 已在 Futu SIM 通过 managed state 完成下单、成交、reconciliation 闭环；真实小额 pilot 仍需人工明确发起
+- 当前阶段：`REAL_MANUAL_PILOT_ACTIVE`
+- 当前定位：`$5,000` V6-A 已进入 Futu real manual pilot；managed state、reconciliation、日报、preflight gate 已打通，但 kill switch 仍保持 `ON`，无人值守自动实盘仍未开启
 
 ## 双 AI 对照锁定的后续优化方向（2026-05-12）
 
@@ -62,10 +62,33 @@ V6 的长期方向不是把一个策略越改越复杂，而是像小型量化�
 V6 Engine = 固定底层规则：经典动量 / 相对强弱 / risk-on risk-off / 波动率控制 / 回撤刹车
 V6 Universe = 总候选池：V6-A Core Pool + V6-B Dynamic Pool + Defensive Pool
 V6-A Core Pool = 低频更新的 AI mega / mega tech 核心池，当前 baseline
-V6-B Dynamic Pool = 动态候选池生成与验证机制，目标是成为 V6 universe refresh engine
+V6-B Dynamic Pool = 动态主题扩散 / 候选池生成与验证机制；AI-capex 只是第一代训练主题，不是策略本体
 V6-C Pool = ETF / 行业 / 全市场 meta-rotation，未来 challenger
 Allocator = 风控与资金分配器，根据近期表现、相关性、回撤、regime 分配 Core / Dynamic / Defensive 权重
 ```
+
+### V6-B 的正式定义边界
+
+`V6-B` 不能定义成 `AI-capex 策略`。如果把 V6-B 与单一主题绑定，那么主题周期结束时，策略本身也会一起失效。
+
+V6-B 的正式定义应为：
+
+- `V6-B = 动态主题扩散 + 瓶颈发现 + 候选池生成机制`
+- `AI-capex` 只是第一代训练样本，因为它扩散路径清晰、瓶颈明确、验证数据多
+- V6-B 的长期有效性来自 `Theme 可迁移 + Universe 可更新 + Engine 固定`
+
+长期结构拆成三层：
+
+- `Theme Layer`：识别当前最强的资本开支、利润扩散或供需错配主线。AI 只是其中一个阶段性主题。
+- `Universe Layer`：针对该主线构建 point-in-time 候选池，靠扩散地图、瓶颈识别、预期上修、流动性和反证清晰度筛票。
+- `Engine Layer`：不负责找主题，只负责在候选池里做入场、减仓、退出、risk-on/risk-off 和仓位控制。
+
+设计纪律：
+
+- 不追求“永远有效的主题”，而追求“可迁移的 alpha 框架”。
+- 未来即使 AI 主线降温，V6-B 也应能够迁移到新的强主线，例如电力升级、工业自动化、网络安全、医疗设备、周期重估或资源瓶颈。
+- 允许替换 `Theme Layer`，但不应频繁改写 `Engine Layer`。
+- 任何人都不应把当前 `AI-capex` 的研究样本误解为 V6-B 的永久定义。
 
 研发路线：
 
@@ -192,6 +215,21 @@ backtest_results/v6_reporting/
    - 轨道 B：`synthetic historical Radar generator`，只用于历史回测，不能把今天才发现的赢家机械回填到过去。
    - 这两条轨道必须分开记账、分开报告、分开结论。
 
+8. `2026-05-13 方法论校正` 已补做
+   - 结论：Claude 那次 `ROUGH_TEST_NO_POINT_IN_TIME` 不应被理解成 `V6-B 历史表现测试`，只能降级为 `engine compatibility probe`。
+   - 原因：脚本内部虽然在每个历史时点按当期动量选 `top_n`，但上游 Universe 仍然用了 `2026-05-10` 才定义好的候选族群覆盖更早历史。
+   - 校正测试：
+     - lookahead 版本：`python3 v6b_rough_test_yahoo.py --cache-only --tag lookahead_recheck_20260513`
+     - entry-date 版本：`python3 v6b_rough_test_yahoo.py --respect-entry-dates --cache-only --tag entry_date_respected_20260513_strict`
+   - apples-to-apples 对照结果：
+     - `V6-B core_reaccel` lookahead：`AnnR +27.6% / Sharpe 0.79 / MaxDD -34.4%`
+     - 同池 `entry_date respected`：`AnnR +9.0% / Sharpe 0.57 / MaxDD -9.3%`
+     - `V6-AB blended` 在 `entry_date respected` 模式下与 `V6-A baseline` 基本一致，说明先前 uplift 主要来自过早激活 V6-B 名单，而不是已验证的历史 alpha。
+   - 正确解释：
+     - `lookahead rough test`：只回答“这类高波动周期 / 扩散链票与 V6-A 参数是否大致相容”
+     - `entry-date respected probe`：只回答“如果不提前激活名单，之前 rough test 的结论会被压缩多少”
+     - 两者都不能替代正式 `synthetic historical Radar generator`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。
@@ -285,15 +323,25 @@ V6-A 出现以下情况时，进入降权或暂停讨论：
 - 所有 challenger 都必须先 research，再 replay，再 preview，再 sim。
 - 任何替换主策略的决定必须有报告证据。
 
+## 当前治理工件
+
+以下工件是当前 V6 进入“可治理状态”的正式证据层：
+
+| 工件 | 作用 | 当前结论 |
+| --- | --- | --- |
+| `v6_strategy_lab/reports/2026-05-13_v6a_execution_quality_board.md` | 统一 V6-A pilot 执行质量看板 | 当前继续 manual pilot |
+| `v6_strategy_lab/reports/2026-05-13_v6b_supply_chain_diffusion_map_v1.md` | 固化 V6-B 当前训练主题与扩散地图 | AI-capex 作为第一代训练主题 |
+| `v6_strategy_lab/reports/2026-05-13_v6_allocator_governance_spec_v1.md` | 固化 Allocator 的职责、边界和晋级口径 | 当前 V6-B 仍是 0% 权重 |
+
 ## 当前实现规格
 
 以下规格由 GPT 负责定义，由 Claude 负责实现。它们不改变 V6-A engine，不授权自动实盘交易，只为 pilot 复盘和自动化前置评估提供证据。
 
 | 规格 | 目的 | 状态 |
 | --- | --- | --- |
-| `v6_strategy_lab/specs/2026-05-12_v6a_turnover_cost_audit_spec.md` | 测算 V6-A 历史换手率、交易成本敏感性、小账户可行性 | 待 Claude 实现 |
-| `v6_strategy_lab/specs/2026-05-12_v6a_pilot_review_dashboard_spec.md` | 为 2026-05-26 两周 pilot 复盘建立证据看板 | 待 Claude 实现 |
-| `v6_strategy_lab/specs/2026-05-12_v6_automation_preflight_gate_spec.md` | 把 OpenD 宕机、未成交、资金不足、滑点超标、kill switch 做成自动化前置 gate | 待 Claude 实现 |
+| `v6_strategy_lab/specs/2026-05-12_v6a_turnover_cost_audit_spec.md` | 测算 V6-A 历史换手率、交易成本敏感性、小账户可行性 | 已实现并出报告 |
+| `v6_strategy_lab/specs/2026-05-12_v6a_pilot_review_dashboard_spec.md` | 为 2026-05-26 两周 pilot 复盘建立证据看板 | 已实现并出报告 |
+| `v6_strategy_lab/specs/2026-05-12_v6_automation_preflight_gate_spec.md` | 把 OpenD 宕机、未成交、资金不足、滑点超标、kill switch 做成自动化前置 gate | 已实现并出报告 |
 
 实现顺序：
 
