@@ -253,6 +253,19 @@ backtest_results/v6_reporting/
    - profile policy：`v6_strategy_lab/configs/v6_engine_profile_selector_v1.json`
    - 治理说明：`v6_strategy_lab/reports/2026-05-13_v6_engine_profiles_and_core_pool_governance_v1.md`
 
+11. `2026-05-13 profile attribution 校正` 已补做
+   - 新增 same-parameter control：`overlay` 不再只和当前 baseline 比，还必须和 `同参数 V6-A base-only` 对照。
+   - 原因：否则会把 `参数优化` 误判成 `V6-B 真正贡献`。
+   - 结果：
+     - `core_reaccel overlay` 通过 attribution 检验，最佳组合约为 `mom60 / top2 / trend120 / rebal10`，相对 same-parameter base-only 仍有 `Ann +5.3% / Sharpe +0.08 / MaxDD 改善 1.7%` 的真实增量，属于第一条有资格继续推进的 V6-B challenger。
+     - `turnaround overlay` 有小幅真实增量，但轨道过 sparse（`23/96` 历史快照非空，平均 `0.24` 只/快照），只能作为低优先级 secondary challenger。
+     - `bottleneck overlay` 未通过 attribution 检验：看似比 baseline 强，但相对 same-parameter base-only 仅 `Ann +0.4%`，同时 `Sharpe -0.13`、`MaxDD 恶化 6.5%`，说明当前收益主要来自参数变化，不是 bottleneck 轨道本身。
+   - 战略含义：
+     - `V6-B` 当前不是“多条轨都能直接带来提升”，而是 `只有少数轨道在同参数对照下仍能证明真实增量`。
+     - 下一步优先级应调整为：`core_reaccel formal challenger > turnaround secondary research > bottleneck freeze`。
+     - 另外需要单独开 `V6-A parameter challenger`，因为同参数对照显示，一部分 uplift 其实来自 base-only 的 engine profile 变化。
+   - 归因报告：`v6_strategy_lab/reports/2026-05-13_v6b_profile_search_attribution_v1.md`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。

@@ -123,3 +123,7 @@
 - [2026-05-13] [发现] 第一版 clean synthetic historical 结果：`V6-A baseline` 仍最强（`AnnR +26.2% / MaxDD -26.1% / Sharpe 0.88`）；`V6-B core_track` 最好为 `AnnR +19.4% / Sharpe 0.57 / MaxDD -39.6%`；`bottleneck_track` 为 `AnnR +16.2% / Sharpe 0.49 / MaxDD -42.1%`；`blended_tracks` 最差（`AnnR +10.5% / Sharpe 0.32 / MaxDD -38.8%`）。结论：V6-B 历史候选池重建链路已打通，但在当前 engine 下仍不足以获得 allocator 权重。
 - [2026-05-13] [决策] `V6-A` 的正确定义补充：它不是“永远不变的池子”，而是 `低频维护的核心池`。允许调整，但只允许因 `结构性失效`、`长期领导权转移`、`治理/可交易性变化` 这三类原因调整，不允许因短期涨跌或聊天群热度频繁换票。
 - [2026-05-13] [决策] `V6-B` 的正确落地方向补充：不把它做成“一主题一策略”的集合，而是做成 `动态资源池生成器`；执行层维持统一 V6 skeleton，只允许少数 `track-aware execution profiles`。首批 profile 口径已写入 `v6_engine_profile_selector_v1.json` 与 `2026-05-13_v6_engine_profiles_and_core_pool_governance_v1.md`。
+- [2026-05-13] [代码] 升级 `v6b_profile_parameter_search.py`：新增 same-parameter `V6-A base-only` 对照，搜索结果同时输出 `vs baseline` 和 `track increment` 两套归因，不再把参数优化误判成 V6-B 的真实贡献。
+- [2026-05-13] [发现] attribution-corrected profile search 结论：`core_reaccel overlay` 仍有真实增量（最佳约 `Ann +5.3% / Sharpe +0.08 / MaxDD 改善 1.7%` 相对 same-parameter base-only）；`turnaround overlay` 只有小幅真实增量（约 `Ann +1.3% / Sharpe +0.03`，且轨道稀疏）；`bottleneck overlay` 未通过归因检验（约 `Ann +0.4% / Sharpe -0.13 / MaxDD 恶化 6.5%`）。
+- [2026-05-13] [决策] V6-B 当前优先级重排为：`core_reaccel formal challenger > turnaround secondary research > bottleneck freeze`。`bottleneck` 暂不具备 allocator 讨论资格。
+- [2026-05-13] [待办] 新增独立工作流：`V6-A parameter challenger`。原因是 same-parameter 对照表明，部分 uplift 来自 V6-A base-only 的 engine profile 改善，而不是动态轨道本身。

@@ -96,6 +96,12 @@
 - [2026-05-13] [发现] 第一版 clean synthetic historical 结果：`V6-A baseline` 仍最强（`AnnR +26.2% / MaxDD -26.1% / Sharpe 0.88`）；`V6-B core_track` 最好为 `AnnR +19.4% / Sharpe 0.57 / MaxDD -39.6%`；`bottleneck_track` 为 `AnnR +16.2% / Sharpe 0.49 / MaxDD -42.1%`；`blended_tracks` 最差（`AnnR +10.5% / Sharpe 0.32 / MaxDD -38.8%`）。结论：V6-B 历史候选池重建链路已打通，但在当前 engine 下仍不足以获得 allocator 权重。
 - [2026-05-13] [决策] `V6-A` 的正确定义补充：它不是“永远不变的池子”，而是 `低频维护的核心池`。允许调整，但只允许因 `结构性失效`、`长期领导权转移`、`治理/可交易性变化` 这三类原因调整，不允许因短期涨跌或聊天群热度频繁换票。
 - [2026-05-13] [决策] `V6-B` 的正确落地方向补充：不把它做成“一主题一策略”的集合，而是做成 `动态资源池生成器`；执行层维持统一 V6 skeleton，只允许少数 `track-aware execution profiles`。首批 profile 口径已写入 `v6_engine_profile_selector_v1.json` 与 `2026-05-13_v6_engine_profiles_and_core_pool_governance_v1.md`。
+- [2026-05-13] [代码] `v6b_profile_parameter_search.py` 已升级为 attribution-corrected 版本：每个 overlay 结果除了和当前 `V6-A baseline` 比，还会强制和 `same-parameter V6-A base-only control` 比，避免把参数优化误判成 V6-B 真实贡献。
+- [2026-05-13] [发现] attribution-corrected 结果重排了三条轨道的优先级：
+  - `core_reaccel overlay`：最佳组合约 `mom60 / top2 / trend120 / rebal10`，相对 same-parameter base-only 仍有 `Ann +5.3% / Sharpe +0.08 / MaxDD 改善 1.7%`，属于第一条真正通过归因检验的 V6-B challenger。
+  - `turnaround overlay`：仍有小幅真实增量（约 `Ann +1.3% / Sharpe +0.03`），但轨道很 sparse（`23/96` 非空快照，平均 `0.24` 只/快照），只能算 secondary challenger。
+  - `bottleneck overlay`：未通过归因检验。看似比 baseline 强，但相对 same-parameter base-only 仅 `Ann +0.4%`，同时 `Sharpe -0.13`、`MaxDD 恶化 6.5%`，说明当前 uplift 主要来自参数变化，不是 bottleneck 轨道本身。
+- [2026-05-13] [决策] V6-B 当前策略性结论修正为：`core_reaccel formal challenger > turnaround secondary research > bottleneck freeze`。另外应单独启动 `V6-A parameter challenger`，因为 same-parameter 对照显示一部分 uplift 其实来自 base-only 的 engine profile 改善。
 - [今日Claude补] [待办] V6-B下一步研究方向：(1)~2026-06-01 Futu额度刷新后，以AMD/MU/TSM/ANET为优先跑point-in-time真实回测；(2)研究V6-B是否需要独立Engine参数（更高dd_stop容忍周期波动，更长mom_days把握半导体大周期）；(3)COHR等历史较短的标的等更多数据再评估；(4)V6-B不能直接复用V6-A Engine参数是本次最重要的工程发现，需要在V6-B设计文档中明确。
 - [今日Claude补] [决策] 新建 `Options Overlay Lab` 独立实验仓规则卡，明确其边界：不属于 V6、不属于 Radar 默认彩票期权 SOP、不属于 Wheel；当前仅允许小额手动 `call debit spread`，用于 `10-20` 笔真实小样本验证后再讨论半自动/自动化。
 - [今日Claude补] [文件] 已生成 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md`，作为后续所有小额期权实验仓的统一更新入口。
