@@ -364,6 +364,19 @@ backtest_results/v6_reporting/
      - `execution-quality evidence` 继续按原 ATTACK live sleeve 跑到 `2026-05-26`
      - `balanced challenger` 进入 `single-candidate runner wiring / dry-run preview` 队列
 
+19. `2026-05-13 V6-A balanced challenger cutover SOP` 已固定
+   - 文档：`v6_strategy_lab/reports/2026-05-13_v6a_balanced_challenger_cutover_sop_v1.md`
+   - 最早决策日：`2026-05-26`
+   - 关键定义：
+     - `2026-05-26` 是 `cutover decision day`，不是默认切换日
+     - 允许输出只有三种：`GO_CUTOVER`、`HOLD_OLD_BASELINE`、`PAUSE_V6`
+   - 当前原则：
+     - 旧 `ATTACK_EQUAL_REPLAY` pilot 通过，是必要条件，但不是充分条件
+     - `balanced challenger` 还必须同时通过 `fresh replay + single-candidate preview + migration diff clarity`
+   - 这份 SOP 的作用：
+     - 到期时不靠主观感觉拍板
+     - 把评估、切换、切后观察和 rollback 条件写死
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。
