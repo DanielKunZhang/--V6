@@ -135,3 +135,6 @@
 - [2026-05-13] [发现] 第一版自动 backlog 共 6 项，优先级合理收敛为：`P0 execution_quality`、`P1 v6a_parameter_challenger`、`P1 v6b_core_reaccel`、`P2 turnaround`、`P2 bottleneck freeze`、`P3 review cadence`。这意味着 V6 复盘已经开始真正反哺研究队列。
 - [2026-05-13] [代码] 新增 `v6a_parameter_neighbor_robustness.py`，对 `V6-A` 候选做本地参数邻域稳健性检查。
 - [2026-05-13] [发现] `balanced V6-A challenger`（`mom60 top3 trend150 mkt200 dd10 rebal10`）首个 robustness 结论为 `stable_neighbor_cluster`：邻域 `11/11` 都仍是 upgrade 候选，中位数约 `AnnΔ +7.6% / SharpeΔ +0.21 / MaxDD 改善 3.7%`。当前应优先推进这一条，而不是急于切去更激进的 raw-best `top2` 候选。
+- [2026-05-13] [代码] 新增 `v6a_challenger_turnover_cost_reaudit.py`，在同一 clean sample 上对 `V6-A baseline` 和 `balanced challenger` 做 turnover / cost re-audit。
+- [2026-05-13] [发现] `balanced challenger` 成本复核通过：25bps 下 baseline 约 `Ann +23.5% / OOS Sharpe 1.20 / annual turnover 8.88`，candidate 约 `Ann +32.4% / OOS Sharpe 1.47 / annual turnover 5.00`。这说明 challenger 不只是无摩擦下更优，成本后仍然显著领先。
+- [2026-05-13] [决策] 已生成 `baseline vs balanced challenger review board`。当前结论：`balanced challenger wins the pre-production research board`，但不直接替换 live baseline；应先进入 `implementation / replay / preview` 队列，再讨论生产基线切换。

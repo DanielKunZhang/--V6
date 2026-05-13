@@ -317,6 +317,30 @@ backtest_results/v6_reporting/
      - 下一步优先做 `turnover/cost re-audit` 和 `baseline vs challenger side-by-side board`
    - 汇总报告：`v6_strategy_lab/reports/2026-05-13_v6_weekly_review_and_v6a_robustness_v1.md`
 
+16. `2026-05-13 balanced challenger turnover/cost re-audit` 已完成
+   - 脚本：`python3 v6a_challenger_turnover_cost_reaudit.py --candidate-label 'mom60 top3 trend150 mkt200 dd10 rebal10' --tag 20260513_balanced_v2`
+   - 结论：`candidate_survives_costs`
+   - 关键读数：
+     - baseline `25bps`：`Ann +23.5% / OOS Sharpe 1.20 / annual turnover 8.88`
+     - candidate `25bps`：`Ann +32.4% / OOS Sharpe 1.47 / annual turnover 5.00`
+   - 当前解释：
+     - `balanced challenger` 不只是无摩擦下更优
+     - 它在成本后仍明显优于 baseline，且换手更低、再平衡频率更低
+   - 报告：`backtest_results/v6a_challenger_turnover_cost_reaudit/v6a_challenger_turnover_cost_reaudit_20260513_balanced_v2.md`
+
+17. `2026-05-13 baseline vs balanced challenger review board` 已补做
+   - 当前结论：`balanced challenger wins the pre-production research board`
+   - 但不立刻替换 live baseline；应先进入 `implementation / replay / preview` 队列
+   - 原因：
+     - 当前证据仍来自 research engine
+     - live sleeve 仍处于 manual pilot
+     - 不能把执行验证和 baseline 替换混成一步
+   - 当前 V6-A 优先级修正为：
+     - `execution-quality evidence`
+     - `balanced challenger implementation / replay / preview`
+     - `baseline promotion discussion`
+   - 评审板：`v6_strategy_lab/reports/2026-05-13_v6a_baseline_vs_balanced_review_board_v1.md`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。

@@ -15,6 +15,8 @@ REPORTING_DIR = ROOT / "backtest_results" / "v6_reporting"
 PILOT_REVIEW_DIR = ROOT / "backtest_results" / "v6a_pilot_review"
 PREFLIGHT_LATEST = ROOT / "backtest_results" / "v6_automation_preflight" / "latest.json"
 V6A_PARAM_DIR = ROOT / "backtest_results" / "v6a_parameter_challenger"
+V6A_ROBUSTNESS_DIR = ROOT / "backtest_results" / "v6a_parameter_robustness"
+V6A_REAUDIT_DIR = ROOT / "backtest_results" / "v6a_challenger_turnover_cost_reaudit"
 V6B_PROFILE_DIR = ROOT / "backtest_results" / "v6b_profile_search"
 OUT_DIR = ROOT / "backtest_results" / "v6_weekly_review"
 BACKLOG_DIR = ROOT / "backtest_results" / "v6_research_backlog"
@@ -115,6 +117,35 @@ def load_latest_v6a_parameter_candidate() -> dict[str, Any]:
     }
 
 
+def load_latest_v6a_robustness() -> dict[str, Any]:
+    json_path = latest_file(V6A_ROBUSTNESS_DIR, "*.json")
+    payload = read_json(json_path) if json_path else {}
+    if not payload:
+        return {}
+    return {
+        "path": rel(json_path),
+        "target_label": str(payload.get("target_label") or ""),
+        "verdict": str(payload.get("verdict") or ""),
+        "neighbor_count": int(payload.get("neighbor_count") or 0),
+        "good_neighbor_count": int(payload.get("good_neighbor_count") or 0),
+    }
+
+
+def load_latest_v6a_reaudit() -> dict[str, Any]:
+    json_path = latest_file(V6A_REAUDIT_DIR, "*.json")
+    payload = read_json(json_path) if json_path else {}
+    if not payload:
+        return {}
+    candidate = payload.get("candidate_params", {}) if isinstance(payload.get("candidate_params"), dict) else {}
+    return {
+        "path": rel(json_path),
+        "candidate_label": str(candidate.get("label") or ""),
+        "verdict": str(payload.get("preliminary_verdict") or ""),
+        "baseline_summary": payload.get("baseline_summary", {}),
+        "candidate_summary": payload.get("candidate_summary", {}),
+    }
+
+
 def load_latest_v6b_track_signal(profile_prefix: str) -> dict[str, Any]:
     csv_path = latest_file(V6B_PROFILE_DIR, f"{profile_prefix}_*.csv")
     if csv_path is None:
@@ -146,6 +177,8 @@ def build_backlog(
     pilot_review: dict[str, Any],
     preflight: dict[str, Any],
     v6a_candidate: dict[str, Any],
+    v6a_robustness: dict[str, Any],
+    v6a_reaudit: dict[str, Any],
     core_signal: dict[str, Any],
     turnaround_signal: dict[str, Any],
     bottleneck_signal: dict[str, Any],
@@ -187,18 +220,41 @@ def build_backlog(
         )
     preferred_v6a = (v6a_candidate or {}).get("balanced_top") or (v6a_candidate or {}).get("raw_top") or {}
     if preferred_v6a and preferred_v6a.get("gate") == "promising_core_upgrade":
+        robustness_ok = (
+            v6a_robustness
+            and v6a_robustness.get("target_label") == preferred_v6a["label"]
+            and v6a_robustness.get("verdict") == "stable_neighbor_cluster"
+        )
+        reaudit_ok = (
+            v6a_reaudit
+            and v6a_reaudit.get("candidate_label") == preferred_v6a["label"]
+            and v6a_reaudit.get("verdict") == "candidate_survives_costs"
+        )
         items.append(
             {
                 "priority": "P1",
                 "lane": "v6a_parameter_challenger",
-                "title": "Run formal follow-up on the leading balanced V6-A challenger",
+                "title": (
+                    "Build formal side-by-side board for the balanced V6-A challenger"
+                    if robustness_ok and reaudit_ok
+                    else "Run formal follow-up on the leading balanced V6-A challenger"
+                ),
                 "reason": (
                     f"Preferred candidate {preferred_v6a['label']} shows "
                     f"Ann +{preferred_v6a['ann_delta'] * 100:.1f}%, "
                     f"Sharpe +{preferred_v6a['sharpe_delta']:.2f}, "
                     f"dd change {preferred_v6a['dd_worse'] * 100:+.1f}% vs baseline."
+                    + (
+                        f" Robustness={v6a_robustness.get('verdict')}, cost_reaudit={v6a_reaudit.get('verdict')}."
+                        if robustness_ok and reaudit_ok
+                        else ""
+                    )
                 ),
-                "next_step": "Do parameter-neighbor robustness and turnover/cost re-audit before any baseline promotion discussion.",
+                "next_step": (
+                    "Prepare baseline vs balanced challenger review board and implementation/replay plan."
+                    if robustness_ok and reaudit_ok
+                    else "Do parameter-neighbor robustness and turnover/cost re-audit before any baseline promotion discussion."
+                ),
             }
         )
     if core_signal and core_signal.get("track_gate") == "real_track_alpha":
@@ -301,6 +357,14 @@ def render_board_md(board: dict[str, Any]) -> str:
                 if board["v6a_candidate"] else "- V6-A balanced candidate: `n/a`"
             ),
             (
+                f"- V6-A robustness: `{board['v6a_robustness']['verdict']}` on `{board['v6a_robustness']['target_label']}`"
+                if board["v6a_robustness"] else "- V6-A robustness: `n/a`"
+            ),
+            (
+                f"- V6-A cost re-audit: `{board['v6a_reaudit']['verdict']}` on `{board['v6a_reaudit']['candidate_label']}`"
+                if board["v6a_reaudit"] else "- V6-A cost re-audit: `n/a`"
+            ),
+            (
                 f"- V6-B core_reaccel: `{board['v6b_core']['track_gate']}` on `{board['v6b_core']['label']}`"
                 if board["v6b_core"] else "- V6-B core_reaccel: `n/a`"
             ),
@@ -357,6 +421,8 @@ def main() -> None:
 
     position_summary = summarize_v6a_positions(pilot_review)
     v6a_candidate = load_latest_v6a_parameter_candidate()
+    v6a_robustness = load_latest_v6a_robustness()
+    v6a_reaudit = load_latest_v6a_reaudit()
     core_signal = load_latest_v6b_track_signal("core_reaccel_profile")
     bottleneck_signal = load_latest_v6b_track_signal("bottleneck_diffusion_profile")
     turnaround_signal = load_latest_v6b_track_signal("turnaround_momentum_profile")
@@ -366,6 +432,8 @@ def main() -> None:
         pilot_review=pilot_review,
         preflight=preflight,
         v6a_candidate=v6a_candidate,
+        v6a_robustness=v6a_robustness,
+        v6a_reaudit=v6a_reaudit,
         core_signal=core_signal,
         turnaround_signal=turnaround_signal,
         bottleneck_signal=bottleneck_signal,
@@ -393,6 +461,8 @@ def main() -> None:
         "preflight_blockers": [str(item) for item in preflight.get("blockers", [])],
         "top_positions": position_summary.get("top3", []),
         "v6a_candidate": v6a_candidate,
+        "v6a_robustness": v6a_robustness,
+        "v6a_reaudit": v6a_reaudit,
         "v6b_core": core_signal,
         "v6b_turnaround": turnaround_signal,
         "v6b_bottleneck": bottleneck_signal,
