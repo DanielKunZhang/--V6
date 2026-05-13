@@ -1,0 +1,1949 @@
+{
+  "generated_at": "2026-05-13T20:32:15",
+  "policy_id": "V6B_SYNTHETIC_HISTORICAL_RADAR_GENERATOR_V1",
+  "snapshot_count": 96,
+  "coverage": [
+    {
+      "ticker": "US.AMD",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.AMKR",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.ANET",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.INTC",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.MU",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.QQQ",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.SMH",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.SPY",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.TSM",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    },
+    {
+      "ticker": "US.WDC",
+      "first_date": "2018-01-02",
+      "last_date": "2025-12-31",
+      "bars": 2011
+    }
+  ],
+  "snapshots": [
+    {
+      "as_of": "2018-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-01-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-02-28_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-03-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-03-29_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-04-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-05-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-05-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-06-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-06-29_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-07-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-08-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-08-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-09-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-09-28_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-10-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-11-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-11-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2018-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2018-12-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-01-31_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-02-28_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2019-03-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-03-29_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2019-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-04-30_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-05-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-05-31_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-06-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-06-28_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-07-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-08-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-08-30_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-09-30_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2019-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-10-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2019-11-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-11-29_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2019-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2019-12-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2020-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-01-31_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2020-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-02-28_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-03-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-03-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-04-30_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-05-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-05-29_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2020-06-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-06-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-07-31_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-08-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-08-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-09-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-10-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-10-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-11-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-11-30_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2020-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2020-12-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-01-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-01-29_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2021-02-26",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-02-26_v6b_universe.json",
+      "entry_count": 6,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2021-03-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-03-31_v6b_universe.json",
+      "entry_count": 6,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2021-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-04-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-05-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-05-28_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-06-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-06-30_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-07-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-07-30_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-08-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-08-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-09-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-10-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-10-29_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-11-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-11-30_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2021-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2021-12-31_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-01-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-02-28_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-03-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-03-31_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-04-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-04-29_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-05-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-05-31_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-06-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-06-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-07-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-07-29_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-08-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-08-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-09-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-10-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-11-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-11-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2022-12-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2022-12-30_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2023-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-01-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2023-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-02-28_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2023-03-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-03-31_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-04-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-04-28_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-05-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-05-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-06-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-06-30_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2023-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-07-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-08-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-08-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-09-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-09-29_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-10-31_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2023-11-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-11-30_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2023-12-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2023-12-29_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.MU",
+          "US.WDC"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2024-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-01-31_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2024-02-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-02-29_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 1,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-03-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-03-28_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.AMD",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-04-30_v6b_universe.json",
+      "entry_count": 3,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-05-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-05-31_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-06-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-06-28_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.AMKR",
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-07-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-08-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-08-30_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-09-30_v6b_universe.json",
+      "entry_count": 1,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-10-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-11-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-11-29_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2024-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2024-12-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-01-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-01-31_v6b_universe.json",
+      "entry_count": 2,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-02-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-02-28_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-03-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-03-31_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-04-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-04-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-05-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-05-30_v6b_universe.json",
+      "entry_count": 0,
+      "track_counts": {
+        "core_reacceleration": 0,
+        "bottleneck_diffusion": 0,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [],
+        "bottleneck_diffusion": [],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-06-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-06-30_v6b_universe.json",
+      "entry_count": 4,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-07-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-07-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 2,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.ANET",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU"
+        ],
+        "turnaround_momentum": []
+      }
+    },
+    {
+      "as_of": "2025-08-29",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-08-29_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.AMKR",
+          "US.MU"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2025-09-30",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-09-30_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.ANET",
+          "US.TSM",
+          "US.AMD"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2025-10-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-10-31_v6b_universe.json",
+      "entry_count": 7,
+      "track_counts": {
+        "core_reacceleration": 3,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM",
+          "US.ANET"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2025-11-28",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-11-28_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 1,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 1
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.WDC",
+          "US.MU",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": [
+          "US.INTC"
+        ]
+      }
+    },
+    {
+      "as_of": "2025-12-31",
+      "path": "v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/snapshots/2025-12-31_v6b_universe.json",
+      "entry_count": 5,
+      "track_counts": {
+        "core_reacceleration": 2,
+        "bottleneck_diffusion": 3,
+        "turnaround_momentum": 0
+      },
+      "selected": {
+        "core_reacceleration": [
+          "US.AMD",
+          "US.TSM"
+        ],
+        "bottleneck_diffusion": [
+          "US.MU",
+          "US.WDC",
+          "US.AMKR"
+        ],
+        "turnaround_momentum": []
+      }
+    }
+  ],
+  "selection_summary": [
+    {
+      "ticker": "US.AMKR",
+      "track": "bottleneck_diffusion",
+      "first_selected": "2019-02-28",
+      "last_selected": "2025-12-31",
+      "selected_months": 32
+    },
+    {
+      "ticker": "US.MU",
+      "track": "bottleneck_diffusion",
+      "first_selected": "2019-07-31",
+      "last_selected": "2025-12-31",
+      "selected_months": 36
+    },
+    {
+      "ticker": "US.WDC",
+      "track": "bottleneck_diffusion",
+      "first_selected": "2019-07-31",
+      "last_selected": "2025-12-31",
+      "selected_months": 29
+    },
+    {
+      "ticker": "US.AMD",
+      "track": "core_reacceleration",
+      "first_selected": "2019-01-31",
+      "last_selected": "2025-12-31",
+      "selected_months": 38
+    },
+    {
+      "ticker": "US.ANET",
+      "track": "core_reacceleration",
+      "first_selected": "2019-02-28",
+      "last_selected": "2025-10-31",
+      "selected_months": 45
+    },
+    {
+      "ticker": "US.TSM",
+      "track": "core_reacceleration",
+      "first_selected": "2019-04-30",
+      "last_selected": "2025-12-31",
+      "selected_months": 42
+    },
+    {
+      "ticker": "US.INTC",
+      "track": "turnaround_momentum",
+      "first_selected": "2019-02-28",
+      "last_selected": "2025-11-28",
+      "selected_months": 23
+    }
+  ]
+}

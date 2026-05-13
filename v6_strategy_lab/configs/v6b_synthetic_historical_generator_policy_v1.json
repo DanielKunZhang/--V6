@@ -1,0 +1,80 @@
+{
+  "policy_id": "V6B_SYNTHETIC_HISTORICAL_RADAR_GENERATOR_V1",
+  "status": "research_only",
+  "description": "Monthly synthetic Radar universe reconstruction from contemporaneous price signals only. Research-only, no live trading approval.",
+  "selection_frequency": "monthly_last_trading_day",
+  "common": {
+    "min_history_days": 252,
+    "trend_ma_days": 200,
+    "high_lookback_days": 252
+  },
+  "benchmarks": {
+    "market": "US.QQQ",
+    "broad": "US.SPY",
+    "semi": "US.SMH"
+  },
+  "tracks": {
+    "core_reacceleration": {
+      "members": [
+        "US.AMD",
+        "US.ANET",
+        "US.TSM"
+      ],
+      "max_names": 3,
+      "filters": {
+        "min_mom20": -0.12,
+        "min_mom60": 0.0,
+        "min_mom120": 0.0,
+        "min_rel60_vs_qqq": -0.05,
+        "max_drawdown_from_high": -0.30
+      },
+      "score_weights": {
+        "mom20": 0.2,
+        "mom60": 0.35,
+        "mom120": 0.25,
+        "rel60_vs_qqq": 0.2
+      }
+    },
+    "bottleneck_diffusion": {
+      "members": [
+        "US.MU",
+        "US.WDC",
+        "US.AMKR"
+      ],
+      "max_names": 3,
+      "filters": {
+        "min_mom20": -0.15,
+        "min_mom60": -0.02,
+        "min_mom120": 0.0,
+        "min_rel60_vs_smh": -0.1,
+        "max_drawdown_from_high": -0.35
+      },
+      "score_weights": {
+        "mom20": 0.15,
+        "mom60": 0.25,
+        "mom120": 0.3,
+        "rel60_vs_smh": 0.2,
+        "rel120_vs_qqq": 0.1
+      }
+    },
+    "turnaround_momentum": {
+      "members": [
+        "US.INTC"
+      ],
+      "max_names": 1,
+      "filters": {
+        "min_mom20": -0.15,
+        "min_mom60": 0.05,
+        "min_mom120": 0.1,
+        "min_rel60_vs_qqq": -0.05,
+        "max_drawdown_from_high": -0.4
+      },
+      "score_weights": {
+        "mom20": 0.2,
+        "mom60": 0.3,
+        "mom120": 0.3,
+        "rel60_vs_qqq": 0.2
+      }
+    }
+  }
+}

@@ -226,9 +226,23 @@ backtest_results/v6_reporting/
      - 同池 `entry_date respected`：`AnnR +9.0% / Sharpe 0.57 / MaxDD -9.3%`
      - `V6-AB blended` 在 `entry_date respected` 模式下与 `V6-A baseline` 基本一致，说明先前 uplift 主要来自过早激活 V6-B 名单，而不是已验证的历史 alpha。
    - 正确解释：
-     - `lookahead rough test`：只回答“这类高波动周期 / 扩散链票与 V6-A 参数是否大致相容”
-     - `entry-date respected probe`：只回答“如果不提前激活名单，之前 rough test 的结论会被压缩多少”
-     - 两者都不能替代正式 `synthetic historical Radar generator`
+   - `lookahead rough test`：只回答“这类高波动周期 / 扩散链票与 V6-A 参数是否大致相容”
+   - `entry-date respected probe`：只回答“如果不提前激活名单，之前 rough test 的结论会被压缩多少”
+   - 两者都不能替代正式 `synthetic historical Radar generator`
+
+9. `2026-05-13 synthetic historical Radar generator v1` 已落地
+   - policy：`v6_strategy_lab/configs/v6b_synthetic_historical_generator_policy_v1.json`
+   - generator：`python3 v6b_synthetic_historical_radar_generator.py --start 2018-01-01 --end 2025-12-31 --tag 20260513_v1c_2025e`
+   - challenger：`python3 v6b_synthetic_historical_challenger.py --manifest v6_strategy_lab/configs/synthetic_history/20260513_v1c_2025e/manifest.json --start 2018-01-01 --end 2025-12-31 --tag 20260513_v1c_2025e`
+   - 结果摘要：
+     - `V6-A baseline` 仍最强：`AnnR +26.2% / MaxDD -26.1% / Sharpe 0.88`
+     - `V6-B core_track` 最好也只有：`AnnR +19.4% / MaxDD -39.6% / Sharpe 0.57`
+     - `V6-B bottleneck_track`：`AnnR +16.2% / MaxDD -42.1% / Sharpe 0.49`
+     - `V6-B blended_tracks` 最差：`AnnR +10.5% / MaxDD -38.8% / Sharpe 0.32`
+   - 当前解释：
+     - `V6-B` 的历史候选池重建链路已经打通
+     - 但在当前 engine 下，`V6-B` 仍未证明应获得 allocator 权重
+     - 下一步必须分轨做独立 engine 设计，不应继续优先研究 mixed pool
 
 今天不能做的事：
 

@@ -90,6 +90,10 @@
 - [今日GPT补] [决策] 当前结论锁定：lookahead rough test 只回答“这类票与 V6-A 参数是否大致兼容”；entry-date-respected probe 只回答“去掉提前激活后结论收缩多少”；正式 V6-B 历史验证仍必须等待 `synthetic historical Radar generator` 或足够长的 point-in-time snapshot 序列。
 - [2026-05-13] [决策] `CRDO` 不再走 `Lane B` 近月 `220/230 call spread`；正式迁移到 `Lane A: Long-Dated Call`，原因是用户更看重 `更大右尾 + 更简单执行`，不再优先 capped upside 的短期结构。
 - [2026-05-13] [文件] 新建 `/Users/zhangkun/Desktop/AI个人投资公司/Radar_Lane_A_长期Call执行卡_v1.md`，将 `CRDO` 设为首个 `Lane A` 活跃案例；原 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md` 中的 `CRDO` 已归档为 `Archived -> Lane A`。
+- [2026-05-13] [决策] `Lane A` 标准进一步澄清：拆分为 `预算版 Lane A ($800-$1,500)` 与 `耐拿版 Lane A ($3,000-$6,000)` 两档；`delta` 不再写死一个区间，而是按 `右尾表达 / 平衡表达 / 替代正股式表达` 三档选择。`CRDO` 当前因 `2027-01` 高 delta call 成本约 `$3k-$6k`，在现预算下只允许做预算版或直接放弃。
+- [2026-05-13] [代码] 已落地 `synthetic historical Radar generator v1`：新增 `v6b_synthetic_historical.py`、`v6b_synthetic_historical_radar_generator.py`、`v6b_synthetic_historical_challenger.py` 与 policy `v6b_synthetic_historical_generator_policy_v1.json`，可月度生成 `point-in-time` 历史快照并驱动动态 challenger。
+- [2026-05-13] [发现] 正式 clean sample 先锁在 `2018-01-01 ~ 2025-12-31`，原因是 `SMH` benchmark 在此区间内覆盖完整；`2026-01` 后半导体 benchmark 缓存不完整，暂不作为正式对外口径。
+- [2026-05-13] [发现] 第一版 clean synthetic historical 结果：`V6-A baseline` 仍最强（`AnnR +26.2% / MaxDD -26.1% / Sharpe 0.88`）；`V6-B core_track` 最好为 `AnnR +19.4% / Sharpe 0.57 / MaxDD -39.6%`；`bottleneck_track` 为 `AnnR +16.2% / Sharpe 0.49 / MaxDD -42.1%`；`blended_tracks` 最差（`AnnR +10.5% / Sharpe 0.32 / MaxDD -38.8%`）。结论：V6-B 历史候选池重建链路已打通，但在当前 engine 下仍不足以获得 allocator 权重。
 - [今日Claude补] [待办] V6-B下一步研究方向：(1)~2026-06-01 Futu额度刷新后，以AMD/MU/TSM/ANET为优先跑point-in-time真实回测；(2)研究V6-B是否需要独立Engine参数（更高dd_stop容忍周期波动，更长mom_days把握半导体大周期）；(3)COHR等历史较短的标的等更多数据再评估；(4)V6-B不能直接复用V6-A Engine参数是本次最重要的工程发现，需要在V6-B设计文档中明确。
 - [今日Claude补] [决策] 新建 `Options Overlay Lab` 独立实验仓规则卡，明确其边界：不属于 V6、不属于 Radar 默认彩票期权 SOP、不属于 Wheel；当前仅允许小额手动 `call debit spread`，用于 `10-20` 笔真实小样本验证后再讨论半自动/自动化。
 - [今日Claude补] [文件] 已生成 `/Users/zhangkun/Desktop/AI个人投资公司/Options_Overlay_Lab_最小测试规则卡_v1.md`，作为后续所有小额期权实验仓的统一更新入口。
