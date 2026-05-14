@@ -129,6 +129,24 @@
       "reason": "Optics peer used to prevent single-name blind spot."
     },
     {
+      "ticker": "US.MRVL",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "core_reacceleration",
+      "registry_status": "watch_add_candidate",
+      "data_status": "needs_price_cache",
+      "source": "2026-05-14 user short-term network: strong MRVL move flagged by external trader",
+      "reason": "AI data-center silicon / networking candidate; should be reviewed as a potential V6-B re-acceleration name after price cache refresh."
+    },
+    {
+      "ticker": "US.NOK",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "optics_and_interconnect",
+      "registry_status": "observe_only",
+      "data_status": "needs_price_cache",
+      "source": "2026-05-14 user short-term network: strong NOK move flagged by external trader",
+      "reason": "Telecom / optical-network infrastructure adjacency; keep as observe-only until Radar can distinguish theme diffusion from single-day speculative flow."
+    },
+    {
       "ticker": "US.AVGO",
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "core_reacceleration",

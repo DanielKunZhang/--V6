@@ -26,7 +26,8 @@
             "US.AMD",
             "US.ANET",
             "US.TSM",
-            "US.AVGO"
+            "US.AVGO",
+            "US.MRVL"
           ]
         },
         {
@@ -42,7 +43,8 @@
           "tickers": [
             "US.COHR",
             "US.AAOI",
-            "US.LITE"
+            "US.LITE",
+            "US.NOK"
           ]
         },
         {

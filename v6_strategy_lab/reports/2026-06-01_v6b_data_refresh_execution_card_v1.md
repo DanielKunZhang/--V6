@@ -27,6 +27,11 @@
 - `US.IR`
 - `US.TER`
 
+第三批补“外部短线网络提示但 Radar 未主动突出”的漏网样本：
+
+- `US.MRVL`
+- `US.NOK`
+
 ## 执行前检查
 
 全部满足才开始：
@@ -59,6 +64,17 @@
   --report backtest_results/v6b_missing_opportunity_review/fetch_gap_cache_report_20260601_batch2.json
 ```
 
+最后跑第三批：
+
+```bash
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 v6b_fetch_radar_price_cache.py \
+  --tickers US.MRVL,US.NOK \
+  --start 2018-01-01 \
+  --end 2026-06-01 \
+  --home-dir /private/tmp/futu_v6b_home \
+  --report backtest_results/v6b_missing_opportunity_review/fetch_gap_cache_report_20260601_batch3_external_short_network.json
+```
+
 ## Step 2: 重跑 Missing Opportunity Review
 
 ```bash
@@ -85,7 +101,16 @@
 2. `US.ASX` 补完数据后是否保持 `watch_add_candidate`
 3. `US.AAOI` 补完数据后是否从 `observe_only` 升到 `watch_add_candidate`
 4. robotics 名单里是否有任何名字值得从 `theme_watch` 升级
-5. `US.ANET / US.TSM` 是否仍属于 `active-but-weak`
+5. `US.MRVL` 是否应从 `watch_add_candidate` 升到 `active_research`
+6. `US.NOK` 是真实 AI 网络基础设施扩散，还是单日投机/期权流导致的合理排除
+7. `US.ANET / US.TSM` 是否仍属于 `active-but-weak`
+
+对 `MRVL / NOK / 后续朋友提示的强势票`，必须额外写一张共性因子表：
+
+| 标的 | 主题/热点 | 动能转换 | 技术形态 | 成交量/资金 | 催化/叙事 | 衍生品/短线情绪 | commonality_verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `US.MRVL` | 待补 | 待补 | 待补 | 待补 | 待补 | 待补 | 待判定 |
+| `US.NOK` | 待补 | 待补 | 待补 | 待补 | 待补 | 待补 | 待判定 |
 
 ## Step 4: 按 verdict 改 registry / universe
 

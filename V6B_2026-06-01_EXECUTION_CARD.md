@@ -47,6 +47,35 @@ python3 v6b_missing_opportunity_review.py
 - `coverage_gap_count`
 - `active_weak_count`
 
+额外强制复盘：
+
+- `US.MRVL`：外部短线网络提示的 AI 数据中心 / networking 漏网样本，判断是否从 `watch_add_candidate` 晋升。
+- `US.NOK`：外部短线网络提示的 telecom / optical-network adjacency，判断是主题扩散还是单日投机，默认不因单日上涨晋升。
+
+这类样本统一归入 `External Short Network Sample`：
+
+- 不作为立即买入依据。
+- 主要用来反推 Radar 的缺口。
+- 每个样本必须归因到 `universe 缺失 / 数据缺失 / 主题映射缺失 / 评分规则太慢 / 合理排除` 之一。
+- 若多次出现同类漏网，下一轮必须升级 Radar 扫描规则，而不是继续人工补丁。
+
+每个样本必须拆成六类共性因子：
+
+1. `主题/热点`：是否属于 AI、机器人、光通信、电力、核电等正在扩散的主线
+2. `动能转换`：是否从弱势/横盘切换为跑赢 QQQ、SMH 或同主题 benchmark
+3. `技术形态`：是否突破平台、站回 MA50/MA200、接近新高或完成趋势修复
+4. `成交量/资金`：是否放量、成交额排名提升、连续资金流入
+5. `催化/叙事`：是否有订单、财报、指引、政策、客户验证或产业链验证
+6. `衍生品/短线情绪`：是否有期权异动、短 squeeze、社群集中讨论
+
+最终 verdict 只能五选一：
+
+- `THEME_DIFFUSION_CONFIRMED`
+- `MOMENTUM_ONLY`
+- `CATALYST_ONLY`
+- `SPECULATIVE_FLOW_ONLY`
+- `ALREADY_COVERED_ELSEWHERE`
+
 ## Step 3. 审计 point-in-time universe
 
 ```bash
@@ -69,6 +98,7 @@ python3 v6b_score_universe.py \
 1. 当前 active names 的分数排序
 2. `watch_add_candidate` 里有没有应该晋升的
 3. robotics / optics / AI supply chain 有没有主题唤醒
+4. `MRVL / NOK` 这类朋友先发现的名字，Radar 漏网原因是否能被归因到 universe、数据、主题映射或评分规则
 
 ## Step 5. 生成回测可用 universe config
 
