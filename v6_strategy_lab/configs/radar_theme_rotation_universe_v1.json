@@ -1,0 +1,90 @@
+{
+  "universe_id": "RADAR_THEME_ROTATION_UNIVERSE_V1",
+  "version": "2026-05-14",
+  "status": "active",
+  "description": "Cross-theme universe for automated main-theme rotation and diffusion scanning. This is not an order universe.",
+  "market_benchmarks": ["US.SPY", "US.QQQ"],
+  "themes": [
+    {
+      "theme_id": "ai_compute_and_data_center",
+      "label": "AI 算力与数据中心",
+      "benchmarks": ["US.SMH", "US.SOXX", "US.XLK"],
+      "leader_layer": ["US.NVDA", "US.AVGO", "US.AMD"],
+      "first_order_beneficiaries": ["US.ANET", "US.TSM"],
+      "second_order_infrastructure": ["US.MU", "US.WDC", "US.AMKR", "US.COHR"],
+      "third_order_high_beta": ["US.AAOI", "US.LITE", "US.MRVL", "US.NOK"]
+    },
+    {
+      "theme_id": "software_and_internet",
+      "label": "软件与互联网",
+      "benchmarks": ["US.IGV", "US.FDN", "US.XLK"],
+      "leader_layer": ["US.MSFT", "US.GOOGL", "US.META"],
+      "first_order_beneficiaries": ["US.AMZN", "US.NFLX"],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": ["US.ARKK"]
+    },
+    {
+      "theme_id": "robotics_and_embodied_ai",
+      "label": "机器人与具身智能",
+      "benchmarks": ["US.XLI", "US.ARKK"],
+      "leader_layer": ["US.TSLA"],
+      "first_order_beneficiaries": [],
+      "second_order_infrastructure": ["US.ROK", "US.ETN", "US.HON", "US.IR", "US.TER"],
+      "third_order_high_beta": []
+    },
+    {
+      "theme_id": "financials_and_capital_markets",
+      "label": "金融与资本市场",
+      "benchmarks": ["US.XLF", "US.KRE"],
+      "leader_layer": ["US.JPM", "US.BRK.B"],
+      "first_order_beneficiaries": [],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": ["US.KRE"]
+    },
+    {
+      "theme_id": "healthcare_and_biotech",
+      "label": "医疗与创新药",
+      "benchmarks": ["US.XLV", "US.XBI"],
+      "leader_layer": ["US.LLY"],
+      "first_order_beneficiaries": ["US.XBI"],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": []
+    },
+    {
+      "theme_id": "energy_and_commodities",
+      "label": "能源与资源",
+      "benchmarks": ["US.XLE", "US.XOP", "US.DBC"],
+      "leader_layer": ["US.XLE"],
+      "first_order_beneficiaries": ["US.XOP"],
+      "second_order_infrastructure": ["US.DBC"],
+      "third_order_high_beta": []
+    },
+    {
+      "theme_id": "gold_and_precious_metals",
+      "label": "黄金与贵金属",
+      "benchmarks": ["US.GLD", "US.SLV", "US.GDX"],
+      "leader_layer": ["US.GLD"],
+      "first_order_beneficiaries": ["US.SLV", "US.GDX"],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": []
+    },
+    {
+      "theme_id": "utilities_power_and_infrastructure",
+      "label": "电力与基础设施",
+      "benchmarks": ["US.XLU", "US.XLI"],
+      "leader_layer": ["US.XLU"],
+      "first_order_beneficiaries": ["US.XLI"],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": []
+    },
+    {
+      "theme_id": "consumer_discretionary",
+      "label": "可选消费",
+      "benchmarks": ["US.XLY"],
+      "leader_layer": ["US.AMZN", "US.TSLA"],
+      "first_order_beneficiaries": ["US.XLY"],
+      "second_order_infrastructure": [],
+      "third_order_high_beta": []
+    }
+  ]
+}

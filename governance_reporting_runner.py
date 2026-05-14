@@ -33,6 +33,11 @@ REPORT_SPECS = {
         "out_dir": ROOT / "backtest_results" / "external_short_network_review",
         "desktop_prefix": "外部短线网络样本复盘_EXTERNAL_SHORT_NETWORK_LATEST",
     },
+    "radar_theme_rotation_scanner": {
+        "script": ROOT / "radar_theme_rotation_scanner.py",
+        "out_dir": ROOT / "backtest_results" / "radar_theme_rotation_scanner",
+        "desktop_prefix": "Radar_主线扩散自动扫描_LATEST",
+    },
     "investment_company_dashboard": {
         "script": ROOT / "investment_company_dashboard.py",
         "out_dir": ROOT / "backtest_results" / "investment_company_dashboard",
@@ -42,8 +47,8 @@ REPORT_SPECS = {
 
 SCOPE_REPORTS = {
     "daily": ["performance_attribution", "overlay_trade_journal", "investment_company_dashboard"],
-    "weekly": ["external_short_network_review", "investment_company_dashboard"],
-    "monthly": ["performance_attribution", "overlay_trade_journal", "external_short_network_review", "monthly_research_review", "investment_company_dashboard"],
+    "weekly": ["radar_theme_rotation_scanner", "external_short_network_review", "investment_company_dashboard"],
+    "monthly": ["performance_attribution", "overlay_trade_journal", "radar_theme_rotation_scanner", "external_short_network_review", "monthly_research_review", "investment_company_dashboard"],
 }
 
 
@@ -53,7 +58,7 @@ def run_report(name: str, tag: str) -> None:
     if not script.exists():
         raise FileNotFoundError(f"Missing report script: {script}")
     cmd = [str(PYTHON), str(script), "--tag", tag]
-    if name in {"investment_company_dashboard", "external_short_network_review"}:
+    if name in {"investment_company_dashboard", "external_short_network_review", "radar_theme_rotation_scanner"}:
         cmd.append("--sync-desktop")
     subprocess.run(cmd, cwd=ROOT, check=True)
 

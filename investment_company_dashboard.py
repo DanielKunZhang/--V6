@@ -21,6 +21,7 @@ SOURCES = {
     "monthly": ROOT / "backtest_results" / "monthly_research_review" / "latest.json",
     "v6_weekly": ROOT / "backtest_results" / "v6_weekly_review" / "latest.json",
     "v6_backlog": ROOT / "backtest_results" / "v6_research_backlog" / "latest.json",
+    "theme_rotation": ROOT / "backtest_results" / "radar_theme_rotation_scanner" / "latest.json",
 }
 
 DESKTOP_LINKS = {
@@ -31,6 +32,8 @@ DESKTOP_LINKS = {
     "v6a_cutover_card": "2026-05-26_V6A_balanced_cutover_执行检查卡_v1.md",
     "v6b_card": "6月1日_V6B_执行卡.md",
     "v6b_preflight": "2026-06-01_V6B_执行预检报告.md",
+    "theme_rotation": "Radar_主线扩散自动扫描_LATEST.md",
+    "external_short_network": "外部短线网络样本复盘_EXTERNAL_SHORT_NETWORK_LATEST.md",
     "overview": "投资系统全景图_SYSTEM_OVERVIEW.html",
     "plan": "26年阶段性组合策略计划.html",
 }
@@ -76,6 +79,7 @@ def build_payload() -> dict[str, Any]:
     monthly = read_json(SOURCES["monthly"])
     v6_weekly = read_json(SOURCES["v6_weekly"])
     v6_backlog = read_json(SOURCES["v6_backlog"])
+    theme_rotation = read_json(SOURCES["theme_rotation"])
 
     coverage = performance.get("coverage", {}) if isinstance(performance.get("coverage"), dict) else {}
     overlay_stats = overlay.get("stats", {}) if isinstance(overlay.get("stats"), dict) else {}
@@ -119,6 +123,12 @@ def build_payload() -> dict[str, Any]:
             "realized_pnl": overlay_stats.get("total_realized_pnl_usd"),
             "one_line": first_line_from_md(ROOT / "backtest_results" / "overlay_trade_journal" / "latest.md"),
         },
+        "theme_rotation": {
+            "top_theme": (theme_rotation.get("summary", {}) or {}).get("top_theme"),
+            "top_theme_stage": (theme_rotation.get("summary", {}) or {}).get("top_theme_stage"),
+            "candidate_count": (theme_rotation.get("summary", {}) or {}).get("candidate_count"),
+            "missing_cache_count": (theme_rotation.get("summary", {}) or {}).get("missing_cache_count"),
+        },
         "monthly": {
             "one_line": first_line_from_md(ROOT / "backtest_results" / "monthly_research_review" / "latest.md"),
         },
@@ -135,8 +145,13 @@ def action_groups(payload: dict[str, Any]) -> dict[str, list[str]]:
     if "CONTINUE" in str(v6["pilot_decision"]) or "Investigate" in str(v6["decision"]):
         groups["可观察"].append("V6 继续收集 pilot / review 证据；5月26日前只看执行质量和 cutover 证据包。")
     radar = payload["radar"]
+    theme_rotation = payload.get("theme_rotation", {})
     if int(radar.get("coverage_gaps") or 0) > 0:
         groups["可观察"].append("Radar / V6-B 等 6月1日数据窗口，按执行卡补 universe、漏网机会和 scorecard。")
+    if theme_rotation.get("top_theme"):
+        groups["可观察"].append(
+            f"Radar 自动主线扫描当前最高主线：{theme_rotation.get('top_theme')} / {theme_rotation.get('top_theme_stage')}；只作为候选供给，不直接交易。"
+        )
     overlay = payload["overlay"]
     if int(overlay.get("closed_samples") or 0) == 0:
         groups["禁止动作"].append("Overlay 还没有真实关闭样本，不能用 watch 项目推断策略有效，也不能扩大预算。")
@@ -187,6 +202,7 @@ def build_html(payload: dict[str, Any]) -> str:
     v6 = payload["v6"]
     radar = payload["radar"]
     overlay = payload["overlay"]
+    theme_rotation = payload["theme_rotation"]
 
     backlog_rows = []
     for item in payload["top_backlog"]:
@@ -338,6 +354,8 @@ def build_html(payload: dict[str, Any]) -> str:
         <a href="{DESKTOP_LINKS['v6a_cutover_card']}">5月26日 V6-A 执行卡</a>
         <a href="{DESKTOP_LINKS['v6b_card']}">6月1日执行卡</a>
         <a href="{DESKTOP_LINKS['v6b_preflight']}">V6-B 预检</a>
+        <a href="{DESKTOP_LINKS['theme_rotation']}">Radar 主线扫描</a>
+        <a href="{DESKTOP_LINKS['external_short_network']}">外部样本复盘</a>
       </div>
     </header>
 
@@ -348,6 +366,15 @@ def build_html(payload: dict[str, Any]) -> str:
       <div class="card"><div class="k">Radar 供给链</div><div class="v">{html.escape(str(radar['registry_count'] or '—'))}</div><div class="small">覆盖缺口 {html.escape(str(radar['coverage_gaps'] or 0))} · 严重漏网 {html.escape(str(radar['critical_misses'] or 0))}</div></div>
       <div class="card"><div class="k">Overlay 样本</div><div class="v">{html.escape(str(overlay['closed_samples'] or 0))}</div><div class="small">观察中 {html.escape(str(overlay['live_or_watch'] or 0))} · 已实现 {html.escape(fmt_usd(overlay['realized_pnl']))}</div></div>
     </div>
+
+    <section class="panel">
+      <h2>Radar 自动主线扫描</h2>
+      <ul>
+        <li>当前最高主线：{html.escape(str(theme_rotation['top_theme'] or '暂无'))}</li>
+        <li>当前阶段：{html.escape(str(theme_rotation['top_theme_stage'] or '暂无'))}</li>
+        <li>候选数：{html.escape(str(theme_rotation['candidate_count'] or 0))} · 缺失价格缓存：{html.escape(str(theme_rotation['missing_cache_count'] or 0))}</li>
+      </ul>
+    </section>
 
     <section class="panel">
       <h2>今日动作区</h2>
