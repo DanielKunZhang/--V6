@@ -1,11 +1,14 @@
-# 2026-06-01 V6-B Data Refresh Execution Card v1
+# 2026-06-01 V6-B + Radar 主线扫描 Data Refresh Execution Card v2
 
 - Status: ready
-- Purpose: 在 Futu 历史 K 线额度刷新后，补齐 Radar 缺失候选数据，并完成第一轮正式 triage。
+- Purpose: 在 Futu 历史 K 线额度刷新后，补齐 Radar 缺失候选数据，重跑自动主线扩散扫描，并完成第一轮正式 triage。
 
 ## 一句话目标
 
-把当前 `coverage gap` 推进成三种清晰状态之一：
+6月1日不是只补 K 线。  
+当天要把 `price cache -> 自动主线扫描 -> Missing Review -> triage -> V6-B 候选更新` 串成一条链。
+
+把当前 `coverage gap / 主线扫描候选` 推进成三种清晰状态之一：
 
 - `PROMOTE_TO_ACTIVE_RESEARCH`
 - `KEEP_IN_REGISTRY`
@@ -39,6 +42,8 @@
 1. OpenD 已启动
 2. Futu 历史 K 线额度已恢复
 3. 当前分支干净到可继续提交这轮结果
+4. 已确认 `radar_theme_rotation_scanner.py` 可运行
+5. 已确认桌面 `Radar_主线扩散自动扫描_LATEST.md` 可同步
 
 ## Step 1: 补 price cache
 
@@ -75,7 +80,25 @@
   --report backtest_results/v6b_missing_opportunity_review/fetch_gap_cache_report_20260601_batch3_external_short_network.json
 ```
 
-## Step 2: 重跑 Missing Opportunity Review
+## Step 2: 先跑 Radar 自动主线扩散扫描
+
+```bash
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 radar_theme_rotation_scanner.py \
+  --tag 20260601_refresh \
+  --sync-desktop
+```
+
+重点看：
+
+- 当前最高主线是否仍为 `AI 算力与数据中心`
+- 当前阶段是否仍是 `二阶扩散`
+- 新补数据后 `AAOI / LITE / MRVL / NOK / ROK / ETN / HON / IR / TER` 是否进入高分候选
+- `scan_journal.json` 是否写入 2026-06-01 快照
+
+这一步是反事后诸葛亮的关键：  
+后续复盘必须基于 `2026-06-01` 当天 scanner 看到的候选，而不是未来涨完再回填。
+
+## Step 3: 重跑 Missing Opportunity Review
 
 ```bash
 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 v6b_missing_opportunity_review.py \
@@ -88,12 +111,13 @@
 - `coverage gaps`
 - `active-but-weak`
 
-## Step 3: 做正式 triage
+## Step 4: 做正式 triage
 
 参考：
 
 - `v6_strategy_lab/reports/2026-05-14_v6b_radar_weekly_triage_sop_v1.md`
 - `v6_strategy_lab/scorecards/v6b_radar_weekly_triage_template.md`
+- `backtest_results/radar_theme_rotation_scanner/latest.md`
 
 本次最重要的人工判断：
 
@@ -104,6 +128,8 @@
 5. `US.MRVL` 是否应从 `watch_add_candidate` 升到 `active_research`
 6. `US.NOK` 是真实 AI 网络基础设施扩散，还是单日投机/期权流导致的合理排除
 7. `US.ANET / US.TSM` 是否仍属于 `active-but-weak`
+8. 自动主线扫描给出的最高主题、阶段和高分候选是否与 Missing Review 一致
+9. 如果 scanner 高分但 Missing Review 没提示，判断是 theme map 缺失还是 score 口径差异
 
 对 `MRVL / NOK / 后续朋友提示的强势票`，必须额外写一张共性因子表：
 
@@ -123,7 +149,7 @@
 - 漏掉 `三阶补涨`：低预期/动能转换扫描不足
 - 把 `情绪尾声` 误判成新机会：风控和退潮识别不足
 
-## Step 4: 按 verdict 改 registry / universe
+## Step 5: 按 verdict 改 registry / universe
 
 如果结论只是：
 
@@ -146,7 +172,20 @@
 
 - `v6_strategy_lab/configs/v6b_point_in_time_universe_seed_20260510.json`
 
-## Step 5: 重跑 Weekly Review Board
+## Step 6: 重跑 External Short Network Review
+
+```bash
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 external_short_network_review.py \
+  --tag 20260601_refresh \
+  --sync-desktop
+```
+
+确认：
+
+- `MRVL / NOK` 的 gap attribution 是否从 `数据缺失` 变成可判断状态
+- 六因子表是否可以开始填真实判断
+
+## Step 7: 重跑 Weekly Review Board
 
 ```bash
 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 v6_weekly_review_board.py \
@@ -160,12 +199,30 @@
 
 并检查新 priority 是否合理。
 
-## Step 6: 提交并推 GitHub
+## Step 8: 刷新每日驾驶舱
+
+```bash
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 investment_company_dashboard.py \
+  --tag 20260601_refresh \
+  --sync-desktop
+```
+
+确认驾驶舱显示：
+
+- Radar 自动主线扫描
+- 当前最高主线
+- 当前阶段
+- 候选数 / 缺失价格缓存
+
+## Step 9: 提交并推 GitHub
 
 最少应提交：
 
 - 最新 fetch reports
+- 最新 Radar 主线扫描报告
+- 最新 scan journal
 - 最新 missing opportunity review
+- 最新 external short network review
 - 最新 weekly review / backlog
 - 若有变动，则包含 registry / universe 更新
 
@@ -180,17 +237,21 @@ research: refresh v6b radar coverage after june quota reset
 最低成功：
 
 - 第一批 `AAOI / ASX / LITE` 不再是 `no_local_price_cache`
+- `radar_theme_rotation_scanner.py` 能跑出主线排名、阶段和候选
+- `scan_journal.json` 写入 2026-06-01 快照
 - 能完成一轮正式 triage
 
 中等成功：
 
 - `COHR / ASX / AAOI` 三者的层级关系更清楚
 - robotics 至少从“纯 gap”进入“有数据可评估”
+- `MRVL / NOK` 不再只是外部样本，而是能被自动 scanner 归入明确主线阶段
 
 最好结果：
 
 - 有 `1-2` 个名字能合理晋级到 `active_research`
 - 同时有 `1-2` 个旧 active 名字被诚实降级
+- 自动主线扫描和 Missing Review 对同一批二阶/三阶候选给出一致提示
 
 ## 如果当日仍失败
 
