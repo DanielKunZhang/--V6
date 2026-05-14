@@ -36,6 +36,8 @@ def read_json(path: Path) -> Any:
 
 
 def is_external_sample(entry: dict[str, Any]) -> bool:
+    if bool(entry.get("external_sample")):
+        return True
     source = str(entry.get("source") or "").lower()
     reason = str(entry.get("reason") or "").lower()
     markers = ["external", "short-term network", "friend", "trader", "外部", "朋友", "短线"]

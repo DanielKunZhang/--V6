@@ -58,6 +58,8 @@ def run_report(name: str, tag: str) -> None:
     if not script.exists():
         raise FileNotFoundError(f"Missing report script: {script}")
     cmd = [str(PYTHON), str(script), "--tag", tag]
+    if name == "radar_theme_rotation_scanner":
+        cmd.append("--exclude-external-samples")
     if name in {"investment_company_dashboard", "external_short_network_review", "radar_theme_rotation_scanner"}:
         cmd.append("--sync-desktop")
     subprocess.run(cmd, cwd=ROOT, check=True)

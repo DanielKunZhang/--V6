@@ -116,8 +116,9 @@
       "bucket_id": "optics_and_interconnect",
       "registry_status": "observe_only",
       "data_status": "needs_price_cache",
+      "external_sample": true,
       "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
-      "reason": "Theme-relevant optics candidate, but still below watch-add confidence until more evidence arrives."
+      "reason": "Theme-relevant optics candidate and 2026-05-14 user short-term network miss sample; use for external sample attribution, not independent alpha."
     },
     {
       "ticker": "US.LITE",
@@ -134,6 +135,7 @@
       "bucket_id": "core_reacceleration",
       "registry_status": "watch_add_candidate",
       "data_status": "needs_price_cache",
+      "external_sample": true,
       "source": "2026-05-14 user short-term network: strong MRVL move flagged by external trader",
       "reason": "AI data-center silicon / networking candidate; should be reviewed as a potential V6-B re-acceleration name after price cache refresh."
     },
@@ -143,6 +145,7 @@
       "bucket_id": "optics_and_interconnect",
       "registry_status": "observe_only",
       "data_status": "needs_price_cache",
+      "external_sample": true,
       "source": "2026-05-14 user short-term network: strong NOK move flagged by external trader",
       "reason": "Telecom / optical-network infrastructure adjacency; keep as observe-only until Radar can distinguish theme diffusion from single-day speculative flow."
     },

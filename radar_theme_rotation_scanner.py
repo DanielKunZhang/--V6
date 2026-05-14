@@ -18,6 +18,7 @@ ROUGH_CACHE_DIR = ROOT / "backtest_results" / "v6b_rough_test" / "price_cache"
 OUT_DIR = ROOT / "backtest_results" / "radar_theme_rotation_scanner"
 DEFAULT_CONFIG = ROOT / "v6_strategy_lab" / "configs" / "radar_theme_rotation_universe_v1.json"
 JOURNAL_PATH = OUT_DIR / "scan_journal.json"
+EXTERNAL_REGISTRY = ROOT / "v6_strategy_lab" / "configs" / "v6b_candidate_registry_v1.json"
 
 
 LAYER_ORDER = [
@@ -46,6 +47,38 @@ def read_json_or_empty(path: Path) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return []
+
+
+def normalize_ticker(ticker: str) -> str:
+    ticker = str(ticker or "").strip().upper()
+    if not ticker:
+        return ""
+    if "." not in ticker:
+        return f"US.{ticker}"
+    return ticker
+
+
+def load_external_sample_tickers(path: Path = EXTERNAL_REGISTRY) -> set[str]:
+    payload = read_json_or_empty(path)
+    if not isinstance(payload, dict):
+        return set()
+    markers = ["external", "short-term network", "friend", "trader", "外部", "朋友", "短线"]
+    out: set[str] = set()
+    for entry in payload.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        if bool(entry.get("external_sample")):
+            ticker = normalize_ticker(str(entry.get("ticker") or ""))
+            if ticker:
+                out.add(ticker)
+            continue
+        source = str(entry.get("source") or "").lower()
+        reason = str(entry.get("reason") or "").lower()
+        if any(marker in source or marker in reason for marker in markers):
+            ticker = normalize_ticker(str(entry.get("ticker") or ""))
+            if ticker:
+                out.add(ticker)
+    return out
 
 
 def cache_candidates(ticker: str) -> list[Path]:
@@ -187,6 +220,74 @@ def compute_ticker_metrics(
     }
 
 
+def classify_trade_posture(row: dict[str, Any]) -> dict[str, str]:
+    """把动量候选转成交易可处理口径，避免把追高当成买点。"""
+    mom20 = row.get("mom20")
+    mom60 = row.get("mom60")
+    drawdown63 = row.get("drawdown63")
+    above_ma50 = bool(row.get("above_ma50"))
+    above_ma200 = bool(row.get("above_ma200"))
+    score = float(row.get("score") or 0.0)
+
+    if not above_ma50 or not above_ma200:
+        return {
+            "trade_posture": "观察，不追",
+            "chase_risk": "中",
+            "entry_note": "趋势未完全确认，只能等重新站稳或系统信号。",
+        }
+    if mom20 is not None and mom60 is not None and drawdown63 is not None:
+        if mom20 >= 0.25 and mom60 >= 0.45 and drawdown63 >= -0.05:
+            return {
+                "trade_posture": "禁止直接追高",
+                "chase_risk": "高",
+                "entry_note": "短中期已经大幅兑现且接近阶段高位，只能等回撤、盘整或小额期权彩票规则。",
+            }
+        if mom20 >= 0.15 and mom60 >= 0.30 and drawdown63 >= -0.08:
+            return {
+                "trade_posture": "只允许小仓试错",
+                "chase_risk": "中高",
+                "entry_note": "趋势强但已不便宜，正股/期权都要用预设亏损上限。",
+            }
+    if score >= 70:
+        return {
+            "trade_posture": "可进入正式复核",
+            "chase_risk": "中",
+            "entry_note": "先做主线、催化、估值和仓位约束复核，再决定是否表达。",
+        }
+    return {
+        "trade_posture": "观察",
+        "chase_risk": "低到中",
+        "entry_note": "强度未到直接表达阈值，继续等待确认。",
+    }
+
+
+def attach_trade_posture(row: dict[str, Any], source_channel: str) -> dict[str, Any]:
+    enriched = dict(row)
+    enriched["source_channel"] = source_channel
+    enriched.update(classify_trade_posture(enriched))
+    return enriched
+
+
+def external_samples_from_metrics(
+    ticker_metrics: dict[str, dict[str, Any]],
+    themes: list[dict[str, Any]],
+    external_tickers: set[str],
+) -> list[dict[str, Any]]:
+    samples = []
+    for theme in themes:
+        for layer in LAYER_ORDER:
+            for ticker in theme.get(layer, []):
+                if ticker not in external_tickers:
+                    continue
+                metric = dict(ticker_metrics.get(ticker, {"ticker": ticker, "eligible": False, "reason": "missing_cache"}))
+                metric["theme_id"] = theme["theme_id"]
+                metric["theme_label"] = theme["label"]
+                metric["layer"] = layer
+                metric["layer_label"] = LAYER_LABELS[layer]
+                samples.append(attach_trade_posture(metric, "external_sample_review"))
+    return sorted(samples, key=lambda row: (row.get("eligible", False), row.get("score", 0.0)), reverse=True)
+
+
 def layer_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     eligible = [row for row in rows if row.get("eligible")]
     if not eligible:
@@ -219,7 +320,8 @@ def classify_stage(layer_summaries: dict[str, dict[str, Any]], theme_score: floa
     return "观察"
 
 
-def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str) -> dict[str, Any]:
+def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str, exclude_tickers: set[str] | None = None) -> dict[str, Any]:
+    exclude_tickers = exclude_tickers or set()
     tickers = set(config.get("market_benchmarks", []))
     for theme in config.get("themes", []):
         for key in ["benchmarks", *LAYER_ORDER]:
@@ -257,6 +359,8 @@ def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str) -> 
         for layer in LAYER_ORDER:
             rows = []
             for ticker in theme.get(layer, []):
+                if ticker in exclude_tickers:
+                    continue
                 metric = dict(ticker_metrics.get(ticker, {"ticker": ticker, "eligible": False, "reason": "missing_cache"}))
                 metric["layer"] = layer
                 metric["layer_label"] = LAYER_LABELS[layer]
@@ -265,13 +369,16 @@ def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str) -> 
                     all_theme_metrics.append(metric)
                     if metric.get("score", 0.0) >= 60:
                         candidate_rows.append(
-                            {
+                            attach_trade_posture(
+                                {
                                 "theme_id": theme["theme_id"],
                                 "theme_label": theme["label"],
                                 "layer": layer,
                                 "layer_label": LAYER_LABELS[layer],
                                 **metric,
-                            }
+                                },
+                                "independent_discovery",
+                            )
                         )
             layer_rows[layer] = rows
             layer_summaries[layer] = layer_summary(rows)
@@ -320,6 +427,7 @@ def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str) -> 
 
     theme_rows = sorted(theme_rows, key=lambda row: row["theme_score"], reverse=True)
     candidate_rows = sorted(candidate_rows, key=lambda row: (row.get("score", 0.0), row.get("rel60_vs_spy") or -9), reverse=True)
+    external_sample_rows = external_samples_from_metrics(ticker_metrics, config.get("themes", []), exclude_tickers)
 
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -332,9 +440,13 @@ def build_scan(config: dict[str, Any], start: str, end: str, as_of_arg: str) -> 
             "missing_cache": sorted(missing),
             "top_theme": theme_rows[0]["theme_label"] if theme_rows else "n/a",
             "top_theme_stage": theme_rows[0]["stage"] if theme_rows else "n/a",
+            "excluded_tickers": sorted(exclude_tickers),
+            "excluded_count": len(exclude_tickers),
+            "external_sample_review_count": len(external_sample_rows),
         },
         "themes": theme_rows,
         "candidates": candidate_rows[:30],
+        "external_sample_review": external_sample_rows,
         "sources": sources,
     }
 
@@ -362,11 +474,14 @@ def update_journal(scan: dict[str, Any], end: str) -> dict[str, Any]:
     existing = read_json_or_empty(JOURNAL_PATH)
     journal = existing if isinstance(existing, list) else []
     as_of = str(scan["as_of"])
+    mode = str(scan.get("mode") or "full_universe_scan")
 
-    journal = [entry for entry in journal if entry.get("as_of") != as_of]
+    journal = [entry for entry in journal if not (entry.get("as_of") == as_of and entry.get("mode", "full_universe_scan") == mode)]
     entry = {
         "generated_at": scan["generated_at"],
         "as_of": as_of,
+        "mode": mode,
+        "excluded_tickers": scan.get("summary", {}).get("excluded_tickers", []),
         "top_themes": [
             {
                 "theme_label": row["theme_label"],
@@ -436,9 +551,11 @@ def render_md(scan: dict[str, Any]) -> str:
         f"- 生成时间：`{scan['generated_at']}`",
         f"- As Of：`{scan['as_of']}`",
         f"- Config：`{scan['config_id']}`",
+        f"- 扫描模式：`{scan.get('mode', 'full_universe_scan')}`",
         f"- 当前最高主线：`{scan['summary']['top_theme']}`",
         f"- 主线阶段：`{scan['summary']['top_theme_stage']}`",
         f"- 缺失价格缓存：`{scan['summary']['missing_cache_count']}`",
+        f"- 排除外部样本：`{scan['summary'].get('excluded_count', 0)}`",
         f"- 历史扫描快照：`{journal.get('snapshot_count', 0)}`",
         f"- 已可评估20日样本：`{journal.get('evaluated_20d_count', 0)}`",
         "",
@@ -468,6 +585,43 @@ def render_md(scan: dict[str, Any]) -> str:
             f"{pct(row.get('mom20'))} | {pct(row.get('mom60'))} | {pct(row.get('rel60_vs_spy'))} | {trend} |"
         )
 
+    lines.extend(
+        [
+            "",
+            "## 追高处理口径",
+            "",
+            "| 标的 | 来源 | 追高风险 | 处理 | 说明 |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    posture_rows = scan["candidates"][:12] + scan.get("external_sample_review", [])[:8]
+    if not posture_rows:
+        lines.append("| 无 | - | - | - | - |")
+    for row in posture_rows:
+        lines.append(
+            f"| `{row['ticker']}` | {row.get('source_channel', 'independent_discovery')} | "
+            f"{row.get('chase_risk', 'n/a')} | {row.get('trade_posture', 'n/a')} | {row.get('entry_note', '')} |"
+        )
+
+    if scan.get("external_sample_review"):
+        lines.extend(
+            [
+                "",
+                "## 外部样本只做归因",
+                "",
+                "- 下列标的来自朋友、交易群或外部短线网络，只能用于学习主线扩散和追高风险，不能被标记为 Radar 独立发现。",
+                "- 若要成为正式买入候选，必须在后续独立扫描或 Missing Opportunity Review 中再次通过。",
+                "",
+                "| 标的 | 主线 | 层级 | 分数 | 20日 | 60日 | 追高风险 | 处理 |",
+                "| --- | --- | --- | ---: | ---: | ---: | --- | --- |",
+            ]
+        )
+        for row in scan["external_sample_review"]:
+            lines.append(
+                f"| `{row['ticker']}` | {row['theme_label']} | {row['layer_label']} | {row.get('score', 0):.1f} | "
+                f"{pct(row.get('mom20'))} | {pct(row.get('mom60'))} | {row.get('chase_risk', 'n/a')} | {row.get('trade_posture', 'n/a')} |"
+            )
+
     lines.extend(["", "## 缺失数据", ""])
     if scan["summary"]["missing_cache"]:
         lines.append(", ".join(f"`{ticker}`" for ticker in scan["summary"]["missing_cache"]))
@@ -488,6 +642,7 @@ def render_md(scan: dict[str, Any]) -> str:
             "## 解释口径",
             "",
             "- 这是自动主线扫描，不是交易信号。",
+            "- `independent_discovery` 才是正式候选来源；外部样本只做方向归因、漏网复盘和追高风险评估。",
             "- 有效输出必须同时包含：主线排名、扩散阶段、高分候选。",
             "- 下一步由 Missing Opportunity Review、V6-B 或 Overlay 决定是否值得表达。",
         ]
@@ -503,10 +658,15 @@ def main() -> None:
     parser.add_argument("--as-of", default="")
     parser.add_argument("--tag", default=datetime.now().strftime("%Y%m%d_%H%M%S"))
     parser.add_argument("--sync-desktop", action="store_true")
+    parser.add_argument("--exclude-external-samples", action="store_true", help="Exclude friend/external short-network samples to test independent discovery alpha.")
+    parser.add_argument("--exclude-ticker", action="append", default=[], help="Additional ticker to exclude from independent discovery, e.g. US.AAOI. Can be repeated.")
     args = parser.parse_args()
 
     config = read_json(Path(args.config))
-    scan = build_scan(config, args.start, args.end, args.as_of)
+    exclude_tickers = load_external_sample_tickers() if args.exclude_external_samples else set()
+    exclude_tickers.update(normalize_ticker(ticker) for ticker in args.exclude_ticker if normalize_ticker(ticker))
+    scan = build_scan(config, args.start, args.end, args.as_of, exclude_tickers=exclude_tickers)
+    scan["mode"] = "independent_discovery" if args.exclude_external_samples else "full_universe_scan"
     scan["journal"] = update_journal(scan, args.end)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

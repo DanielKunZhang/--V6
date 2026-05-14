@@ -82,8 +82,11 @@
 
 ## Step 2: 先跑 Radar 自动主线扩散扫描
 
+正式口径先跑 `independent_discovery`，排除朋友/外部短线网络样本，避免把外部样本包装成系统 Alpha：
+
 ```bash
 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 radar_theme_rotation_scanner.py \
+  --exclude-external-samples \
   --tag 20260601_refresh \
   --sync-desktop
 ```
@@ -92,7 +95,10 @@
 
 - 当前最高主线是否仍为 `AI 算力与数据中心`
 - 当前阶段是否仍是 `二阶扩散`
-- 新补数据后 `AAOI / LITE / MRVL / NOK / ROK / ETN / HON / IR / TER` 是否进入高分候选
+- 排除外部样本后，系统自己还能发现哪些主线和候选
+- 新补数据后 `LITE / ROK / ETN / HON / IR / TER` 是否进入独立高分候选
+- `AAOI / MRVL / NOK / 后续朋友样本` 只看 `external_sample_review`、漏网归因和追高风险，不作为独立发现
+- 每个高分候选的 `chase_risk` 和 `trade_posture` 是否允许现在表达
 - `scan_journal.json` 是否写入 2026-06-01 快照
 
 这一步是反事后诸葛亮的关键：  
