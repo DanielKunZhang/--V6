@@ -30,6 +30,7 @@ DESKTOP_LINKS = {
     "monthly": "Monthly_Research_Review_LATEST.html",
     "v6a_cutover_card": "2026-05-26_V6A_balanced_cutover_执行检查卡_v1.md",
     "v6b_card": "6月1日_V6B_执行卡.md",
+    "v6b_preflight": "2026-06-01_V6B_执行预检报告.md",
     "overview": "投资系统全景图_SYSTEM_OVERVIEW.html",
     "plan": "26年阶段性组合策略计划.html",
 }
@@ -277,6 +278,7 @@ def build_html(payload: dict[str, Any]) -> str:
         <a href="{DESKTOP_LINKS['overlay']}">Overlay</a>
         <a href="{DESKTOP_LINKS['v6a_cutover_card']}">5月26日 V6-A 执行卡</a>
         <a href="{DESKTOP_LINKS['v6b_card']}">6月1日执行卡</a>
+        <a href="{DESKTOP_LINKS['v6b_preflight']}">V6-B 预检</a>
       </div>
     </header>
 
