@@ -18,7 +18,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Semiconductors / AI Infrastructure",
-      "notes": "成本极低$34.62，浮盈巨大。机会成本=NVDA未来3年预期年化回报（AI周期红利，估计20%+）"
+      "notes": "成本极低$34.62，浮盈巨大。最新官方仍是FY2026 Q4：收入$68.1B、Data Center $62.3B；截至2026-05-14尚无FY2027 Q1新季报。若未来与V6仓位重叠，也必须继续按主仓财报口径跟踪。"
     },
 
     "PDD": {
@@ -31,7 +31,7 @@
       "watchlist_key": "PDD",
       "ev_fcf_at_cost": 6.5,
       "sector": "Consumer Cyclical / E-commerce",
-      "notes": "正股825股；另有1张 2028-01-21 110C 作为替代型弹性仓。V_base=$181，V_base_geo=$127，Temu关税风险持续。"
+      "notes": "正股825股；另有1张 2028-01-21 110C 作为替代型弹性仓。最新官方仍是2026-03-25 FY2025/Q4：Q4收入+12%，季度净利润-11%；截至2026-05-14尚无26Q1新季报。V_base=$181，V_base_geo=$127，Temu关税风险持续。"
     },
 
     "QCOM": {
@@ -44,7 +44,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Semiconductors / Mobile",
-      "notes": "手机芯片+汽车芯片布局。当前持仓成本约$144.39。"
+      "notes": "手机芯片+汽车芯片布局。最新FY26 Q2收入$10.6B，Handset -13%，Auto +38%，IoT +9%；多元化延续，但手机链压力仍在。当前持仓成本约$144.39。"
     },
 
     "ADBE": {
@@ -57,7 +57,7 @@
       "watchlist_key": "ADBE",
       "ev_fcf_at_cost": null,
       "sector": "Software / Creative Cloud",
-      "notes": "已完成初始建仓，后续按计划分段向目标仓位推进。"
+      "notes": "已完成初始建仓。FY26 Q1收入$6.40B(+12%)、经营现金流$2.96B、AI-first ARR同比3x+；thesis未转弱，后续按计划分段向目标仓位推进。"
     },
 
     "IT": {
@@ -70,7 +70,7 @@
       "watchlist_key": "IT",
       "ev_fcf_at_cost": null,
       "sector": "Information Services / Research",
-      "notes": "灵活舒服仓。2026-05-14 已进入$140-$150观察/可加区，但资本优先级仍低于 ADBE 与核心击球区。"
+      "notes": "灵活舒服仓。2026Q1 CV +1%(fx-neutral)、收入-1.5%、FCF +28.7%；研究主业与现金流仍稳、咨询偏弱。2026-05-14 已进入$140-$150观察/可加区，但资本优先级仍低于 ADBE 与核心击球区。"
     },
 
     "NU": {
@@ -83,7 +83,7 @@
       "watchlist_key": "NU",
       "ev_fcf_at_cost": null,
       "sector": "Fintech / Digital Banking",
-      "notes": "已完成初始仓。2026-05-14 现价跌破$13，进入正式击球区，但仍按分段加仓纪律执行。"
+      "notes": "已完成初始仓。最新官方仍是FY2025/Q4：客户1.31亿、全年净增1700万、ARPAC $15；截至2026-05-14白天尚未出26Q1正式财报。现价跌破$13，进入正式击球区，但仍按分段加仓纪律执行。"
     },
 
     "CRDO": {
@@ -122,7 +122,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Technology / Internet Platform",
-      "notes": "富途港股账户持有500股@549.9HKD"
+      "notes": "富途港股账户持有500股@549.9HKD。2026Q1收入+9%、广告+20%、金融科技与企业服务+9%、FCF+20%；经营质量上修，但合并总暴露仍过大，策略仍是低位不加、反弹减仓。"
     },
 
     "9992.HK_富途": {
@@ -135,7 +135,7 @@
       "watchlist_key": "9992.HK",
       "ev_fcf_at_cost": null,
       "sector": "Consumer / IP Collectibles",
-      "notes": "富途港股400股@150.3HKD"
+      "notes": "富途港股400股@150.3HKD。2026Q1经营更新显示总收入+75%~80%、中国区+100%~105%；实际增长强于4月保守估值假设，因此当前判断是依然偏便宜/至少不贵，但仍先持有、不追高。"
     },
 
     "9999.HK_option": {
@@ -171,7 +171,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Consumer Appliances / Smart Home",
-      "notes": "5000股@78.83RMB。家电龙头，确定性高，增速放缓。"
+      "notes": "5000股@78.83RMB。2026Q1收入+2.55%、归母+2.03%，但扣非归母-14.02%；家电龙头确定性仍高，但盈利节奏放慢，执行上改为分段补仓。"
     },
 
     "9992.HK_港股通": {
@@ -184,7 +184,7 @@
       "watchlist_key": "9992.HK",
       "ev_fcf_at_cost": null,
       "sector": "Consumer / IP Collectibles",
-      "notes": "原有200股@149.27HKD，2026-05-14 再买200股@156.6HKD，合并成本约152.94HKD。与富途港股合计800股泡泡玛特。"
+      "notes": "原有200股@149.27HKD，2026-05-14 再买200股@156.6HKD，合并成本约152.94HKD。2026Q1经营更新继续验证高增长，当前结论是依然偏便宜/至少不贵，但仍只持有/回落再加；与富途港股合计800股泡泡玛特。"
     },
 
     "0700.HK_港股通": {
@@ -197,7 +197,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Technology / Internet Platform",
-      "notes": "港股通400股@608.51HKD。与富途港股+RSU合计2100股腾讯。"
+      "notes": "港股通400股@608.51HKD。2026Q1经营质量继续增强，但与富途港股+RSU合计2100股后总暴露仍过大，策略仍是低位不加、反弹减仓。"
     },
 
     "600036.SS": {
@@ -210,7 +210,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Banking / Financial Services",
-      "notes": "2026-05-14 卖出800股，剩2700股@38.79RMB。国内零售银行龙头，高股息，低估值，但只作为RMB停泊仓。"
+      "notes": "2026-05-14 卖出800股，剩2700股@38.79RMB。2026Q1收入+3.81%、归母+1.52%、不良率0.94%持平、财富管理收入+25.42%；国内零售银行龙头，但仍只作为RMB停泊仓。"
     },
 
     "0700.HK_RSU": {
@@ -223,7 +223,7 @@
       "watchlist_key": null,
       "ev_fcf_at_cost": null,
       "sector": "Technology / Internet Platform",
-      "notes": "1200股RSU，已赋予并完税，实际成本=0。机会成本=卖出腾讯换入候选标的的相对回报。"
+      "notes": "1200股RSU，已赋予并完税，实际成本=0。2026Q1经营质量继续增强，但必须与富途港股/港股通合并计算腾讯总暴露；机会成本=卖出腾讯换入候选标的的相对回报。"
     }
 
   },
