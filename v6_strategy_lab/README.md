@@ -29,3 +29,20 @@ V6 Strategy Lab 是 V6 的研究与治理层，不是执行层。
 3. 输出到 `reports/`。
 4. 关键指标进入 `scorecards/`。
 5. 季度做一次主策略 revalidation。
+
+## 周度运行补充
+
+当前周度治理建议增加这一条顺序：
+
+1. 先运行 `v6b_missing_opportunity_review.py`
+2. 再运行 `v6_weekly_review_board.py`
+
+原因：
+
+- `Missing Opportunity Review` 负责找本周主题内强票是否漏出当前 Radar seed
+- `Weekly V6 Review Board` 负责把这些漏网、覆盖缺口和现有 challenger 一起汇总成正式 backlog
+
+当前边界：
+
+- `Missing Opportunity Review` 是 review/watch 工件，不是自动入池
+- 真正把名字写进 `point-in-time universe` 仍需人工确认

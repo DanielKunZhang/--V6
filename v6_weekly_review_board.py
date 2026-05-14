@@ -18,6 +18,7 @@ V6A_PARAM_DIR = ROOT / "backtest_results" / "v6a_parameter_challenger"
 V6A_ROBUSTNESS_DIR = ROOT / "backtest_results" / "v6a_parameter_robustness"
 V6A_REAUDIT_DIR = ROOT / "backtest_results" / "v6a_challenger_turnover_cost_reaudit"
 V6B_PROFILE_DIR = ROOT / "backtest_results" / "v6b_profile_search"
+MISSING_REVIEW_LATEST = ROOT / "backtest_results" / "v6b_missing_opportunity_review" / "latest.json"
 OUT_DIR = ROOT / "backtest_results" / "v6_weekly_review"
 BACKLOG_DIR = ROOT / "backtest_results" / "v6_research_backlog"
 
@@ -172,6 +173,24 @@ def load_latest_v6b_track_signal(profile_prefix: str) -> dict[str, Any]:
     }
 
 
+def load_latest_missing_review() -> dict[str, Any]:
+    payload = read_json(MISSING_REVIEW_LATEST)
+    if not payload:
+        return {}
+    summary = payload.get("summary", {}) if isinstance(payload.get("summary"), dict) else {}
+    return {
+        "path": rel(MISSING_REVIEW_LATEST),
+        "as_of": str(payload.get("as_of") or ""),
+        "critical_miss_count": int(summary.get("critical_miss_count") or 0),
+        "watch_miss_count": int(summary.get("watch_miss_count") or 0),
+        "active_weak_count": int(summary.get("active_weak_count") or 0),
+        "coverage_gap_count": int(summary.get("coverage_gap_count") or 0),
+        "theme_wakeup_count": int(summary.get("theme_wakeup_count") or 0),
+        "critical_miss_tickers": [str(item) for item in summary.get("critical_miss_tickers", [])],
+        "theme_wakeups": [str(item) for item in summary.get("theme_wakeups", [])],
+    }
+
+
 def build_backlog(
     daily_report: dict[str, Any],
     pilot_review: dict[str, Any],
@@ -182,6 +201,7 @@ def build_backlog(
     core_signal: dict[str, Any],
     turnaround_signal: dict[str, Any],
     bottleneck_signal: dict[str, Any],
+    missing_review: dict[str, Any],
     position_summary: dict[str, Any],
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
@@ -297,6 +317,36 @@ def build_backlog(
                 "next_step": "Do not spend allocator attention here until universe quality or exits materially improve.",
             }
         )
+    if missing_review and (missing_review.get("critical_miss_count", 0) > 0 or missing_review.get("theme_wakeup_count", 0) > 0):
+        missing_names = ", ".join(missing_review.get("critical_miss_tickers", [])[:5]) or "none"
+        theme_wakeups = ", ".join(missing_review.get("theme_wakeups", [])[:4]) or "none"
+        items.append(
+            {
+                "priority": "P1",
+                "lane": "radar_missing_opportunity",
+                "title": "Review new missing-opportunity names before the next Radar universe refresh",
+                "reason": (
+                    f"Latest missing-opportunity review ({missing_review.get('as_of')}) shows "
+                    f"{missing_review.get('critical_miss_count', 0)} critical misses "
+                    f"and {missing_review.get('theme_wakeup_count', 0)} theme wakeups. "
+                    f"Names={missing_names}; themes={theme_wakeups}."
+                ),
+                "next_step": "Decide whether to upgrade these names/themes into point-in-time research seed or explicitly document why they remain excluded.",
+            }
+        )
+    if missing_review and missing_review.get("coverage_gap_count", 0) > 0:
+        items.append(
+            {
+                "priority": "P2",
+                "lane": "radar_coverage_gaps",
+                "title": "Close Radar data and theme coverage gaps",
+                "reason": (
+                    f"Latest missing-opportunity review still has {missing_review.get('coverage_gap_count', 0)} coverage gaps "
+                    f"and {missing_review.get('active_weak_count', 0)} active-but-weak names."
+                ),
+                "next_step": "Fetch or validate missing candidate data, then prune stale names or move them to explicit observe-only status.",
+            }
+        )
     report_status = daily_report.get("weekly_action") or ""
     if report_status:
         items.append(
@@ -376,6 +426,20 @@ def render_board_md(board: dict[str, Any]) -> str:
                 f"- V6-B bottleneck: `{board['v6b_bottleneck']['track_gate']}` on `{board['v6b_bottleneck']['label']}`"
                 if board["v6b_bottleneck"] else "- V6-B bottleneck: `n/a`"
             ),
+            (
+                f"- Missing opportunity review: `{board['missing_review']['critical_miss_count']} critical / "
+                f"{board['missing_review']['theme_wakeup_count']} theme wakeups / "
+                f"{board['missing_review']['coverage_gap_count']} coverage gaps` as of `{board['missing_review']['as_of']}`"
+                if board["missing_review"] else "- Missing opportunity review: `n/a`"
+            ),
+            (
+                f"- Missing opportunity names: `{', '.join(board['missing_review']['critical_miss_tickers'])}`"
+                if board["missing_review"] and board["missing_review"].get("critical_miss_tickers") else "- Missing opportunity names: `none`"
+            ),
+            (
+                f"- Theme wakeups: `{', '.join(board['missing_review']['theme_wakeups'])}`"
+                if board["missing_review"] and board["missing_review"].get("theme_wakeups") else "- Theme wakeups: `none`"
+            ),
             "",
             "## 5. Research Backlog",
             "",
@@ -426,6 +490,7 @@ def main() -> None:
     core_signal = load_latest_v6b_track_signal("core_reaccel_profile")
     bottleneck_signal = load_latest_v6b_track_signal("bottleneck_diffusion_profile")
     turnaround_signal = load_latest_v6b_track_signal("turnaround_momentum_profile")
+    missing_review = load_latest_missing_review()
 
     backlog_items = build_backlog(
         daily_report=weekly_report or daily_report,
@@ -437,6 +502,7 @@ def main() -> None:
         core_signal=core_signal,
         turnaround_signal=turnaround_signal,
         bottleneck_signal=bottleneck_signal,
+        missing_review=missing_review,
         position_summary=position_summary,
     )
 
@@ -466,12 +532,14 @@ def main() -> None:
         "v6b_core": core_signal,
         "v6b_turnaround": turnaround_signal,
         "v6b_bottleneck": bottleneck_signal,
+        "missing_review": missing_review,
         "backlog_items": backlog_items,
         "artifacts": {
             "latest_daily": rel(latest_daily_path),
             "latest_weekly": rel(latest_weekly_path),
             "pilot_review": rel(pilot_review_path),
             "preflight": rel(PREFLIGHT_LATEST),
+            "missing_review": rel(MISSING_REVIEW_LATEST),
         },
     }
 

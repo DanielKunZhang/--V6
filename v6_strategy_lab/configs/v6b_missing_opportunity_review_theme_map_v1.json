@@ -1,0 +1,92 @@
+{
+  "review_id": "V6B_MISSING_OPPORTUNITY_THEME_MAP_V1",
+  "version": "2026-05-14",
+  "status": "active",
+  "description": "Theme-scoped candidate map for Radar Missing Opportunity Review. This is a review/watch map, not a live universe.",
+  "benchmarks": {
+    "market": "US.QQQ",
+    "semi": "US.SMH",
+    "industrial": "US.XLI"
+  },
+  "themes": [
+    {
+      "theme_id": "ai_supply_chain_diffusion",
+      "label": "AI Supply Chain Diffusion",
+      "notes": "Current V6-B training theme. Review should catch leaders that are strong but still missing from active Radar universe.",
+      "sentinels": [
+        "US.SMH",
+        "US.NVDA",
+        "US.AMD",
+        "US.ANET"
+      ],
+      "buckets": [
+        {
+          "bucket_id": "core_reacceleration",
+          "tickers": [
+            "US.AMD",
+            "US.ANET",
+            "US.TSM",
+            "US.AVGO"
+          ]
+        },
+        {
+          "bucket_id": "bottleneck_diffusion",
+          "tickers": [
+            "US.MU",
+            "US.WDC",
+            "US.AMKR"
+          ]
+        },
+        {
+          "bucket_id": "optics_and_interconnect",
+          "tickers": [
+            "US.COHR",
+            "US.AAOI",
+            "US.LITE"
+          ]
+        },
+        {
+          "bucket_id": "advanced_packaging",
+          "tickers": [
+            "US.AMKR",
+            "US.ASX"
+          ]
+        },
+        {
+          "bucket_id": "turnaround_momentum",
+          "tickers": [
+            "US.INTC",
+            "US.WDC"
+          ]
+        }
+      ]
+    },
+    {
+      "theme_id": "robotics_and_automation",
+      "label": "Robotics And Automation",
+      "notes": "Phase-1 wake-up theme. Current goal is to detect when the theme is awake and force candidate/data coverage review.",
+      "sentinels": [
+        "US.TSLA",
+        "US.XLI"
+      ],
+      "buckets": [
+        {
+          "bucket_id": "embodied_ai_leaders",
+          "tickers": [
+            "US.TSLA"
+          ]
+        },
+        {
+          "bucket_id": "automation_and_motion",
+          "tickers": [
+            "US.ROK",
+            "US.ETN",
+            "US.HON",
+            "US.IR",
+            "US.TER"
+          ]
+        }
+      ]
+    }
+  ]
+}

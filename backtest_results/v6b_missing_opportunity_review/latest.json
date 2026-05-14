@@ -1,0 +1,233 @@
+{
+  "generated_at": "2026-05-14T09:57:57",
+  "as_of": "2026-05-08",
+  "review_threshold": 70.0,
+  "critical_threshold": 80.0,
+  "theme_wakeup_threshold": 70.0,
+  "active_universe_id": "V6B_RADAR_POINT_IN_TIME_SEED",
+  "theme_map_id": "V6B_MISSING_OPPORTUNITY_THEME_MAP_V1",
+  "summary": {
+    "theme_count": 2,
+    "active_universe_count": 9,
+    "review_row_count": 13,
+    "critical_miss_count": 1,
+    "watch_miss_count": 1,
+    "active_weak_count": 2,
+    "coverage_gap_count": 8,
+    "theme_wakeup_count": 0,
+    "critical_miss_tickers": [
+      "US.COHR"
+    ],
+    "theme_wakeups": []
+  },
+  "themes": [
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "theme_status": "missed_leaders_present",
+      "sentinel_strength": 44.09,
+      "active_count": 7,
+      "critical_miss_count": 1,
+      "watch_miss_count": 1,
+      "coverage_gap_count": 3,
+      "top_name": "US.INTC",
+      "top_score": 100.0
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "theme_status": "covered_or_cold",
+      "sentinel_strength": 13.23,
+      "active_count": 0,
+      "critical_miss_count": 0,
+      "watch_miss_count": 0,
+      "coverage_gap_count": 5,
+      "top_name": "US.TSLA",
+      "top_score": 16.29
+    }
+  ],
+  "critical_misses": [
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.COHR",
+      "buckets": "optics_and_interconnect",
+      "is_sentinel": false,
+      "active_in_universe": false,
+      "score": 86.26,
+      "action": "urgent_seed_review",
+      "cache_source": "backtest_results/v6b_rough_test/price_cache/COHR_daily.csv",
+      "eligible": true,
+      "history_days": 805,
+      "last_price_date": "2026-05-08",
+      "stale_days": 0,
+      "close": 335.26,
+      "ma50": 286.5072,
+      "ma200": 184.32954999999998,
+      "above_ma50": true,
+      "above_ma200": true,
+      "trend_gap": 0.8188076735390502,
+      "drawdown_from_high63": -0.0433988643821156,
+      "drawdown_from_high252": -0.0433988643821156,
+      "mom20": 0.09027642276422765,
+      "mom60": 0.49877062005453965,
+      "mom120": 1.3952275487604484,
+      "rel60_vs_market": 0.38564371467097036,
+      "rel60_vs_theme_benchmark": 0.4523053713300136
+    }
+  ],
+  "watch_misses": [
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.COHR",
+      "buckets": "optics_and_interconnect",
+      "is_sentinel": false,
+      "active_in_universe": false,
+      "score": 86.26,
+      "action": "urgent_seed_review",
+      "cache_source": "backtest_results/v6b_rough_test/price_cache/COHR_daily.csv",
+      "eligible": true,
+      "history_days": 805,
+      "last_price_date": "2026-05-08",
+      "stale_days": 0,
+      "close": 335.26,
+      "ma50": 286.5072,
+      "ma200": 184.32954999999998,
+      "above_ma50": true,
+      "above_ma200": true,
+      "trend_gap": 0.8188076735390502,
+      "drawdown_from_high63": -0.0433988643821156,
+      "drawdown_from_high252": -0.0433988643821156,
+      "mom20": 0.09027642276422765,
+      "mom60": 0.49877062005453965,
+      "mom120": 1.3952275487604484,
+      "rel60_vs_market": 0.38564371467097036,
+      "rel60_vs_theme_benchmark": 0.4523053713300136
+    }
+  ],
+  "active_weak": [
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.ANET",
+      "buckets": "core_reacceleration",
+      "is_sentinel": true,
+      "active_in_universe": true,
+      "score": 27.93,
+      "action": "review_active_name",
+      "cache_source": "backtest_results/v6b_rough_test/price_cache/ANET_daily.csv",
+      "eligible": true,
+      "history_days": 840,
+      "last_price_date": "2026-05-08",
+      "stale_days": 0,
+      "close": 141.77,
+      "ma50": 145.22100000000003,
+      "ma200": 138.6449,
+      "above_ma50": false,
+      "above_ma200": true,
+      "trend_gap": 0.022540317025725454,
+      "drawdown_from_high63": -0.20232937601980527,
+      "drawdown_from_high252": -0.20232937601980527,
+      "mom20": -0.03786901934170328,
+      "mom60": 0.007891369259206638,
+      "mom120": 0.08802762854950119,
+      "rel60_vs_market": -0.10523553612436265,
+      "rel60_vs_theme_benchmark": -0.03857387946531943
+    },
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.TSM",
+      "buckets": "core_reacceleration",
+      "is_sentinel": false,
+      "active_in_universe": true,
+      "score": 52.69,
+      "action": "review_active_name",
+      "cache_source": "backtest_results/v6b_rough_test/price_cache/TSM_daily.csv",
+      "eligible": true,
+      "history_days": 840,
+      "last_price_date": "2026-05-08",
+      "stale_days": 0,
+      "close": 411.68,
+      "ma50": 363.097696,
+      "ma200": 308.6211865,
+      "above_ma50": true,
+      "above_ma200": true,
+      "trend_gap": 0.3339330480475615,
+      "drawdown_from_high63": -0.01864123957091779,
+      "drawdown_from_high252": -0.01864123957091779,
+      "mom20": 0.11084727468969224,
+      "mom60": 0.10273771889081207,
+      "mom120": 0.46622218423227046,
+      "rel60_vs_market": -0.010389186492757219,
+      "rel60_vs_theme_benchmark": 0.056272470166286004
+    }
+  ],
+  "coverage_gaps": [
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.AAOI",
+      "buckets": "optics_and_interconnect",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.ASX",
+      "buckets": "advanced_packaging",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "AI Supply Chain Diffusion",
+      "theme_id": "ai_supply_chain_diffusion",
+      "ticker": "US.LITE",
+      "buckets": "optics_and_interconnect",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "ticker": "US.ETN",
+      "buckets": "automation_and_motion",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "ticker": "US.HON",
+      "buckets": "automation_and_motion",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "ticker": "US.IR",
+      "buckets": "automation_and_motion",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "ticker": "US.ROK",
+      "buckets": "automation_and_motion",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    },
+    {
+      "theme": "Robotics And Automation",
+      "theme_id": "robotics_and_automation",
+      "ticker": "US.TER",
+      "buckets": "automation_and_motion",
+      "gap_reason": "no_local_price_cache",
+      "active_in_universe": false
+    }
+  ]
+}
