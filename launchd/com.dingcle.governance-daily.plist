@@ -3,28 +3,26 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.dingcle.monthly-research-review</string>
+  <string>com.dingcle.governance-daily</string>
   <key>ProgramArguments</key>
   <array>
     <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
     <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/governance_reporting_runner.py</string>
     <string>--scope</string>
-    <string>monthly</string>
+    <string>daily</string>
   </array>
   <key>WorkingDirectory</key>
   <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>
   <key>StartCalendarInterval</key>
   <dict>
-    <key>Day</key>
-    <integer>1</integer>
     <key>Hour</key>
-    <integer>10</integer>
+    <integer>9</integer>
     <key>Minute</key>
-    <integer>0</integer>
+    <integer>15</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/monthly_research_review/launchd.out.log</string>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/governance_reporting/launchd_daily.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/monthly_research_review/launchd.err.log</string>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/governance_reporting/launchd_daily.err.log</string>
 </dict>
 </plist>
