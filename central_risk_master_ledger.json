@@ -1,0 +1,25 @@
+{
+  "ledger_id": "CENTRAL_RISK_MASTER_LEDGER_V1",
+  "version": "2026-05-14",
+  "updated_at": "2026-05-14",
+  "currency": "USD",
+  "total_assets_usd": 395000.0,
+  "futu_executable_assets_usd": 216800.0,
+  "source_note": "Structured master ledger extracted from 26年阶段性组合策略计划.html; future Central Risk Board reads this first and uses HTML as fallback/check.",
+  "positions": [
+    {"name": "腾讯", "current_pct": 31.8, "target_min": 18.0, "target_max": 22.0, "target_short": "18-22%", "action": "只减不加", "sleeve": "Value Main Book", "theme": "中国平台互联网"},
+    {"name": "美的", "current_pct": 14.4, "target_min": 12.0, "target_max": 14.0, "target_short": "12-14%", "action": "长期持有，分红底盘", "sleeve": "Value Main Book", "theme": "中国制造/家电"},
+    {"name": "招商银行", "current_pct": 3.8, "target_min": 0.0, "target_max": 3.0, "target_short": "0-3%", "action": "只作现金替代/腾挪来源", "sleeve": "Value Main Book", "theme": "中国金融"},
+    {"name": "NVDA", "current_pct": 12.8, "target_min": 12.0, "target_max": 14.0, "target_short": "12-14%", "action": "持有，不追高", "sleeve": "Value Main Book", "theme": "AI半导体"},
+    {"name": "ADBE", "current_pct": 1.9, "target_min": 8.0, "target_max": 10.0, "target_short": "8-10%", "action": "分段建仓", "sleeve": "Value Main Book", "theme": "美国软件"},
+    {"name": "PDD", "current_pct": 20.3, "target_min": 10.0, "target_max": 12.0, "target_short": "10-12%", "action": "只减不加", "sleeve": "Value Main Book", "theme": "中国平台互联网"},
+    {"name": "NU", "current_pct": 2.0, "target_min": 8.0, "target_max": 10.0, "target_short": "8-10%", "action": "已建 1%-2% 初始仓", "sleeve": "Value Main Book", "theme": "拉美金融科技"},
+    {"name": "泡泡玛特", "current_pct": 4.1, "target_min": 5.0, "target_max": 6.0, "target_short": "5-6%", "action": "持有为主；回落或完整财报再加", "sleeve": "Value Main Book", "theme": "中国消费/IP"},
+    {"name": "Radar", "current_pct": 0.0, "target_min": 0.0, "target_max": 3.0, "target_short": "0-3%", "action": "暂停单独加仓，转入 V6-B 回测", "sleeve": "Radar Overlay", "theme": "动态研究输入"},
+    {"name": "V6 量化策略仓", "current_pct": 0.0, "target_min": 5.0, "target_max": 8.0, "target_short": "5-8%", "action": "先完成模拟/小额实盘", "sleeve": "V6", "theme": "系统化进攻"},
+    {"name": "卫星实验", "current_pct": 0.0, "target_min": 1.0, "target_max": 3.0, "target_short": "1-3%", "action": "小额、独立、允许归零", "sleeve": "Experimental", "theme": "高弹性实验"},
+    {"name": "TME", "current_pct": 0.0, "target_min": 0.0, "target_max": 0.0, "target_short": "0%", "action": "直接退出", "sleeve": "Value Main Book", "theme": "中国平台互联网"},
+    {"name": "IT", "current_pct": 1.8, "target_min": 0.0, "target_max": 4.0, "target_short": "0-4%", "action": "进入舒服区，可观察式补", "sleeve": "Value Main Book", "theme": "IT服务"},
+    {"name": "富途现金", "current_pct": 7.6, "target_min": 8.0, "target_max": 12.0, "target_short": "8-12%", "action": "部分用于 V6 验证，保留缓冲", "sleeve": "Cash Buffer", "theme": "现金缓冲"}
+  ]
+}

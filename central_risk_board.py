@@ -16,6 +16,7 @@ from morning_brief import HTML_PORTFOLIO, collect_events, collect_portfolio_futu
 ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "central_risk_board"
 CONFIG_PATH = ROOT / "central_risk_board_config.json"
+STRUCTURED_LEDGER_PATH = ROOT / "central_risk_master_ledger.json"
 CASH_ALPHA_FUTU_SNAPSHOT = ROOT / "cash_alpha_v3_repo" / "backtest_results" / "futu_account_snapshot_latest.json"
 ATTACK_PREVIEW_DIR = ROOT / "backtest_results" / "attack_engine_live_preview"
 
@@ -223,7 +224,130 @@ def extract_portfolio_meta() -> dict[str, Any]:
         "total_assets_usd": total_assets_usd,
         "futu_executable_assets_usd": futu_assets_usd,
         "source": str(HTML_PORTFOLIO),
+        "source_type": "html_fallback",
         "notes": notes,
+    }
+
+
+def position_status(row: dict[str, Any]) -> str:
+    current_pct = float(row.get("current_pct") or 0.0)
+    target_min = row.get("target_min")
+    target_max = row.get("target_max")
+    status = str(row.get("status") or "")
+    if status:
+        return status
+    if target_max is not None and current_pct > float(target_max) + 0.5:
+        return "over"
+    if target_min is not None and float(target_min) > 2 and current_pct < float(target_min) - 1:
+        return "under"
+    return "ok"
+
+
+def normalize_structured_position(row: dict[str, Any]) -> dict[str, Any]:
+    clean = {
+        "name": str(row.get("name") or "").strip(),
+        "current_pct": round(float(row.get("current_pct") or 0.0), 1),
+        "target_min": row.get("target_min"),
+        "target_max": row.get("target_max"),
+        "target_short": str(row.get("target_short") or "—"),
+        "action": str(row.get("action") or ""),
+    }
+    if clean["target_min"] is not None:
+        clean["target_min"] = float(clean["target_min"])
+    if clean["target_max"] is not None:
+        clean["target_max"] = float(clean["target_max"])
+    if row.get("sleeve"):
+        clean["sleeve"] = str(row["sleeve"])
+    if row.get("theme"):
+        clean["theme"] = str(row["theme"])
+    clean["status"] = position_status({**row, **clean})
+    return clean
+
+
+def compare_ledgers(structured_positions: list[dict[str, Any]], html_positions: list[dict[str, Any]]) -> dict[str, Any]:
+    structured = {row["name"]: row for row in structured_positions}
+    html_rows = {row["name"]: row for row in html_positions}
+    missing_in_structured = sorted(set(html_rows) - set(structured))
+    missing_in_html = sorted(set(structured) - set(html_rows))
+    pct_diffs = []
+    for name in sorted(set(structured) & set(html_rows)):
+        diff = round(float(structured[name].get("current_pct") or 0.0) - float(html_rows[name].get("current_pct") or 0.0), 2)
+        if abs(diff) >= 0.2:
+            pct_diffs.append(
+                {
+                    "name": name,
+                    "structured_pct": structured[name].get("current_pct"),
+                    "html_pct": html_rows[name].get("current_pct"),
+                    "diff": diff,
+                }
+            )
+    return {
+        "html_source": str(HTML_PORTFOLIO),
+        "html_last_updated": "",
+        "missing_in_structured": missing_in_structured,
+        "missing_in_html": missing_in_html,
+        "pct_diffs": pct_diffs,
+        "status": "OK" if not missing_in_structured and not missing_in_html and not pct_diffs else "CHECK",
+    }
+
+
+def load_structured_master_ledger() -> dict[str, Any]:
+    if not STRUCTURED_LEDGER_PATH.exists():
+        return {}
+    try:
+        raw = json.loads(STRUCTURED_LEDGER_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"error": f"structured_ledger_parse_error={exc}"}
+    if not isinstance(raw, dict):
+        return {"error": "structured_ledger_not_object"}
+    positions_raw = raw.get("positions", [])
+    if not isinstance(positions_raw, list):
+        return {"error": "structured_ledger_positions_not_list"}
+    positions = [normalize_structured_position(row) for row in positions_raw if isinstance(row, dict) and str(row.get("name") or "").strip()]
+    return {
+        "last_updated": str(raw.get("updated_at") or ""),
+        "positions": positions,
+        "alerts": [row for row in positions if row["status"] == "over"],
+        "ledger_id": str(raw.get("ledger_id") or ""),
+        "version": str(raw.get("version") or ""),
+        "raw": raw,
+    }
+
+
+def load_master_ledger() -> dict[str, Any]:
+    structured = load_structured_master_ledger()
+    html_portfolio = collect_portfolio_html()
+    if structured and not structured.get("error"):
+        raw = structured.get("raw", {})
+        meta = {
+            "total_assets_usd": float(raw.get("total_assets_usd")) if raw.get("total_assets_usd") is not None else None,
+            "futu_executable_assets_usd": float(raw.get("futu_executable_assets_usd")) if raw.get("futu_executable_assets_usd") is not None else None,
+            "source": str(STRUCTURED_LEDGER_PATH),
+            "source_type": "structured_json",
+            "notes": [],
+        }
+        reconciliation = compare_ledgers(structured["positions"], html_portfolio.get("positions", []) if not html_portfolio.get("error") else [])
+        reconciliation["html_last_updated"] = html_portfolio.get("last_updated", "")
+        return {
+            "portfolio": {
+                "last_updated": structured.get("last_updated", ""),
+                "positions": structured["positions"],
+                "alerts": structured["alerts"],
+                "error": "",
+                "ledger_id": structured.get("ledger_id", ""),
+                "ledger_version": structured.get("version", ""),
+            },
+            "meta": meta,
+            "reconciliation": reconciliation,
+        }
+
+    html_meta = extract_portfolio_meta()
+    if structured.get("error"):
+        html_meta.setdefault("notes", []).append(structured["error"])
+    return {
+        "portfolio": html_portfolio,
+        "meta": html_meta,
+        "reconciliation": {"status": "FALLBACK", "html_source": str(HTML_PORTFOLIO), "html_last_updated": html_portfolio.get("last_updated", "")},
     }
 
 
@@ -467,7 +591,12 @@ def build_mapping_quality(positions: list[dict[str, Any]], config: dict[str, Any
     }
 
 
-def build_ledger_quality(portfolio: dict[str, Any], portfolio_meta: dict[str, Any], positions: list[dict[str, Any]]) -> dict[str, Any]:
+def build_ledger_quality(
+    portfolio: dict[str, Any],
+    portfolio_meta: dict[str, Any],
+    positions: list[dict[str, Any]],
+    reconciliation: dict[str, Any],
+) -> dict[str, Any]:
     issues: list[str] = []
     if portfolio.get("error"):
         issues.append(f"portfolio_parse_error={portfolio['error']}")
@@ -481,11 +610,19 @@ def build_ledger_quality(portfolio: dict[str, Any], portfolio_meta: dict[str, An
         issues.extend(str(item) for item in portfolio_meta["notes"])
     if not positions:
         issues.append("portfolio_positions_missing")
+    pct_sum = round(sum(float(row.get("current_pct") or 0.0) for row in positions), 1)
+    if pct_sum < 95.0 or pct_sum > 105.0:
+        issues.append(f"position_pct_sum_out_of_range={pct_sum:.1f}%")
+    if reconciliation.get("status") == "CHECK":
+        issues.append("structured_vs_html_reconciliation_check")
     return {
         "status": "OK" if not issues else "CHECK",
         "issues": issues,
         "position_count": len(positions),
+        "position_pct_sum": pct_sum,
         "source": portfolio_meta.get("source", str(HTML_PORTFOLIO)),
+        "source_type": portfolio_meta.get("source_type", "unknown"),
+        "reconciliation": reconciliation,
     }
 
 
@@ -662,10 +799,12 @@ def render_html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]
 def build_payload(requested_cadence: str) -> dict[str, Any]:
     config = load_board_config()
     cadence = resolve_cadence(requested_cadence)
-    portfolio = collect_portfolio_html()
+    master_ledger = load_master_ledger()
+    portfolio = master_ledger["portfolio"]
     v6 = collect_v6()
     generated_at = datetime.now().isoformat(timespec="seconds")
-    portfolio_meta = extract_portfolio_meta()
+    portfolio_meta = master_ledger["meta"]
+    ledger_reconciliation = master_ledger["reconciliation"]
     base_positions = portfolio.get("positions", [])
     alerts = portfolio.get("alerts", [])
     futu_snapshot = build_futu_snapshot()
@@ -676,12 +815,12 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     themes = build_theme_rows(positions, config)
     overlap = build_overlap_section(base_positions, v6.get("positions", {}), config)
     freshness = build_freshness(generated_at, portfolio.get("last_updated", ""), v6.get("state_updated", ""), futu_snapshot)
-    ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions)
+    ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions, ledger_reconciliation)
     mapping_quality = build_mapping_quality(positions, config)
     events = build_event_rows(config)
     status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
     return {
-        "version": "v1.3",
+        "version": "v1.4",
         "requested_cadence": requested_cadence,
         "cadence": cadence,
         "cadence_label": cadence_label(cadence),
@@ -689,6 +828,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "portfolio_last_updated": portfolio.get("last_updated", ""),
         "portfolio_error": portfolio.get("error", ""),
         "portfolio_meta": portfolio_meta,
+        "ledger_reconciliation": ledger_reconciliation,
         "status": status,
         "status_reasons": reasons,
         "firm_snapshot": snapshot,
@@ -710,7 +850,8 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "events": events,
         "event_window_days": int(config.get("board", {}).get("event_window_days") or 21),
         "known_limits": [
-            "total-account 主账本已经有质量检查，但仍然依赖 26年阶段性组合策略计划.html 的人工更新频率。",
+            "total-account 主账本已优先读取 central_risk_master_ledger.json；若结构化账本缺失或损坏，才回退到 26年阶段性组合策略计划.html。",
+            "结构化主账本当前仍需要人工更新，但已经可被机器校验、版本化、与 HTML 交叉核对。",
             "V6 曝露目前只对 master ledger 缺失的 managed names 做增量折算，避免与已入账主仓名称双重计算。",
             "Futu snapshot 仍然主要承担 broker-level sanity / freshness，不是完整全资产分母来源。",
             "theme mapping 已配置化并有未映射报警，但映射质量仍取决于后续持续补表。",
@@ -797,6 +938,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Total account denominator: `{fmt_usd(portfolio_meta.get('total_assets_usd'))}`",
         f"- Futu executable capital base: `{fmt_usd(portfolio_meta.get('futu_executable_assets_usd'))}`",
         f"- V6 embedded exposure added into denominator: `{fmt_pct(payload['v6_allocated']['current_pct'])}`",
+        f"- Master ledger source type: `{payload['ledger_quality'].get('source_type', 'unknown')}`",
         "",
         "## Firm Snapshot",
         "",
@@ -826,8 +968,16 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.extend(["", "## Master Ledger Quality", ""])
     lines.append(f"- Status: `{payload['ledger_quality']['status']}`")
     lines.append(f"- Source: `{payload['ledger_quality']['source']}`")
+    lines.append(f"- Source type: `{payload['ledger_quality'].get('source_type', 'unknown')}`")
     lines.append(f"- Parsed positions: `{payload['ledger_quality']['position_count']}`")
+    lines.append(f"- Position pct sum: `{fmt_pct(payload['ledger_quality'].get('position_pct_sum', 0.0))}`")
     lines.append(f"- Issues: `{', '.join(payload['ledger_quality']['issues']) if payload['ledger_quality']['issues'] else 'none'}`")
+    reconciliation = payload["ledger_quality"].get("reconciliation", {})
+    lines.append(f"- HTML reconciliation status: `{reconciliation.get('status', 'unknown')}`")
+    if reconciliation.get("missing_in_structured") or reconciliation.get("missing_in_html") or reconciliation.get("pct_diffs"):
+        lines.append(f"- Missing in structured: `{', '.join(reconciliation.get('missing_in_structured', [])) or 'none'}`")
+        lines.append(f"- Missing in HTML: `{', '.join(reconciliation.get('missing_in_html', [])) or 'none'}`")
+        lines.append(f"- Pct diffs: `{reconciliation.get('pct_diffs', [])}`")
 
     lines.extend(["", "## Theme Mapping Quality", ""])
     lines.append(f"- Unmapped positions: `{payload['mapping_quality']['unmapped_count']}`")
@@ -1038,7 +1188,10 @@ def build_html(payload: dict[str, Any]) -> str:
       <tbody>
         <tr><td>status</td><td>{html.escape(str(payload['ledger_quality']['status']))}</td></tr>
         <tr><td>source</td><td>{html.escape(str(payload['ledger_quality']['source']))}</td></tr>
+        <tr><td>source type</td><td>{html.escape(str(payload['ledger_quality'].get('source_type', 'unknown')))}</td></tr>
         <tr><td>parsed positions</td><td>{html.escape(str(payload['ledger_quality']['position_count']))}</td></tr>
+        <tr><td>position pct sum</td><td>{html.escape(fmt_pct(payload['ledger_quality'].get('position_pct_sum', 0.0)))}</td></tr>
+        <tr><td>HTML reconciliation</td><td>{html.escape(str(payload['ledger_quality'].get('reconciliation', {}).get('status', 'unknown')))}</td></tr>
         <tr><td>issues</td><td>{html.escape(', '.join(payload['ledger_quality']['issues']) if payload['ledger_quality']['issues'] else 'none')}</td></tr>
       </tbody>
     </table>
