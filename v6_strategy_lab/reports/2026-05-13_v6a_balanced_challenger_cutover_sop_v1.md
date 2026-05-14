@@ -261,6 +261,10 @@
 
 `执行 V6-A balanced challenger cutover SOP`
 
+一页执行卡：
+
+- `v6_strategy_lab/reports/2026-05-14_v6a_balanced_cutover_decision_day_card_v1.md`
+
 届时执行顺序固定为：
 
 1. 收集 evidence pack
@@ -278,4 +282,3 @@
 `先证明旧线稳定，再证明新线 ready，再做受控迁移。`
 
 这比“2026-05-26 直接一把切过去”更慢半步，但风险显著更低。
-

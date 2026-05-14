@@ -425,6 +425,16 @@ backtest_results/v6_reporting/
      - 当前 live `ATTACK_EQUAL_REPLAY` sleeve 仍保持不动，正式 go/no-go 继续等 `2026-05-26`
    - 汇总报告：`v6_strategy_lab/reports/2026-05-14_v6a_balanced_cutover_gate_status_v1.md`
 
+22. `2026-05-14` 已新增 `2026-05-26` 决策日一页执行卡
+   - 文档：`v6_strategy_lab/reports/2026-05-14_v6a_balanced_cutover_decision_day_card_v1.md`
+   - 作用：
+     - 把长版 cutover SOP 压缩成当天可直接执行的一页卡
+     - 锁定用户触发语、允许 verdict、evidence pack、决策顺序、执行边界
+   - 当前规则：
+     - 到 `2026-05-26` 当天，用户只需发：`执行 V6-A balanced challenger cutover SOP`
+     - 系统只允许输出：`GO_CUTOVER / HOLD_OLD_BASELINE / PAUSE_V6`
+     - 即便 `GO_CUTOVER`，真实下单前仍需单独确认：`GO_BALANCED_CUTOVER_EXECUTE`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。
