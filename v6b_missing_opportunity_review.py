@@ -16,6 +16,7 @@ ROUGH_CACHE_DIR = ROOT / "backtest_results" / "v6b_rough_test" / "price_cache"
 OUT_DIR = ROOT / "backtest_results" / "v6b_missing_opportunity_review"
 DEFAULT_THEME_MAP = ROOT / "v6_strategy_lab" / "configs" / "v6b_missing_opportunity_review_theme_map_v1.json"
 DEFAULT_UNIVERSE = ROOT / "v6_strategy_lab" / "configs" / "v6b_point_in_time_universe_seed_20260510.json"
+DEFAULT_REGISTRY = ROOT / "v6_strategy_lab" / "configs" / "v6b_candidate_registry_v1.json"
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -94,6 +95,15 @@ def active_universe_map(universe: dict[str, Any]) -> dict[str, dict[str, Any]]:
     for entry in universe.get("entries", []):
         ticker = str(entry.get("ticker") or "")
         if ticker and entry.get("status") == "active_research":
+            rows[ticker] = entry
+    return rows
+
+
+def registry_map(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for entry in registry.get("entries", []):
+        ticker = str(entry.get("ticker") or "")
+        if ticker:
             rows[ticker] = entry
     return rows
 
@@ -204,6 +214,7 @@ def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> 
 def build_review(
     theme_map: dict[str, Any],
     universe: dict[str, Any],
+    registry: dict[str, Any],
     prices: pd.DataFrame,
     sources: dict[str, str],
     as_of: pd.Timestamp,
@@ -214,6 +225,7 @@ def build_review(
     min_history_days: int,
 ) -> dict[str, Any]:
     active_map = active_universe_map(universe)
+    registry_rows = registry_map(registry)
     active_tickers = set(active_map)
     benchmark_map = theme_map.get("benchmarks", {})
     market_benchmark = str(benchmark_map.get("market") or "US.QQQ")
@@ -242,6 +254,9 @@ def build_review(
         theme_gaps: list[dict[str, Any]] = []
         for ticker in theme_tickers:
             bucket_ids = buckets.get(ticker, [])
+            registry_row = registry_rows.get(ticker, {})
+            registry_status = str(registry_row.get("registry_status") or "unregistered")
+            registry_data_status = str(registry_row.get("data_status") or "")
             if ticker not in prices.columns:
                 gap = {
                     "theme": label,
@@ -250,6 +265,8 @@ def build_review(
                     "buckets": ", ".join(bucket_ids) or "sentinel_only",
                     "gap_reason": "no_local_price_cache",
                     "active_in_universe": ticker in active_tickers,
+                    "registry_status": registry_status,
+                    "registry_data_status": registry_data_status,
                 }
                 theme_gaps.append(gap)
                 coverage_gaps.append(gap)
@@ -271,6 +288,8 @@ def build_review(
                     "buckets": ", ".join(bucket_ids) or "sentinel_only",
                     "gap_reason": str(metrics.get("blocked_reason") or "unknown"),
                     "active_in_universe": ticker in active_tickers,
+                    "registry_status": registry_status,
+                    "registry_data_status": registry_data_status,
                 }
                 theme_gaps.append(gap)
                 coverage_gaps.append(gap)
@@ -284,6 +303,8 @@ def build_review(
                 "buckets": ", ".join(bucket_ids) or "sentinel_only",
                 "is_sentinel": ticker in sentinels,
                 "active_in_universe": ticker in active_tickers,
+                "registry_status": registry_status,
+                "registry_data_status": registry_data_status,
                 "score": score,
                 "action": classify_action(active=ticker in active_tickers, score=score),
                 "cache_source": sources.get(ticker, ""),
@@ -341,6 +362,7 @@ def build_review(
         "theme_wakeup_threshold": theme_wakeup_threshold,
         "active_universe_id": universe.get("universe_id"),
         "theme_map_id": theme_map.get("review_id"),
+        "registry_id": registry.get("registry_id"),
         "summary": {
             "theme_count": len(theme_summaries),
             "active_universe_count": len(active_tickers),
@@ -369,6 +391,7 @@ def render_md(review: dict[str, Any]) -> str:
         f"- As Of: `{review['as_of']}`",
         f"- Active Universe: `{review['active_universe_id']}`",
         f"- Theme Map: `{review['theme_map_id']}`",
+        f"- Candidate Registry: `{review['registry_id']}`",
         "",
         "## Summary",
         "",
@@ -416,6 +439,7 @@ def render_md(review: dict[str, Any]) -> str:
                     "theme": row["theme"],
                     "ticker": row["ticker"],
                     "buckets": row["buckets"],
+                    "registry_status": row["registry_status"],
                     "score": f"{row['score']:.1f}",
                     "mom20": render_percent(row["mom20"]),
                     "mom60": render_percent(row["mom60"]),
@@ -428,6 +452,7 @@ def render_md(review: dict[str, Any]) -> str:
                 ("theme", "theme"),
                 ("ticker", "ticker"),
                 ("buckets", "buckets"),
+                ("registry_status", "registry_status"),
                 ("score", "score"),
                 ("mom20", "mom20"),
                 ("mom60", "mom60"),
@@ -444,6 +469,7 @@ def render_md(review: dict[str, Any]) -> str:
                 {
                     "theme": row["theme"],
                     "ticker": row["ticker"],
+                    "registry_status": row["registry_status"],
                     "score": f"{row['score']:.1f}",
                     "mom20": render_percent(row["mom20"]),
                     "mom60": render_percent(row["mom60"]),
@@ -455,6 +481,7 @@ def render_md(review: dict[str, Any]) -> str:
             [
                 ("theme", "theme"),
                 ("ticker", "ticker"),
+                ("registry_status", "registry_status"),
                 ("score", "score"),
                 ("mom20", "mom20"),
                 ("mom60", "mom60"),
@@ -472,6 +499,8 @@ def render_md(review: dict[str, Any]) -> str:
                     "theme": row["theme"],
                     "ticker": row["ticker"],
                     "buckets": row["buckets"],
+                    "registry_status": row["registry_status"],
+                    "registry_data_status": row["registry_data_status"],
                     "gap_reason": row["gap_reason"],
                     "active_in_universe": "yes" if row["active_in_universe"] else "no",
                 }
@@ -481,6 +510,8 @@ def render_md(review: dict[str, Any]) -> str:
                 ("theme", "theme"),
                 ("ticker", "ticker"),
                 ("buckets", "buckets"),
+                ("registry_status", "registry_status"),
+                ("registry_data_status", "registry_data_status"),
                 ("gap_reason", "gap_reason"),
                 ("active_in_universe", "active_in_universe"),
             ],
@@ -493,6 +524,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Radar Missing Opportunity Review for V6-B.")
     parser.add_argument("--theme-map", default=str(DEFAULT_THEME_MAP))
     parser.add_argument("--universe", default=str(DEFAULT_UNIVERSE))
+    parser.add_argument("--registry", default=str(DEFAULT_REGISTRY))
     parser.add_argument("--start", default="2023-01-01")
     parser.add_argument("--end", default=datetime.now().strftime("%Y-%m-%d"))
     parser.add_argument("--as-of", default="")
@@ -505,6 +537,7 @@ def main() -> None:
 
     theme_map = load_json(Path(args.theme_map))
     universe = load_json(Path(args.universe))
+    registry = load_json(Path(args.registry))
 
     tickers: set[str] = set()
     for theme in theme_map.get("themes", []):
@@ -529,6 +562,7 @@ def main() -> None:
     review = build_review(
         theme_map,
         universe,
+        registry,
         prices,
         sources,
         as_of,

@@ -1,0 +1,195 @@
+{
+  "registry_id": "V6B_CANDIDATE_REGISTRY_V1",
+  "version": "2026-05-14",
+  "status": "active",
+  "description": "Pre-universe candidate registry for V6-B. This file tracks names before and beyond active_research seed membership.",
+  "status_definitions": {
+    "active_research": "Already in point-in-time active research universe.",
+    "watch_add_candidate": "Has research support and should be considered for the next universe refresh once data and rationale are sufficient.",
+    "observe_only": "Theme-relevant, but still too early or insufficiently validated for next refresh.",
+    "theme_watch": "Theme-scoped watch name; should remain in review but not close to active promotion.",
+    "covered_in_v6a_core": "Theme-relevant but already covered by V6-A core pool, so not a V6-B priority."
+  },
+  "entries": [
+    {
+      "ticker": "US.AMD",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "core_reacceleration",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Core first-order AI accelerator re-acceleration track."
+    },
+    {
+      "ticker": "US.ANET",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "core_reacceleration",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "AI networking / fabric leader in active V6-B research."
+    },
+    {
+      "ticker": "US.TSM",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "core_reacceleration",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Manufacturing anchor in active V6-B research."
+    },
+    {
+      "ticker": "US.MU",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "bottleneck_diffusion",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "HBM / memory bottleneck track."
+    },
+    {
+      "ticker": "US.WDC",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "bottleneck_diffusion",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Storage-cycle repricing track."
+    },
+    {
+      "ticker": "US.AMKR",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "advanced_packaging",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Advanced packaging watch in active universe."
+    },
+    {
+      "ticker": "US.INTC",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "turnaround_momentum",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Turnaround momentum research track."
+    },
+    {
+      "ticker": "US.AMBA",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "bottleneck_diffusion",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Edge AI optionality in active research seed."
+    },
+    {
+      "ticker": "US.CEVA",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "bottleneck_diffusion",
+      "registry_status": "active_research",
+      "data_status": "local_cache_available",
+      "source": "v6b_point_in_time_universe_seed_20260510.json",
+      "reason": "Edge AI IP optionality in active research seed."
+    },
+    {
+      "ticker": "US.COHR",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "optics_and_interconnect",
+      "registry_status": "watch_add_candidate",
+      "data_status": "local_cache_available",
+      "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
+      "reason": "High-priority optics / interconnect add candidate if point-in-time review validates."
+    },
+    {
+      "ticker": "US.ASX",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "advanced_packaging",
+      "registry_status": "watch_add_candidate",
+      "data_status": "needs_price_cache",
+      "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
+      "reason": "ASE Technology watch-add candidate for packaging / OSAT layer."
+    },
+    {
+      "ticker": "US.AAOI",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "optics_and_interconnect",
+      "registry_status": "observe_only",
+      "data_status": "needs_price_cache",
+      "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
+      "reason": "Theme-relevant optics candidate, but still below watch-add confidence until more evidence arrives."
+    },
+    {
+      "ticker": "US.LITE",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "optics_and_interconnect",
+      "registry_status": "observe_only",
+      "data_status": "needs_price_cache",
+      "source": "2026-05-10 Radar weekly patch",
+      "reason": "Optics peer used to prevent single-name blind spot."
+    },
+    {
+      "ticker": "US.AVGO",
+      "theme_id": "ai_supply_chain_diffusion",
+      "bucket_id": "core_reacceleration",
+      "registry_status": "covered_in_v6a_core",
+      "data_status": "local_cache_available",
+      "source": "V6-A core pool",
+      "reason": "Relevant AI leader but already covered in V6-A core baseline."
+    },
+    {
+      "ticker": "US.TSLA",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "embodied_ai_leaders",
+      "registry_status": "theme_watch",
+      "data_status": "local_cache_available",
+      "source": "robotics theme wake-up monitor",
+      "reason": "Theme sentinel for embodied AI / robotics wake-up detection."
+    },
+    {
+      "ticker": "US.ROK",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "automation_and_motion",
+      "registry_status": "theme_watch",
+      "data_status": "needs_price_cache",
+      "source": "robotics_and_automation theme map v1",
+      "reason": "Industrial automation / motion-control candidate for robotics theme."
+    },
+    {
+      "ticker": "US.ETN",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "automation_and_motion",
+      "registry_status": "theme_watch",
+      "data_status": "needs_price_cache",
+      "source": "robotics_and_automation theme map v1",
+      "reason": "Power management / automation beneficiary candidate."
+    },
+    {
+      "ticker": "US.HON",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "automation_and_motion",
+      "registry_status": "theme_watch",
+      "data_status": "needs_price_cache",
+      "source": "robotics_and_automation theme map v1",
+      "reason": "Industrial automation and controls candidate."
+    },
+    {
+      "ticker": "US.IR",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "automation_and_motion",
+      "registry_status": "theme_watch",
+      "data_status": "needs_price_cache",
+      "source": "robotics_and_automation theme map v1",
+      "reason": "Industrial automation / motion infrastructure watch name."
+    },
+    {
+      "ticker": "US.TER",
+      "theme_id": "robotics_and_automation",
+      "bucket_id": "automation_and_motion",
+      "registry_status": "theme_watch",
+      "data_status": "needs_price_cache",
+      "source": "robotics_and_automation theme map v1",
+      "reason": "Testing / automation adjacency candidate."
+    }
+  ]
+}

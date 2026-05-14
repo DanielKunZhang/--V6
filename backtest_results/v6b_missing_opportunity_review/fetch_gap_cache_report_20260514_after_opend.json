@@ -1,0 +1,34 @@
+[
+  {
+    "ticker": "US.AAOI",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.ASX",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.LITE",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.ETN",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.HON",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.IR",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.ROK",
+    "status": "empty"
+  },
+  {
+    "ticker": "US.TER",
+    "status": "empty"
+  }
+]

@@ -1,0 +1,230 @@
+{
+  "generated_at": "2026-05-14T10:12:15",
+  "week_ending": "2026-05-14",
+  "decision": "Investigate / Continue manual pilot",
+  "pilot_review_decision": "CONTINUE_MANUAL_PILOT",
+  "managed_unrealized_pl_pct_points": -0.55,
+  "top3_weight": 0.7337226522418325,
+  "latest_weekly_action": "需要用户确认：检测到 armed 执行记录，复核订单和仓位。",
+  "managed_state_strategy": "V6-A ATTACK_EQUAL_REPLAY",
+  "recon_issue_count": 0,
+  "pending_order_count": 0,
+  "preflight_decision": "BLOCK",
+  "preflight_blockers": [
+    "kill_switch: Kill switch is ON (reason=manual_review, updated_at=2026-05-12). Set kill_switch.enabled=false in policy config to allow automation.",
+    "trading_session: Not in regular market hours: Tuesday 06:53 EDT (session 09:30–16:00 ET weekdays only)"
+  ],
+  "top_positions": [
+    {
+      "code": "US.AMZN",
+      "market_val": 1075.96,
+      "weight": 0.29130151097971374,
+      "unrealized_pl_pct": -1.01
+    },
+    {
+      "code": "US.AVGO",
+      "market_val": 856.86,
+      "weight": 0.231983171026876,
+      "unrealized_pl_pct": 0.25
+    },
+    {
+      "code": "US.GOOGL",
+      "market_val": 777.28,
+      "weight": 0.21043797023524283,
+      "unrealized_pl_pct": -1.5
+    }
+  ],
+  "v6a_candidate": {
+    "path": "backtest_results/v6a_parameter_challenger/v6a_parameter_challenger_20260513_v1.csv",
+    "raw_top": {
+      "path": "backtest_results/v6a_parameter_challenger/v6a_parameter_challenger_20260513_v1.csv",
+      "label": "mom120 top2 trend150 mkt200 dd10 rebal10",
+      "gate": "promising_core_upgrade",
+      "top_n": 2,
+      "ann_ret": 0.3751212817653944,
+      "max_dd": -0.2631242074473737,
+      "sharpe": 1.093572053557641,
+      "ann_delta": 0.1131105649389037,
+      "sharpe_delta": 0.2145811924392743,
+      "dd_worse": 0.0025583630229472,
+      "oos_sharpe": 1.353848439289149,
+      "oos_sharpe_delta": 0.0738944631275047
+    },
+    "balanced_top": {
+      "path": "backtest_results/v6a_parameter_challenger/v6a_parameter_challenger_20260513_v1.csv",
+      "label": "mom60 top3 trend150 mkt200 dd10 rebal10",
+      "gate": "promising_core_upgrade",
+      "top_n": 3,
+      "ann_ret": 0.3400033387998149,
+      "max_dd": -0.2233716759081021,
+      "sharpe": 1.1074231900464764,
+      "ann_delta": 0.0779926219733242,
+      "sharpe_delta": 0.2284323289281097,
+      "dd_worse": -0.0371941685163243,
+      "oos_sharpe": 1.5164964221918784,
+      "oos_sharpe_delta": 0.2365424460302341
+    }
+  },
+  "v6a_robustness": {
+    "path": "backtest_results/v6a_parameter_robustness/v6a_parameter_robustness_20260513_balanced_v1.json",
+    "target_label": "mom60 top3 trend150 mkt200 dd10 rebal10",
+    "verdict": "stable_neighbor_cluster",
+    "neighbor_count": 11,
+    "good_neighbor_count": 11
+  },
+  "v6a_reaudit": {
+    "path": "backtest_results/v6a_challenger_turnover_cost_reaudit/v6a_challenger_turnover_cost_reaudit_20260513_balanced_v2.json",
+    "candidate_label": "mom60 top3 trend150 mkt200 dd10 rebal10",
+    "verdict": "candidate_survives_costs",
+    "baseline_summary": {
+      "label": "baseline",
+      "full_ann_0": 0.2620107168264907,
+      "full_dd_0": -0.2605658444244265,
+      "sharpe_0": 0.8789908611183667,
+      "oos_ann_0": 0.4712215483707325,
+      "oos_sharpe_0": 1.2799539761616443,
+      "full_ann_25": 0.23450741123785845,
+      "full_dd_25": -0.26672960605971124,
+      "sharpe_25": 0.7866098717489504,
+      "oos_ann_25": 0.43866709979765073,
+      "oos_sharpe_25": 1.2040318327835122,
+      "annual_turnover_full": 8.876909246575343,
+      "annual_turnover_oos": 8.935013717421125,
+      "rebalances_per_year": 17.01164383561644,
+      "avg_turnover_per_rebalance": 0.5218137254901961,
+      "max_turnover_per_rebalance": 1.0
+    },
+    "candidate_summary": {
+      "label": "candidate",
+      "full_ann_0": 0.3400033387998149,
+      "full_dd_0": -0.2233716759081021,
+      "sharpe_0": 1.1074231900464764,
+      "oos_ann_0": 0.5970680295285367,
+      "oos_sharpe_0": 1.5164964221918784,
+      "full_ann_25": 0.3236339318155794,
+      "full_dd_25": -0.22540741365360845,
+      "sharpe_25": 1.056892700741052,
+      "oos_ann_25": 0.573070638685572,
+      "oos_sharpe_25": 1.4655584330060774,
+      "annual_turnover_full": 4.999255136986301,
+      "annual_turnover_oos": 6.012345679012346,
+      "rebalances_per_year": 10.632277397260275,
+      "avg_turnover_per_rebalance": 0.4701960784313727,
+      "max_turnover_per_rebalance": 1.0
+    }
+  },
+  "v6b_core": {
+    "path": "backtest_results/v6b_profile_search/core_reaccel_profile_20260513_core_v2.csv",
+    "label": "mom60 top2 trend120 mkt180 dd10 rebal10",
+    "baseline_gate": "promising_safe_overlay",
+    "track_gate": "real_track_alpha",
+    "ann_ret": 0.3682719133911465,
+    "max_dd": -0.2896732088013701,
+    "sharpe": 1.035397859130648,
+    "track_ann_inc": 0.053210708429368,
+    "track_sharpe_inc": 0.0765871768764865,
+    "track_dd_inc": -0.0174068803451442
+  },
+  "v6b_turnaround": {
+    "path": "backtest_results/v6b_profile_search/turnaround_momentum_profile_20260513_turn_v2.csv",
+    "label": "mom60 top2 trend150 mkt200 dd08 rebal10",
+    "baseline_gate": "promising_safe_overlay",
+    "track_gate": "real_track_alpha",
+    "ann_ret": 0.3588281789719043,
+    "max_dd": -0.2453336857810734,
+    "sharpe": 1.0708843112773463,
+    "track_ann_inc": 0.0134959318079452,
+    "track_sharpe_inc": 0.033267752232718,
+    "track_dd_inc": 4.718447854656915e-16
+  },
+  "v6b_bottleneck": {
+    "path": "backtest_results/v6b_profile_search/bottleneck_diffusion_profile_20260513_bottle_v2.csv",
+    "label": "mom120 top2 trend150 mkt200 dd10 rebal5",
+    "baseline_gate": "return_only_overlay",
+    "track_gate": "return_only_track",
+    "ann_ret": 0.289591014395681,
+    "max_dd": -0.3407950032144361,
+    "sharpe": 0.7867122696876975,
+    "track_ann_inc": 0.0141574486839175,
+    "track_sharpe_inc": -0.0403906244733566,
+    "track_dd_inc": 0.0256150393803711
+  },
+  "missing_review": {
+    "path": "backtest_results/v6b_missing_opportunity_review/latest.json",
+    "as_of": "2026-05-08",
+    "critical_miss_count": 1,
+    "watch_miss_count": 1,
+    "active_weak_count": 2,
+    "coverage_gap_count": 8,
+    "theme_wakeup_count": 0,
+    "critical_miss_tickers": [
+      "US.COHR"
+    ],
+    "theme_wakeups": []
+  },
+  "backlog_items": [
+    {
+      "priority": "P0",
+      "lane": "execution_quality",
+      "title": "Keep V6-A in manual pilot and collect more execution evidence",
+      "reason": "Pilot review remains CONTINUE_MANUAL_PILOT. System still in execution-validation phase.",
+      "next_step": "Continue manual pilot and reuse the same review board at the next weekly checkpoint."
+    },
+    {
+      "priority": "P1",
+      "lane": "v6a_parameter_challenger",
+      "title": "Build formal side-by-side board for the balanced V6-A challenger",
+      "reason": "Preferred candidate mom60 top3 trend150 mkt200 dd10 rebal10 shows Ann +7.8%, Sharpe +0.23, dd change -3.7% vs baseline. Robustness=stable_neighbor_cluster, cost_reaudit=candidate_survives_costs.",
+      "next_step": "Prepare baseline vs balanced challenger review board and implementation/replay plan."
+    },
+    {
+      "priority": "P1",
+      "lane": "v6b_core_reaccel",
+      "title": "Promote core_reaccel to formal V6-B challenger lane",
+      "reason": "Best core_reaccel overlay mom60 top2 trend120 mkt180 dd10 rebal10 still adds Ann +5.3% and Sharpe +0.08 vs same-parameter V6-A base-only.",
+      "next_step": "Keep core_reaccel ahead of other V6-B tracks and build the next validation board around it."
+    },
+    {
+      "priority": "P2",
+      "lane": "v6b_turnaround",
+      "title": "Keep turnaround as secondary research only",
+      "reason": "Turnaround still shows positive track increment, but only modestly (Ann +1.3%, Sharpe +0.03).",
+      "next_step": "Do not give allocator weight; only continue if new sparse-track evidence improves quality."
+    },
+    {
+      "priority": "P2",
+      "lane": "v6b_bottleneck",
+      "title": "Freeze bottleneck as a live promotion candidate",
+      "reason": "Bottleneck top row mom120 top2 trend150 mkt200 dd10 rebal5 does not pass true track-alpha test (track gate = return_only_track).",
+      "next_step": "Do not spend allocator attention here until universe quality or exits materially improve."
+    },
+    {
+      "priority": "P1",
+      "lane": "radar_missing_opportunity",
+      "title": "Review new missing-opportunity names before the next Radar universe refresh",
+      "reason": "Latest missing-opportunity review (2026-05-08) shows 1 critical misses and 0 theme wakeups. Names=US.COHR; themes=none.",
+      "next_step": "Decide whether to upgrade these names/themes into point-in-time research seed or explicitly document why they remain excluded."
+    },
+    {
+      "priority": "P2",
+      "lane": "radar_coverage_gaps",
+      "title": "Close Radar data and theme coverage gaps",
+      "reason": "Latest missing-opportunity review still has 8 coverage gaps and 2 active-but-weak names.",
+      "next_step": "Fetch or validate missing candidate data, then prune stale names or move them to explicit observe-only status."
+    },
+    {
+      "priority": "P3",
+      "lane": "review_cadence",
+      "title": "Keep weekly review cadence active",
+      "reason": "Latest report action is '需要用户确认：检测到 armed 执行记录，复核订单和仓位。'. Weekly review is now a formal governance step, not optional reflection.",
+      "next_step": "Run the weekly board again after the next full week of pilot data."
+    }
+  ],
+  "artifacts": {
+    "latest_daily": "backtest_results/v6_reporting/latest_daily.json",
+    "latest_weekly": "backtest_results/v6_reporting/latest_weekly.json",
+    "pilot_review": "backtest_results/v6a_pilot_review/v6a_pilot_review_gpt_review_20260512.json",
+    "preflight": "backtest_results/v6_automation_preflight/latest.json",
+    "missing_review": "backtest_results/v6b_missing_opportunity_review/latest.json"
+  }
+}

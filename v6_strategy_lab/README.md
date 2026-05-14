@@ -41,8 +41,10 @@ V6 Strategy Lab 是 V6 的研究与治理层，不是执行层。
 
 - `Missing Opportunity Review` 负责找本周主题内强票是否漏出当前 Radar seed
 - `Weekly V6 Review Board` 负责把这些漏网、覆盖缺口和现有 challenger 一起汇总成正式 backlog
+- `v6b_candidate_registry_v1.json` 负责承接 `active_research` 之外的 `watch_add_candidate / observe_only / theme_watch`
 
 当前边界：
 
 - `Missing Opportunity Review` 是 review/watch 工件，不是自动入池
 - 真正把名字写进 `point-in-time universe` 仍需人工确认
+- 周度人工 triage 参考 `reports/2026-05-14_v6b_radar_weekly_triage_sop_v1.md`
