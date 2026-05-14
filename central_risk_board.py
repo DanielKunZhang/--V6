@@ -20,6 +20,23 @@ CASH_ALPHA_FUTU_SNAPSHOT = ROOT / "cash_alpha_v3_repo" / "backtest_results" / "f
 ATTACK_PREVIEW_DIR = ROOT / "backtest_results" / "attack_engine_live_preview"
 
 DEFAULT_CONFIG = {
+    "board": {
+        "event_window_days": 21,
+        "manual_events": [
+            {
+                "date": "2026-05-26",
+                "domain": "V6治理",
+                "text": "balanced challenger cutover 决策补充检查",
+                "action": "按 cutover SOP 检查执行质量、回撤、偏离、自动化稳定性；禁止临场跳步骤。",
+            },
+            {
+                "date": "2026-06-01",
+                "domain": "V6-B治理",
+                "text": "V6-B 数据链路与 challenger 链路补充检查",
+                "action": "按 6月1日_V6B_执行卡执行 universe audit、synthetic history、challenger、allocator。",
+            },
+        ],
+    },
     "special_sleeves": {
         "V6 量化策略仓": "V6",
         "Radar": "Radar Overlay",
@@ -103,6 +120,8 @@ def load_board_config() -> dict[str, Any]:
             raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
             if isinstance(raw, dict):
                 merged = json.loads(json.dumps(DEFAULT_CONFIG, ensure_ascii=False))
+                if isinstance(raw.get("board"), dict):
+                    merged["board"].update(raw["board"])
                 for key in ("special_sleeves", "position_themes", "v6_themes"):
                     if isinstance(raw.get(key), dict):
                         merged[key].update(raw[key])
@@ -432,6 +451,86 @@ def build_theme_rows(positions: list[dict[str, Any]], config: dict[str, Any]) ->
     return rows
 
 
+def build_mapping_quality(positions: list[dict[str, Any]], config: dict[str, Any]) -> dict[str, Any]:
+    unmapped = []
+    for row in positions:
+        if float(row["current_pct"]) <= 0:
+            continue
+        theme = position_theme(row, config)
+        if theme in {"其他/待映射", "V6未映射主题"}:
+            unmapped.append({"name": row["name"], "current_pct": row["current_pct"], "theme": theme})
+    unmapped.sort(key=lambda item: item["current_pct"], reverse=True)
+    return {
+        "unmapped_count": len(unmapped),
+        "unmapped_weight": round(sum(float(item["current_pct"]) for item in unmapped), 1),
+        "unmapped_positions": unmapped,
+    }
+
+
+def build_ledger_quality(portfolio: dict[str, Any], portfolio_meta: dict[str, Any], positions: list[dict[str, Any]]) -> dict[str, Any]:
+    issues: list[str] = []
+    if portfolio.get("error"):
+        issues.append(f"portfolio_parse_error={portfolio['error']}")
+    if not portfolio.get("last_updated") or portfolio.get("last_updated") == "未知":
+        issues.append("portfolio_last_updated_missing")
+    if portfolio_meta.get("total_assets_usd") is None:
+        issues.append("total_assets_usd_missing")
+    if portfolio_meta.get("futu_executable_assets_usd") is None:
+        issues.append("futu_executable_assets_usd_missing")
+    if portfolio_meta.get("notes"):
+        issues.extend(str(item) for item in portfolio_meta["notes"])
+    if not positions:
+        issues.append("portfolio_positions_missing")
+    return {
+        "status": "OK" if not issues else "CHECK",
+        "issues": issues,
+        "position_count": len(positions),
+        "source": portfolio_meta.get("source", str(HTML_PORTFOLIO)),
+    }
+
+
+def normalize_event(item: dict[str, Any], source: str) -> dict[str, Any] | None:
+    try:
+        d = date.fromisoformat(str(item["date"]))
+    except (KeyError, ValueError):
+        return None
+    row = dict(item)
+    row["_date_obj"] = d
+    row["_days"] = (d - date.today()).days
+    row["source"] = source
+    return row
+
+
+def build_event_rows(config: dict[str, Any]) -> list[dict[str, Any]]:
+    days = int(config.get("board", {}).get("event_window_days") or 21)
+    today = date.today()
+    cutoff = today + date.resolution * days
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    for row in collect_events(days):
+        key = (str(row.get("date", "")), str(row.get("domain", "")), str(row.get("text", "")))
+        seen.add(key)
+        rows.append({**row, "source": "events_calendar"})
+
+    for item in config.get("board", {}).get("manual_events", []):
+        if not isinstance(item, dict):
+            continue
+        row = normalize_event(item, "central_risk_board_config")
+        if not row:
+            continue
+        if not (today <= row["_date_obj"] <= cutoff):
+            continue
+        key = (str(row.get("date", "")), str(row.get("domain", "")), str(row.get("text", "")))
+        if key in seen:
+            continue
+        rows.append(row)
+        seen.add(key)
+
+    rows.sort(key=lambda item: item["_date_obj"])
+    return rows
+
+
 def build_overlap_section(base_positions: list[dict[str, Any]], v6_positions: dict[str, float], config: dict[str, Any]) -> dict[str, Any]:
     main_names = {row["name"] for row in base_positions if position_sleeve(row, config) == "Value Main Book" and row["current_pct"] > 0}
     v6_plain = {normalize_v6_name(code) for code, qty in v6_positions.items() if qty > 0}
@@ -501,7 +600,14 @@ def build_freshness(payload_generated_at: str, portfolio_last_updated: str, v6_s
     return {"rows": rows, "red_reasons": red_reasons, "yellow_reasons": yellow_reasons}
 
 
-def classify_board_status(snapshot: dict[str, Any], themes: list[dict[str, Any]], alerts: list[dict[str, Any]], freshness: dict[str, Any]) -> tuple[str, list[str]]:
+def classify_board_status(
+    snapshot: dict[str, Any],
+    themes: list[dict[str, Any]],
+    alerts: list[dict[str, Any]],
+    freshness: dict[str, Any],
+    ledger_quality: dict[str, Any],
+    mapping_quality: dict[str, Any],
+) -> tuple[str, list[str]]:
     reasons: list[str] = []
     top_theme = themes[0]["current_pct"] if themes else 0.0
     if snapshot["max_position"] >= 25.0:
@@ -510,6 +616,10 @@ def classify_board_status(snapshot: dict[str, Any], themes: list[dict[str, Any]]
         reasons.append(f"top2_sum={snapshot['top2_sum']:.1f}%")
     if top_theme >= 45.0:
         reasons.append(f"top_theme={top_theme:.1f}%")
+    if ledger_quality.get("status") != "OK":
+        reasons.append("ledger_quality_check")
+    if float(mapping_quality.get("unmapped_weight") or 0.0) >= 5.0:
+        reasons.append(f"unmapped_theme_weight={mapping_quality['unmapped_weight']:.1f}%")
     reasons.extend(freshness.get("red_reasons", []))
     if reasons:
         return "RED", reasons
@@ -521,6 +631,8 @@ def classify_board_status(snapshot: dict[str, Any], themes: list[dict[str, Any]]
         yellow.append(f"top3_sum={snapshot['top3_sum']:.1f}%")
     if len(alerts) >= 3:
         yellow.append(f"target_alerts={len(alerts)}")
+    if mapping_quality.get("unmapped_count"):
+        yellow.append(f"unmapped_theme_count={mapping_quality['unmapped_count']}")
     yellow.extend(freshness.get("yellow_reasons", []))
     if yellow:
         return "YELLOW", yellow
@@ -552,7 +664,6 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     cadence = resolve_cadence(requested_cadence)
     portfolio = collect_portfolio_html()
     v6 = collect_v6()
-    events = collect_events(14)
     generated_at = datetime.now().isoformat(timespec="seconds")
     portfolio_meta = extract_portfolio_meta()
     base_positions = portfolio.get("positions", [])
@@ -565,9 +676,12 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     themes = build_theme_rows(positions, config)
     overlap = build_overlap_section(base_positions, v6.get("positions", {}), config)
     freshness = build_freshness(generated_at, portfolio.get("last_updated", ""), v6.get("state_updated", ""), futu_snapshot)
-    status, reasons = classify_board_status(snapshot, themes, alerts, freshness)
+    ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions)
+    mapping_quality = build_mapping_quality(positions, config)
+    events = build_event_rows(config)
+    status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
     return {
-        "version": "v1.2",
+        "version": "v1.3",
         "requested_cadence": requested_cadence,
         "cadence": cadence,
         "cadence_label": cadence_label(cadence),
@@ -580,6 +694,8 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "firm_snapshot": snapshot,
         "sleeves": sleeves,
         "themes": themes[:10],
+        "ledger_quality": ledger_quality,
+        "mapping_quality": mapping_quality,
         "freshness": freshness,
         "futu_snapshot": futu_snapshot,
         "target_alerts": alerts,
@@ -592,11 +708,12 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "v6_allocated": v6_allocated,
         "overlap": overlap,
         "events": events,
+        "event_window_days": int(config.get("board", {}).get("event_window_days") or 21),
         "known_limits": [
-            "total-account 主账本仍然依赖 26年阶段性组合策略计划.html 的人工更新频率。",
+            "total-account 主账本已经有质量检查，但仍然依赖 26年阶段性组合策略计划.html 的人工更新频率。",
             "V6 曝露目前只对 master ledger 缺失的 managed names 做增量折算，避免与已入账主仓名称双重计算。",
             "Futu snapshot 仍然主要承担 broker-level sanity / freshness，不是完整全资产分母来源。",
-            "theme mapping 已配置化，但映射质量仍取决于后续持续补表。",
+            "theme mapping 已配置化并有未映射报警，但映射质量仍取决于后续持续补表。",
         ],
     }
 
@@ -627,7 +744,7 @@ def build_alert_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def build_event_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    return [{"date": row["date"], "domain": row.get("domain", ""), "days": row.get("_days", ""), "text": row.get("text", ""), "action": row.get("action", "")} for row in payload["events"]]
+    return [{"date": row["date"], "domain": row.get("domain", ""), "days": row.get("_days", ""), "text": row.get("text", ""), "action": row.get("action", ""), "source": row.get("source", "")} for row in payload["events"]]
 
 
 def build_v6_embedded_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -641,6 +758,13 @@ def build_v6_embedded_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
             "theme": row.get("theme", ""),
         }
         for row in payload["v6_allocated"]["positions"]
+    ]
+
+
+def build_mapping_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {"name": row["name"], "current_pct": fmt_pct(row["current_pct"]), "theme": row["theme"]}
+        for row in payload["mapping_quality"]["unmapped_positions"]
     ]
 
 
@@ -699,6 +823,17 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.extend(["", "## Data Freshness", ""])
     lines.extend(render_table(payload["freshness"]["rows"], [("item", "item"), ("updated_at", "updated_at"), ("age", "age"), ("status", "status"), ("note", "note")]))
 
+    lines.extend(["", "## Master Ledger Quality", ""])
+    lines.append(f"- Status: `{payload['ledger_quality']['status']}`")
+    lines.append(f"- Source: `{payload['ledger_quality']['source']}`")
+    lines.append(f"- Parsed positions: `{payload['ledger_quality']['position_count']}`")
+    lines.append(f"- Issues: `{', '.join(payload['ledger_quality']['issues']) if payload['ledger_quality']['issues'] else 'none'}`")
+
+    lines.extend(["", "## Theme Mapping Quality", ""])
+    lines.append(f"- Unmapped positions: `{payload['mapping_quality']['unmapped_count']}`")
+    lines.append(f"- Unmapped weight: `{fmt_pct(payload['mapping_quality']['unmapped_weight'])}`")
+    lines.extend(render_table(build_mapping_display_rows(payload), [("name", "name"), ("current_pct", "current"), ("theme", "theme")]))
+
     lines.extend(["", "## Futu Broker Snapshot", ""])
     futu_snapshot = payload["futu_snapshot"]
     if futu_snapshot["available"]:
@@ -728,8 +863,8 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.extend(["", "## Target Drift Alerts", ""])
     lines.extend(render_table(build_alert_display_rows(payload), [("name", "name"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
 
-    lines.extend(["", "## Event Window (14d)", ""])
-    lines.extend(render_table(build_event_display_rows(payload), [("date", "date"), ("domain", "domain"), ("days", "days"), ("text", "event"), ("action", "action")]))
+    lines.extend(["", f"## Event Window ({payload['event_window_days']}d)", ""])
+    lines.extend(render_table(build_event_display_rows(payload), [("date", "date"), ("domain", "domain"), ("days", "days"), ("text", "event"), ("action", "action"), ("source", "source")]))
 
     lines.extend(["", "## Known Limits", ""])
     for item in payload["known_limits"]:
@@ -749,6 +884,7 @@ def build_html(payload: dict[str, Any]) -> str:
     freshness_rows = payload["freshness"]["rows"]
     alert_rows = build_alert_display_rows(payload)
     event_rows = build_event_display_rows(payload)
+    mapping_rows = build_mapping_display_rows(payload)
     portfolio_meta = payload["portfolio_meta"]
     status_color = {"GREEN": "#16a34a", "YELLOW": "#d97706", "RED": "#dc2626"}.get(payload["status"], "#2563eb")
 
@@ -896,11 +1032,31 @@ def build_html(payload: dict[str, Any]) -> str:
     <h2>Data Freshness</h2>
     {render_html_table(freshness_rows, [('item', 'item'), ('updated_at', 'updated_at'), ('age', 'age'), ('status', 'status'), ('note', 'note')])}
 
+    <h2>Master Ledger Quality</h2>
+    <table>
+      <thead><tr><th>item</th><th>value</th></tr></thead>
+      <tbody>
+        <tr><td>status</td><td>{html.escape(str(payload['ledger_quality']['status']))}</td></tr>
+        <tr><td>source</td><td>{html.escape(str(payload['ledger_quality']['source']))}</td></tr>
+        <tr><td>parsed positions</td><td>{html.escape(str(payload['ledger_quality']['position_count']))}</td></tr>
+        <tr><td>issues</td><td>{html.escape(', '.join(payload['ledger_quality']['issues']) if payload['ledger_quality']['issues'] else 'none')}</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Theme Mapping Quality</h2>
+    <div class="card">
+      <ul>
+        <li>Unmapped positions: {html.escape(str(payload['mapping_quality']['unmapped_count']))}</li>
+        <li>Unmapped weight: {html.escape(fmt_pct(payload['mapping_quality']['unmapped_weight']))}</li>
+      </ul>
+    </div>
+    {render_html_table(mapping_rows, [('name', 'name'), ('current_pct', 'current'), ('theme', 'theme')]) if mapping_rows else ""}
+
     <h2>Target Drift Alerts</h2>
     {render_html_table(alert_rows, [('name', 'name'), ('current_pct', 'current'), ('target', 'target'), ('action', 'action')])}
 
     <h2>Event Window</h2>
-    {render_html_table(event_rows, [('date', 'date'), ('domain', 'domain'), ('days', 'days'), ('text', 'event'), ('action', 'action')])}
+    {render_html_table(event_rows, [('date', 'date'), ('domain', 'domain'), ('days', 'days'), ('text', 'event'), ('action', 'action'), ('source', 'source')])}
 
     <h2>Overlap Risk</h2>
     <div class="card">

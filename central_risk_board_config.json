@@ -1,4 +1,21 @@
 {
+  "board": {
+    "event_window_days": 21,
+    "manual_events": [
+      {
+        "date": "2026-05-26",
+        "domain": "V6治理",
+        "text": "balanced challenger cutover 决策补充检查",
+        "action": "按 cutover SOP 检查执行质量、回撤、偏离、自动化稳定性；禁止临场跳步骤。"
+      },
+      {
+        "date": "2026-06-01",
+        "domain": "V6-B治理",
+        "text": "V6-B 数据链路与 challenger 链路补充检查",
+        "action": "按 6月1日_V6B_执行卡执行 universe audit、synthetic history、challenger、allocator。"
+      }
+    ]
+  },
   "special_sleeves": {
     "V6 量化策略仓": "V6",
     "Radar": "Radar Overlay",
