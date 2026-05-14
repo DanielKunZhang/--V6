@@ -15,9 +15,9 @@ import attack_engine_live_order_preview as preview
 
 ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "v6a_cutover"
-DEFAULT_DAILY = ROOT / "backtest_results" / "v6a_core_replay" / "v6a_core_replay_daily_20260514_bridge_refresh_v1_v6a_core_balanced.csv"
+DEFAULT_DAILY = ROOT / "backtest_results" / "v6a_core_replay" / "v6a_core_replay_daily_20260514_bridge_refresh_v3_v6a_core_balanced.csv"
 DEFAULT_MANAGED_STATE = ROOT / "backtest_results" / "v6a_state" / "v6a_managed_positions_real_281756481449956811.json"
-DEFAULT_ACCOUNT_FALLBACK = ROOT / "backtest_results" / "attack_engine_live_preview" / "attack_live_order_preview_account_v6_daily_auto_20260514T083004_plan_only_preview.json"
+DEFAULT_ACCOUNT_FALLBACK = ROOT / "backtest_results" / "attack_engine_live_preview" / "attack_live_order_preview_account_20260514_balanced_cutover_preview_v3.json"
 
 
 def as_float(value: Any, default: float = 0.0) -> float:

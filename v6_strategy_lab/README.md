@@ -22,6 +22,16 @@ V6 Strategy Lab 是 V6 的研究与治理层，不是执行层。
 - 当前目标：先把 `$5,000` real manual pilot 的执行质量证据做满，再进入自动化层级与资金扩容讨论；并同步完善 V6-B 动态 universe 与 Allocator 治理层
 - 并行升级线：`V6-A core replay bridge` 已建立，用于 `v6a_core_baseline` 与 `balanced challenger` 的 runner-compatible parity 验证；该桥接层不改动当前 live ATTACK pilot
 
+## 当前优先级
+
+1. `V6-A balanced challenger` 的 cutover 证据包与 `2026-05-26` 决策日
+2. `Radar-Sourced Overlay` 的真实小样本累积
+3. `V6-B dynamic universe engine` 的 synthetic historical / point-in-time 研究
+
+正式说明见：
+
+- `reports/2026-05-14_v6_build_order_lock_v1.md`
+
 ## 推荐流程
 
 1. 每月在 `hypotheses/` 新增假设。

@@ -146,7 +146,7 @@ def build_gate(args: argparse.Namespace) -> Dict[str, Any]:
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "gate_result": gate_result,
         "asof_date": args.asof_date,
-        "strategy": "V6-A ATTACK_EQUAL_REPLAY",
+        "strategy": args.strategy_label,
         "checks": checks,
         "failed_blockers": blocker_failed,
         "summary": {
@@ -206,6 +206,7 @@ def main() -> None:
     parser.add_argument("--live-preview-orders", default=str(DEFAULT_LIVE_PREVIEW_ORDERS))
     parser.add_argument("--live-preview-quotes", default=str(DEFAULT_LIVE_PREVIEW_QUOTES))
     parser.add_argument("--live-preview-account", default=str(DEFAULT_LIVE_PREVIEW_ACCOUNT))
+    parser.add_argument("--strategy-label", default="V6-A ATTACK_EQUAL_REPLAY")
     parser.add_argument("--asof-date", default=datetime.now().date().isoformat())
     parser.add_argument("--max-signal-age-days", type=int, default=5)
     parser.add_argument("--min-full-ann", type=float, default=25.0)

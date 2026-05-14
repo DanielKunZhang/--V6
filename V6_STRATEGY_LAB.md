@@ -400,6 +400,31 @@ backtest_results/v6_reporting/
      - 再补一轮成功的 `balanced challenger` live preview（quotes/account/orders 全 PASS）
      - 最后在 `2026-05-26` 决策日按 SOP 汇总 `live pilot + fresh replay + preview + migration diff`
 
+21. `2026-05-14 V6-A balanced challenger` 的 freshness / preview / release gate 证据已补齐
+   - `price cache` 已通过 OpenD 刷新到 `2026-05-13`
+   - `fresh replay`：
+     - 脚本：`python3 v6a_core_deterministic_replay.py --config v6_strategy_lab/configs/v6a_core_replay_bridge_v1.json --tag 20260514_bridge_refresh_v3`
+     - 最新工件：`backtest_results/v6a_core_replay/v6a_core_replay_summary_20260514_bridge_refresh_v3_v6a_core_balanced.csv`
+     - 当前解释：`latest_date = 2026-05-12` 不再代表缓存陈旧，而是由 replay config 中的 `sample.end=2026-05-12` 决定
+   - `single-candidate live preview`：
+     - 脚本：`/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 attack_engine_live_order_preview.py --daily backtest_results/v6a_core_replay/v6a_core_replay_daily_20260514_bridge_refresh_v3_v6a_core_balanced.csv --strategy-capital 5000 --max-gross 1.0 --max-order-value 5000 --min-order-value 25 --net-managed-positions --managed-positions-state backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json --acc-id 281756481449956811 --trd-env REAL --quote-timeout-sec 25 --account-timeout-sec 25 --tag 20260514_balanced_cutover_preview_v3`
+     - 结果：`quotes/account/orders` 全部成功，无 warnings
+     - 当前 target：`AMZN / AVGO / GOOGL`
+     - 当前增量 buy：`AMZN +2`、`AVGO +1`、`GOOGL +2`
+   - `release gate`：
+     - 结果：`PASS`
+     - 关键通过项：
+       - `signal_freshness_gate`: `signal_date=2026-05-12` 对 `asof=2026-05-14` 仅 `2` 天
+       - `live_quotes_complete_gate`: `3/3` 通过
+       - `live_account_gate`: 通过
+       - `order_value_gate`: 通过
+     - 工件：`backtest_results/attack_engine_release_gate/attack_engine_release_gate_20260514_balanced_cutover_gate_v1.md`
+   - 当前含义：
+     - `balanced challenger` 的技术性 cutover blocker 已基本收口
+     - 现在剩下的是 `治理时点`，不是 `工程接线`
+     - 当前 live `ATTACK_EQUAL_REPLAY` sleeve 仍保持不动，正式 go/no-go 继续等 `2026-05-26`
+   - 汇总报告：`v6_strategy_lab/reports/2026-05-14_v6a_balanced_cutover_gate_status_v1.md`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。
