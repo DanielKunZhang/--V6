@@ -126,21 +126,59 @@ def build_payload() -> dict[str, Any]:
     }
 
 
-def action_text(payload: dict[str, Any]) -> list[str]:
-    actions = []
+def action_groups(payload: dict[str, Any]) -> dict[str, list[str]]:
+    groups = {"必须处理": [], "可观察": [], "禁止动作": []}
     risk = payload["central_risk"]
     if risk["status"] == "RED":
-        actions.append("先处理集中度治理：腾讯 / PDD / 中国平台互联网仍是第一风险源。")
+        groups["必须处理"].append("继续把腾讯 / PDD / 中国平台互联网集中度视为第一风险源；低位不加，等待合适窗口去超配。")
     v6 = payload["v6"]
     if "CONTINUE" in str(v6["pilot_decision"]) or "Investigate" in str(v6["decision"]):
-        actions.append("V6 继续收集 pilot / review 证据，不提前扩容。")
+        groups["可观察"].append("V6 继续收集 pilot / review 证据；5月26日前只看执行质量和 cutover 证据包。")
     radar = payload["radar"]
     if int(radar.get("coverage_gaps") or 0) > 0:
-        actions.append("Radar 等 6 月 1 日数据窗口，按执行卡补 universe / missing opportunity。")
+        groups["可观察"].append("Radar / V6-B 等 6月1日数据窗口，按执行卡补 universe、漏网机会和 scorecard。")
     overlay = payload["overlay"]
     if int(overlay.get("closed_samples") or 0) == 0:
-        actions.append("Overlay 还没有真实关闭样本，不能用 watch 项目推断策略有效。")
-    return actions or ["当前没有需要改变系统状态的动作，继续按既定节奏运行。"]
+        groups["禁止动作"].append("Overlay 还没有真实关闭样本，不能用 watch 项目推断策略有效，也不能扩大预算。")
+    groups["禁止动作"].append("未触发明确确认短语前，不允许 V6 自动下真实订单或扩容。")
+    if not groups["必须处理"] and not groups["可观察"]:
+        groups["可观察"].append("当前没有需要改变系统状态的动作，继续按既定节奏运行。")
+    return groups
+
+
+LANE_LABELS = {
+    "execution_quality": "执行质量",
+    "v6a_parameter_challenger": "V6-A 参数 challenger",
+    "v6b_core_reaccel": "V6-B 核心再加速",
+    "v6b_turnaround": "V6-B 反转动量",
+    "v6b_bottleneck": "V6-B 瓶颈链",
+    "radar_missing_opportunity": "Radar 漏网复盘",
+}
+
+TEXT_TRANSLATIONS = {
+    "Keep V6-A in manual pilot and collect more execution evidence": "V6-A 继续手动 pilot，补足执行质量证据",
+    "Continue manual pilot and reuse the same review board at the next weekly checkpoint.": "继续手动 pilot，在下一个周度检查点复用同一套 review board。",
+    "Build formal side-by-side board for the balanced V6-A challenger": "为 balanced V6-A challenger 建立正式对比板",
+    "Prepare baseline vs balanced challenger review board and implementation/replay plan.": "准备 baseline vs balanced challenger 对比板，以及 implementation / replay 计划。",
+    "Promote core_reaccel to formal V6-B challenger lane": "把 core_reaccel 提升为正式 V6-B challenger 轨道",
+    "Keep core_reaccel ahead of other V6-B tracks and build the next validation board around it.": "让 core_reaccel 保持在其他 V6-B 轨道之前，并围绕它建立下一张验证板。",
+    "Keep turnaround as secondary research only": "turnaround 只保留为二级研究方向",
+    "Do not give allocator weight; only continue if new sparse-track evidence improves quality.": "不给 allocator 权重；只有 sparse-track 证据质量改善时才继续。",
+    "Freeze bottleneck as a live promotion candidate": "bottleneck 暂停作为 live 晋级候选",
+    "Do not spend allocator attention here until universe quality or exits materially improve.": "在 universe 质量或退出规则明显改善前，不消耗 allocator 注意力。",
+    "Review new missing-opportunity names before the next Radar universe refresh": "在下一次 Radar universe 刷新前复核新的漏网标的",
+    "Decide whether to upgrade these names/themes into point-in-time research seed or explicitly document why they remain excluded.": "决定是否把这些标的 / 主题升级为 point-in-time research seed，或明确记录为什么继续排除。",
+}
+
+
+def zh_text(value: Any) -> str:
+    text = str(value or "")
+    return TEXT_TRANSLATIONS.get(text, text)
+
+
+def zh_lane(value: Any) -> str:
+    text = str(value or "")
+    return LANE_LABELS.get(text, text)
 
 
 def build_html(payload: dict[str, Any]) -> str:
@@ -155,14 +193,18 @@ def build_html(payload: dict[str, Any]) -> str:
         backlog_rows.append(
             "<tr>"
             f"<td>{html.escape(str(item.get('priority', '')))}</td>"
-            f"<td>{html.escape(str(item.get('lane', '')))}</td>"
-            f"<td>{html.escape(str(item.get('title', '')))}</td>"
-            f"<td>{html.escape(str(item.get('next_step', '')))}</td>"
+            f"<td>{html.escape(zh_lane(item.get('lane', '')))}</td>"
+            f"<td>{html.escape(zh_text(item.get('title', '')))}</td>"
+            f"<td>{html.escape(zh_text(item.get('next_step', '')))}</td>"
             "</tr>"
         )
     backlog_body = "".join(backlog_rows) or "<tr><td colspan='4'>暂无 backlog 数据</td></tr>"
 
-    actions = "".join(f"<li>{html.escape(item)}</li>" for item in action_text(payload))
+    groups = action_groups(payload)
+    action_columns = "".join(
+        f"<div class='action-card'><h3>{html.escape(title)}</h3><ul>{''.join(f'<li>{html.escape(item)}</li>' for item in items) if items else '<li>暂无</li>'}</ul></div>"
+        for title, items in groups.items()
+    )
     priority_watch = ", ".join(str(item) for item in radar.get("priority_watch", [])[:8]) or "none"
 
     return f"""<!DOCTYPE html>
@@ -254,8 +296,25 @@ def build_html(payload: dict[str, Any]) -> str:
       text-decoration: none;
       font-weight: 700;
     }}
+    .action-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }}
+    .action-card {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }}
+    .action-card h3 {{
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0;
+    }}
     @media (max-width: 980px) {{
       .grid {{ grid-template-columns: 1fr 1fr; }}
+      .action-grid {{ grid-template-columns: 1fr; }}
       table {{ display: block; overflow-x: auto; }}
     }}
     @media (max-width: 620px) {{
@@ -291,8 +350,8 @@ def build_html(payload: dict[str, Any]) -> str:
     </div>
 
     <section class="panel">
-      <h2>今天只需要看这里</h2>
-      <ul>{actions}</ul>
+      <h2>今日动作区</h2>
+      <div class="action-grid">{action_columns}</div>
     </section>
 
     <section class="panel">
