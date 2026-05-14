@@ -148,3 +148,4 @@
 - [2026-05-14] [代码] 新增 `v6_strategy_lab/configs/v6b_candidate_registry_v1.json`，把 `active_research` 之外的 `watch_add_candidate / observe_only / theme_watch / covered_in_v6a_core` 候选统一纳入 pre-universe registry；`v6b_missing_opportunity_review.py` 已接入该 registry，输出现在能直接显示每个名字当前所处层级。
 - [2026-05-14] [文件] 新增 `v6_strategy_lab/reports/2026-05-14_v6b_radar_weekly_triage_sop_v1.md` 与 `v6_strategy_lab/scorecards/v6b_radar_weekly_triage_template.md`，正式定义 Radar 周度人工决策流程与 `active_research` 降级规则。
 - [2026-05-14] [阻塞] OpenD 连通性已恢复，但补抓 `US.AAOI / US.ASX / US.LITE / US.ETN / US.HON / US.IR / US.ROK / US.TER` 时统一命中 `历史K线额度不足`。这说明当前 Radar 的下一个真实 blocker 已从“连接问题”转为“历史 K 线额度治理问题”；在 `2026-06-01` 额度刷新前，应先把 registry / triage / downgrade 机制补齐。
+- [2026-05-14] [文件] 新增 `v6_strategy_lab/reports/2026-06-01_v6b_data_refresh_execution_card_v1.md`，作为 6 月额度刷新后的“一页执行卡”。到时只需按卡片顺序补 price cache、重跑 missing review、做 triage、必要时更新 registry/universe，再重跑 weekly board。
