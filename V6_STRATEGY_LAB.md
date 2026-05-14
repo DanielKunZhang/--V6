@@ -68,6 +68,22 @@ V6-C Pool = ETF / 行业 / 全市场 meta-rotation，未来 challenger
 Allocator = 风控与资金分配器，根据近期表现、相关性、回撤、regime 分配 Core / Dynamic / Defensive 权重
 ```
 
+## 与全投资系统的关系
+
+V6 不是孤立存在的。
+
+它在整个 AI 个人投资公司里的正式位置已经锁定为：
+
+- `价值投资主仓`：长期资本池
+- `V6`：中频进攻/防守切换的收益增强层
+- `Radar-Sourced Overlay`：小额右尾收益层
+- `Research / Experimental Sleeves`：只负责验证，不默认进入生产
+
+未来 `12` 个月的系统升级总路线见：
+
+- `AI_INVESTMENT_COMPANY_12M_UPGRADE_ROADMAP.md`
+- `CENTRAL_RISK_BOARD_SPEC.md`
+
 ### V6-B 的正式定义边界
 
 `V6-B` 不能定义成 `AI-capex 策略`。如果把 V6-B 与单一主题绑定，那么主题周期结束时，策略本身也会一起失效。

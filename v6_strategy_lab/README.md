@@ -31,6 +31,8 @@ V6 Strategy Lab 是 V6 的研究与治理层，不是执行层。
 正式说明见：
 
 - `reports/2026-05-14_v6_build_order_lock_v1.md`
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_INVESTMENT_COMPANY_12M_UPGRADE_ROADMAP.md`
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/CENTRAL_RISK_BOARD_SPEC.md`
 
 ## 推荐流程
 
