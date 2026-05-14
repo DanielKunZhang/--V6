@@ -17,6 +17,8 @@ WEEKLY_REVIEW_DIR = ROOT / "backtest_results" / "v6_weekly_review"
 BACKLOG_DIR = ROOT / "backtest_results" / "v6_research_backlog"
 OVERLAY_DIR = ROOT / "backtest_results" / "overlay_trade_journal"
 MISSING_REVIEW_PATH = ROOT / "backtest_results" / "v6b_missing_opportunity_review" / "latest.json"
+THEME_ROTATION_PATH = ROOT / "backtest_results" / "radar_theme_rotation_scanner" / "latest.json"
+THEME_ROTATION_JOURNAL_PATH = ROOT / "backtest_results" / "radar_theme_rotation_scanner" / "scan_journal.json"
 REGISTRY_PATH = ROOT / "v6_strategy_lab" / "configs" / "v6b_candidate_registry_v1.json"
 
 
@@ -71,6 +73,59 @@ def summarize_registry() -> dict[str, Any]:
     }
 
 
+def summarize_theme_rotation() -> dict[str, Any]:
+    latest = optional_json(THEME_ROTATION_PATH)
+    journal_raw = optional_json(THEME_ROTATION_JOURNAL_PATH)
+    journal = journal_raw if isinstance(journal_raw, list) else []
+    summary = latest.get("summary", {}) if isinstance(latest.get("summary"), dict) else {}
+    themes = latest.get("themes", []) if isinstance(latest.get("themes"), list) else []
+    candidates = latest.get("candidates", []) if isinstance(latest.get("candidates"), list) else []
+
+    evaluated_20d = []
+    for snapshot in journal:
+        if not isinstance(snapshot, dict):
+            continue
+        for row in snapshot.get("candidates", []):
+            if isinstance(row, dict) and row.get("fwd_20d") is not None:
+                evaluated_20d.append(row)
+
+    avg_20d = None
+    hit_rate_20d = None
+    if evaluated_20d:
+        avg_20d = sum(float(row["fwd_20d"]) for row in evaluated_20d) / len(evaluated_20d)
+        hit_rate_20d = sum(1 for row in evaluated_20d if float(row["fwd_20d"]) > 0) / len(evaluated_20d)
+
+    return {
+        "top_theme": summary.get("top_theme"),
+        "top_theme_stage": summary.get("top_theme_stage"),
+        "candidate_count": summary.get("candidate_count"),
+        "missing_cache_count": summary.get("missing_cache_count"),
+        "top_themes": [
+            {
+                "theme": row.get("theme_label"),
+                "score": row.get("theme_score"),
+                "stage": row.get("stage"),
+            }
+            for row in themes[:5]
+        ],
+        "top_candidates": [
+            {
+                "ticker": row.get("ticker"),
+                "theme": row.get("theme_label"),
+                "layer": row.get("layer_label"),
+                "score": row.get("score"),
+                "mom60": row.get("mom60"),
+                "rel60": row.get("rel60_vs_spy"),
+            }
+            for row in candidates[:10]
+        ],
+        "journal_snapshot_count": len(journal),
+        "journal_evaluated_20d_count": len(evaluated_20d),
+        "journal_avg_20d": avg_20d,
+        "journal_hit_rate_20d": hit_rate_20d,
+    }
+
+
 def build_payload() -> dict[str, Any]:
     central_path = (CENTRAL_RISK_DIR / "latest_weekly.json") if (CENTRAL_RISK_DIR / "latest_weekly.json").exists() else (CENTRAL_RISK_DIR / "latest.json")
     attribution_path = ATTRIBUTION_DIR / "latest.json"
@@ -84,6 +139,7 @@ def build_payload() -> dict[str, Any]:
     weekly = optional_json(weekly_path)
     backlog = optional_json(backlog_path)
     missing = optional_json(MISSING_REVIEW_PATH)
+    theme_rotation = summarize_theme_rotation()
     registry = summarize_registry()
 
     backlog_items = backlog if isinstance(backlog, list) else []
@@ -100,6 +156,8 @@ def build_payload() -> dict[str, Any]:
             "research_backlog": str(backlog_path.relative_to(ROOT)) if backlog_path else "",
             "overlay_journal": str(overlay_path.relative_to(ROOT)) if overlay_path.exists() else "",
             "missing_review": str(MISSING_REVIEW_PATH.relative_to(ROOT)) if MISSING_REVIEW_PATH.exists() else "",
+            "theme_rotation": str(THEME_ROTATION_PATH.relative_to(ROOT)) if THEME_ROTATION_PATH.exists() else "",
+            "theme_rotation_journal": str(THEME_ROTATION_JOURNAL_PATH.relative_to(ROOT)) if THEME_ROTATION_JOURNAL_PATH.exists() else "",
             "registry": str(REGISTRY_PATH.relative_to(ROOT)),
         },
         "central_risk": central,
@@ -116,6 +174,7 @@ def build_payload() -> dict[str, Any]:
             "theme_wakeups": [str(item) for item in missing_summary.get("theme_wakeups", [])],
         },
         "registry_summary": registry,
+        "theme_rotation": theme_rotation,
     }
 
 
@@ -168,6 +227,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     overlay_stats = (payload.get("overlay", {}) or {}).get("stats", {})
     missing = payload["missing_summary"]
     registry = payload["registry_summary"]
+    theme_rotation = payload["theme_rotation"]
     weekly = payload.get("weekly_review", {})
 
     lines = [
@@ -210,6 +270,29 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Coverage gaps: `{missing['coverage_gap_count']}`",
         f"- Priority watch names: `{', '.join(registry['top_watch']) if registry['top_watch'] else 'none'}`",
         "",
+        "## Radar Theme Rotation Scanner",
+        "",
+        f"- Current top theme: `{theme_rotation.get('top_theme') or 'n/a'}`",
+        f"- Current stage: `{theme_rotation.get('top_theme_stage') or 'n/a'}`",
+        f"- Candidate count: `{theme_rotation.get('candidate_count') or 0}`",
+        f"- Missing price-cache count: `{theme_rotation.get('missing_cache_count') or 0}`",
+        f"- Scan journal snapshots: `{theme_rotation.get('journal_snapshot_count') or 0}`",
+        f"- 20D evaluated samples: `{theme_rotation.get('journal_evaluated_20d_count') or 0}`",
+        f"- 20D avg return: `{fmt_pct(theme_rotation.get('journal_avg_20d') * 100 if theme_rotation.get('journal_avg_20d') is not None else None)}`",
+        f"- 20D hit rate: `{fmt_pct(theme_rotation.get('journal_hit_rate_20d') * 100 if theme_rotation.get('journal_hit_rate_20d') is not None else None)}`",
+        "",
+        "### Top Scanner Themes",
+        "",
+    ]
+    lines.extend(render_table(theme_rotation.get("top_themes", []), [("theme", "theme"), ("score", "score"), ("stage", "stage")]))
+    lines.extend([
+        "",
+        "### Top Scanner Candidates",
+        "",
+    ])
+    lines.extend(render_table(theme_rotation.get("top_candidates", []), [("ticker", "ticker"), ("theme", "theme"), ("layer", "layer"), ("score", "score"), ("mom60", "mom60"), ("rel60", "rel60")]))
+    lines.extend([
+        "",
         "## Overlay Lab Snapshot",
         "",
         f"- Closed sample count: `{overlay_stats.get('closed_sample_count', 0)}`",
@@ -218,7 +301,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "",
         "## Top Backlog",
         "",
-    ]
+    ])
     lines.extend(render_table(backlog_display_rows(payload), [("priority", "priority"), ("lane", "lane"), ("title", "title"), ("next", "next step")]))
     lines.extend(["", "## Current Judgment", ""])
     lines.append("- 6月1日前，最该做的是把 `风控 / 归因 / review / overlay 样本登记 / V6-B 执行卡` 固化；不是提前给 V6-B 申请生产预算。")
@@ -232,6 +315,7 @@ def build_html(payload: dict[str, Any]) -> str:
     overlay_stats = (payload.get("overlay", {}) or {}).get("stats", {})
     missing = payload["missing_summary"]
     registry = payload["registry_summary"]
+    theme_rotation = payload["theme_rotation"]
     weekly = payload.get("weekly_review", {})
 
     return f"""<!DOCTYPE html>
@@ -300,8 +384,22 @@ def build_html(payload: dict[str, Any]) -> str:
       <div class="card"><div class="kicker">Central Risk</div><div class="num">{html.escape(str(risk.get('status', 'UNKNOWN')))}</div></div>
       <div class="card"><div class="kicker">Broker Coverage</div><div class="num">{html.escape(fmt_pct(coverage.get('covered_ratio_pct')))}</div></div>
       <div class="card"><div class="kicker">Critical Misses</div><div class="num">{missing['critical_miss_count']}</div></div>
-      <div class="card"><div class="kicker">Overlay Samples</div><div class="num">{overlay_stats.get('closed_sample_count', 0)}</div></div>
+      <div class="card"><div class="kicker">Radar Top Theme</div><div class="num" style="font-size:18px;">{html.escape(str(theme_rotation.get('top_theme') or 'n/a'))}</div></div>
     </div>
+    <h2>Radar Theme Rotation Scanner</h2>
+    <table>
+      <thead><tr><th>dimension</th><th>value</th></tr></thead>
+      <tbody>
+        <tr><td>Top theme</td><td>{html.escape(str(theme_rotation.get('top_theme') or 'n/a'))}</td></tr>
+        <tr><td>Stage</td><td>{html.escape(str(theme_rotation.get('top_theme_stage') or 'n/a'))}</td></tr>
+        <tr><td>Candidate count</td><td>{html.escape(str(theme_rotation.get('candidate_count') or 0))}</td></tr>
+        <tr><td>Missing cache count</td><td>{html.escape(str(theme_rotation.get('missing_cache_count') or 0))}</td></tr>
+        <tr><td>Journal snapshots</td><td>{html.escape(str(theme_rotation.get('journal_snapshot_count') or 0))}</td></tr>
+        <tr><td>20D evaluated samples</td><td>{html.escape(str(theme_rotation.get('journal_evaluated_20d_count') or 0))}</td></tr>
+      </tbody>
+    </table>
+    <h2>Radar Top Scanner Candidates</h2>
+    {render_html_table(theme_rotation.get('top_candidates', []), [('ticker', 'ticker'), ('theme', 'theme'), ('layer', 'layer'), ('score', 'score'), ('mom60', 'mom60'), ('rel60', 'rel60')])}
     <h2>Top Backlog</h2>
     {render_html_table(backlog_display_rows(payload), [('priority', 'priority'), ('lane', 'lane'), ('title', 'title'), ('next', 'next step')])}
     <h2>Current Snapshot</h2>

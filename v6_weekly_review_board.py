@@ -19,6 +19,7 @@ V6A_ROBUSTNESS_DIR = ROOT / "backtest_results" / "v6a_parameter_robustness"
 V6A_REAUDIT_DIR = ROOT / "backtest_results" / "v6a_challenger_turnover_cost_reaudit"
 V6B_PROFILE_DIR = ROOT / "backtest_results" / "v6b_profile_search"
 MISSING_REVIEW_LATEST = ROOT / "backtest_results" / "v6b_missing_opportunity_review" / "latest.json"
+THEME_ROTATION_LATEST = ROOT / "backtest_results" / "radar_theme_rotation_scanner" / "latest.json"
 OUT_DIR = ROOT / "backtest_results" / "v6_weekly_review"
 BACKLOG_DIR = ROOT / "backtest_results" / "v6_research_backlog"
 
@@ -191,6 +192,34 @@ def load_latest_missing_review() -> dict[str, Any]:
     }
 
 
+def load_latest_theme_rotation() -> dict[str, Any]:
+    payload = read_json(THEME_ROTATION_LATEST)
+    if not payload:
+        return {}
+    summary = payload.get("summary", {}) if isinstance(payload.get("summary"), dict) else {}
+    journal = payload.get("journal", {}) if isinstance(payload.get("journal"), dict) else {}
+    candidates = payload.get("candidates", []) if isinstance(payload.get("candidates"), list) else []
+    return {
+        "path": rel(THEME_ROTATION_LATEST),
+        "as_of": str(payload.get("as_of") or ""),
+        "top_theme": str(summary.get("top_theme") or ""),
+        "top_theme_stage": str(summary.get("top_theme_stage") or ""),
+        "candidate_count": int(summary.get("candidate_count") or 0),
+        "missing_cache_count": int(summary.get("missing_cache_count") or 0),
+        "journal_snapshot_count": int(journal.get("snapshot_count") or 0),
+        "journal_evaluated_20d_count": int(journal.get("evaluated_20d_count") or 0),
+        "top_candidates": [
+            {
+                "ticker": str(row.get("ticker") or ""),
+                "theme": str(row.get("theme_label") or ""),
+                "layer": str(row.get("layer_label") or ""),
+                "score": float(row.get("score") or 0.0),
+            }
+            for row in candidates[:8]
+        ],
+    }
+
+
 def build_backlog(
     daily_report: dict[str, Any],
     pilot_review: dict[str, Any],
@@ -202,6 +231,7 @@ def build_backlog(
     turnaround_signal: dict[str, Any],
     bottleneck_signal: dict[str, Any],
     missing_review: dict[str, Any],
+    theme_rotation: dict[str, Any],
     position_summary: dict[str, Any],
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
@@ -347,6 +377,22 @@ def build_backlog(
                 "next_step": "Fetch or validate missing candidate data, then prune stale names or move them to explicit observe-only status.",
             }
         )
+    if theme_rotation and theme_rotation.get("top_theme"):
+        names = ", ".join(row["ticker"] for row in theme_rotation.get("top_candidates", [])[:5]) or "none"
+        items.append(
+            {
+                "priority": "P1",
+                "lane": "radar_theme_rotation",
+                "title": "Review Radar theme-rotation scanner output in the weekly loop",
+                "reason": (
+                    f"Scanner as of {theme_rotation.get('as_of')} shows top theme "
+                    f"{theme_rotation.get('top_theme')} / {theme_rotation.get('top_theme_stage')}, "
+                    f"{theme_rotation.get('candidate_count')} candidates, "
+                    f"{theme_rotation.get('missing_cache_count')} missing caches. Top={names}."
+                ),
+                "next_step": "Compare scanner candidates with Missing Review and decide whether gaps are data, universe, or scoring issues.",
+            }
+        )
     report_status = daily_report.get("weekly_action") or ""
     if report_status:
         items.append(
@@ -440,6 +486,18 @@ def render_board_md(board: dict[str, Any]) -> str:
                 f"- Theme wakeups: `{', '.join(board['missing_review']['theme_wakeups'])}`"
                 if board["missing_review"] and board["missing_review"].get("theme_wakeups") else "- Theme wakeups: `none`"
             ),
+            (
+                f"- Radar theme scanner: `{board['theme_rotation']['top_theme']} / "
+                f"{board['theme_rotation']['top_theme_stage']}` with "
+                f"`{board['theme_rotation']['candidate_count']}` candidates, "
+                f"`{board['theme_rotation']['missing_cache_count']}` missing caches, "
+                f"`{board['theme_rotation']['journal_snapshot_count']}` journal snapshots"
+                if board["theme_rotation"] else "- Radar theme scanner: `n/a`"
+            ),
+            (
+                f"- Radar scanner top candidates: `{', '.join(row['ticker'] for row in board['theme_rotation']['top_candidates'][:6])}`"
+                if board["theme_rotation"] and board["theme_rotation"].get("top_candidates") else "- Radar scanner top candidates: `none`"
+            ),
             "",
             "## 5. Research Backlog",
             "",
@@ -491,6 +549,7 @@ def main() -> None:
     bottleneck_signal = load_latest_v6b_track_signal("bottleneck_diffusion_profile")
     turnaround_signal = load_latest_v6b_track_signal("turnaround_momentum_profile")
     missing_review = load_latest_missing_review()
+    theme_rotation = load_latest_theme_rotation()
 
     backlog_items = build_backlog(
         daily_report=weekly_report or daily_report,
@@ -503,6 +562,7 @@ def main() -> None:
         turnaround_signal=turnaround_signal,
         bottleneck_signal=bottleneck_signal,
         missing_review=missing_review,
+        theme_rotation=theme_rotation,
         position_summary=position_summary,
     )
 
@@ -533,6 +593,7 @@ def main() -> None:
         "v6b_turnaround": turnaround_signal,
         "v6b_bottleneck": bottleneck_signal,
         "missing_review": missing_review,
+        "theme_rotation": theme_rotation,
         "backlog_items": backlog_items,
         "artifacts": {
             "latest_daily": rel(latest_daily_path),
@@ -540,6 +601,7 @@ def main() -> None:
             "pilot_review": rel(pilot_review_path),
             "preflight": rel(PREFLIGHT_LATEST),
             "missing_review": rel(MISSING_REVIEW_LATEST),
+            "theme_rotation": rel(THEME_ROTATION_LATEST),
         },
     }
 
