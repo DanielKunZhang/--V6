@@ -28,11 +28,16 @@ REPORT_SPECS = {
         "out_dir": ROOT / "backtest_results" / "monthly_research_review",
         "desktop_prefix": "Monthly_Research_Review_LATEST",
     },
+    "investment_company_dashboard": {
+        "script": ROOT / "investment_company_dashboard.py",
+        "out_dir": ROOT / "backtest_results" / "investment_company_dashboard",
+        "desktop_prefix": "AI个人投资公司_每日驾驶舱",
+    },
 }
 
 SCOPE_REPORTS = {
-    "daily": ["performance_attribution", "overlay_trade_journal"],
-    "monthly": ["performance_attribution", "overlay_trade_journal", "monthly_research_review"],
+    "daily": ["performance_attribution", "overlay_trade_journal", "investment_company_dashboard"],
+    "monthly": ["performance_attribution", "overlay_trade_journal", "monthly_research_review", "investment_company_dashboard"],
 }
 
 
@@ -41,7 +46,10 @@ def run_report(name: str, tag: str) -> None:
     script = spec["script"]
     if not script.exists():
         raise FileNotFoundError(f"Missing report script: {script}")
-    subprocess.run([str(PYTHON), str(script), "--tag", tag], cwd=ROOT, check=True)
+    cmd = [str(PYTHON), str(script), "--tag", tag]
+    if name == "investment_company_dashboard":
+        cmd.append("--sync-desktop")
+    subprocess.run(cmd, cwd=ROOT, check=True)
 
 
 def sync_report(name: str) -> None:
@@ -50,6 +58,8 @@ def sync_report(name: str) -> None:
     desktop_prefix = spec["desktop_prefix"]
     for ext in ("md", "html", "json"):
         src = out_dir / f"latest.{ext}"
+        if name == "investment_company_dashboard" and ext == "md":
+            continue
         if not src.exists():
             raise FileNotFoundError(f"Missing latest report: {src}")
         dst = DESKTOP_DIR / f"{desktop_prefix}.{ext}"
