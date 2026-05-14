@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dingcle.central-risk-board</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+    <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/central_risk_board.py</string>
+    <string>--cadence</string>
+    <string>auto</string>
+    <string>--email</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>9</integer>
+    <key>Minute</key>
+    <integer>5</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/central_risk_board/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/central_risk_board/launchd.err.log</string>
+</dict>
+</plist>

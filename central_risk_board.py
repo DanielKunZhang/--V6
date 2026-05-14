@@ -2,51 +2,59 @@
 from __future__ import annotations
 
 import argparse
+import html
+import importlib
 import json
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from morning_brief import collect_events, collect_portfolio_futu, collect_portfolio_html, collect_v6
+from morning_brief import HTML_PORTFOLIO, collect_events, collect_portfolio_futu, collect_portfolio_html, collect_v6
 
 
 ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "central_risk_board"
+CONFIG_PATH = ROOT / "central_risk_board_config.json"
 CASH_ALPHA_FUTU_SNAPSHOT = ROOT / "cash_alpha_v3_repo" / "backtest_results" / "futu_account_snapshot_latest.json"
 ATTACK_PREVIEW_DIR = ROOT / "backtest_results" / "attack_engine_live_preview"
 
-
-SPECIAL_SLEEVES = {
-    "V6 量化策略仓": "V6",
-    "Radar": "Radar Overlay",
-    "卫星实验": "Experimental",
-    "富途现金": "Cash Buffer",
-}
-
-THEME_MAP = {
-    "腾讯": "中国平台互联网",
-    "PDD": "中国平台互联网",
-    "TME": "中国平台互联网",
-    "美的": "中国制造/家电",
-    "招商银行": "中国金融",
-    "泡泡玛特": "中国消费/IP",
-    "NVDA": "AI半导体",
-    "ADBE": "美国软件",
-    "NU": "拉美金融科技",
-    "IT": "IT服务",
-    "富途现金": "现金缓冲",
-    "V6 量化策略仓": "系统化进攻",
-    "Radar": "动态研究输入",
-    "卫星实验": "高弹性实验",
-}
-
-V6_THEME_MAP = {
-    "US.AMZN": "美国平台/云",
-    "US.AVGO": "AI半导体",
-    "US.GOOGL": "美国平台/AI",
-    "US.NVDA": "AI半导体",
-    "US.BIL": "现金类防守",
-    "US.GLD": "黄金防守",
+DEFAULT_CONFIG = {
+    "special_sleeves": {
+        "V6 量化策略仓": "V6",
+        "Radar": "Radar Overlay",
+        "卫星实验": "Experimental",
+        "富途现金": "Cash Buffer",
+    },
+    "position_themes": {
+        "腾讯": "中国平台互联网",
+        "PDD": "中国平台互联网",
+        "TME": "中国平台互联网",
+        "美的": "中国制造/家电",
+        "招商银行": "中国金融",
+        "泡泡玛特": "中国消费/IP",
+        "NVDA": "AI半导体",
+        "ADBE": "美国软件",
+        "NU": "拉美金融科技",
+        "IT": "IT服务",
+        "富途现金": "现金缓冲",
+        "V6 量化策略仓": "系统化进攻",
+        "Radar": "动态研究输入",
+        "卫星实验": "高弹性实验",
+        "AMZN": "美国平台/云",
+        "AVGO": "AI半导体",
+        "GOOGL": "美国平台/AI",
+        "BIL": "现金类防守",
+        "GLD": "黄金防守",
+    },
+    "v6_themes": {
+        "US.AMZN": "美国平台/云",
+        "US.AVGO": "AI半导体",
+        "US.GOOGL": "美国平台/AI",
+        "US.NVDA": "AI半导体",
+        "US.BIL": "现金类防守",
+        "US.GLD": "黄金防守",
+    },
 }
 
 
@@ -89,14 +97,27 @@ def sanitize(value: Any) -> Any:
     return value
 
 
-def classify_sleeve(name: str) -> str:
-    if name in SPECIAL_SLEEVES:
-        return SPECIAL_SLEEVES[name]
-    return "Value Main Book"
+def load_board_config() -> dict[str, Any]:
+    if CONFIG_PATH.exists():
+        try:
+            raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                merged = json.loads(json.dumps(DEFAULT_CONFIG, ensure_ascii=False))
+                for key in ("special_sleeves", "position_themes", "v6_themes"):
+                    if isinstance(raw.get(key), dict):
+                        merged[key].update(raw[key])
+                return merged
+        except Exception:
+            pass
+    return DEFAULT_CONFIG
 
 
-def classify_theme(name: str) -> str:
-    return THEME_MAP.get(name, "其他/待映射")
+def classify_sleeve(name: str, config: dict[str, Any]) -> str:
+    return config["special_sleeves"].get(name, "Value Main Book")
+
+
+def classify_theme(name: str, config: dict[str, Any]) -> str:
+    return config["position_themes"].get(name, "其他/待映射")
 
 
 def normalize_v6_name(code: str) -> str:
@@ -138,11 +159,75 @@ def load_cached_futu_snapshot() -> dict[str, Any]:
     return {"raw": {}, "path": ""}
 
 
+def parse_wan_usd(text: str) -> float | None:
+    match = re.search(r"([\d.]+)\s*万\s*USD", text)
+    if not match:
+        return None
+    return round(float(match.group(1)) * 10000, 2)
+
+
+def extract_portfolio_meta() -> dict[str, Any]:
+    if not HTML_PORTFOLIO.exists():
+        return {"total_assets_usd": None, "futu_executable_assets_usd": None, "source": str(HTML_PORTFOLIO), "notes": ["portfolio_html_missing"]}
+    content = HTML_PORTFOLIO.read_text(encoding="utf-8")
+    notes: list[str] = []
+
+    total_assets_usd = None
+    total_patterns = [
+        r"合计总资产约\s*<strong>([\d.]+\s*万\s*USD)</strong>",
+        r"全资产约\s*<strong>([\d.]+\s*万\s*USD)</strong>",
+        r"全资产：约\s*([\d.]+\s*万\s*USD)",
+    ]
+    for pattern in total_patterns:
+        match = re.search(pattern, content)
+        if match:
+            total_assets_usd = parse_wan_usd(match.group(1))
+            break
+    if total_assets_usd is None:
+        notes.append("total_assets_usd_not_found")
+
+    futu_assets_usd = None
+    futu_patterns = [
+        r"当前富途账户约\s*<strong>([\d.]+\s*万\s*USD)</strong>",
+        r"富途账户约\s*<strong>([\d.]+\s*万\s*USD)</strong>",
+        r"富途这\s*([\d.]+\s*万\s*USD)",
+    ]
+    for pattern in futu_patterns:
+        match = re.search(pattern, content)
+        if match:
+            futu_assets_usd = parse_wan_usd(match.group(1))
+            break
+    if futu_assets_usd is None:
+        notes.append("futu_executable_assets_usd_not_found")
+
+    return {
+        "total_assets_usd": total_assets_usd,
+        "futu_executable_assets_usd": futu_assets_usd,
+        "source": str(HTML_PORTFOLIO),
+        "notes": notes,
+    }
+
+
 def build_futu_snapshot() -> dict[str, Any]:
     live = collect_portfolio_futu()
     if live:
         positions = live.get("positions", {})
-        long_mv_hkd = round(sum(float(item.get("mv_local", 0.0)) for item in positions.values()), 2)
+        positions_map: dict[str, dict[str, Any]] = {}
+        long_mv_hkd = 0.0
+        long_mv_usd = 0.0
+        for code, item in positions.items():
+            qty = float(item.get("qty", 0.0))
+            mv_local = float(item.get("mv_local", 0.0))
+            mv_usd = mv_local if code.startswith("US.") else None
+            long_mv_hkd += mv_local
+            if mv_usd:
+                long_mv_usd += mv_usd
+            positions_map[code] = {
+                "qty": qty,
+                "market_val_local": mv_local,
+                "market_val_usd": mv_usd,
+                "stock_name": item.get("stock_name", ""),
+            }
         return {
             "available": True,
             "scope": "broker_account_only",
@@ -153,10 +238,11 @@ def build_futu_snapshot() -> dict[str, Any]:
             "net_liquidation_usd": None,
             "available_cash_usd": None,
             "strategy_capital_usd": None,
-            "positions_count": len([qty for qty in positions.values() if float(qty.get("qty", 0.0)) > 0]),
-            "long_positions_market_value_usd": None,
-            "long_positions_market_value_hkd": long_mv_hkd,
+            "positions_count": len([item for item in positions.values() if float(item.get("qty", 0.0)) > 0]),
+            "long_positions_market_value_usd": round(long_mv_usd, 2) if long_mv_usd > 0 else None,
+            "long_positions_market_value_hkd": round(long_mv_hkd, 2),
             "reserve_sellable_usd": None,
+            "positions_map": positions_map,
             "warnings": [],
         }
 
@@ -177,7 +263,20 @@ def build_futu_snapshot() -> dict[str, Any]:
             "long_positions_market_value_usd": None,
             "long_positions_market_value_hkd": None,
             "reserve_sellable_usd": None,
+            "positions_map": {},
             "warnings": ["futu_snapshot_unavailable"],
+        }
+
+    positions_map: dict[str, dict[str, Any]] = {}
+    for row in raw.get("positions", []) or []:
+        code = str(row.get("code", ""))
+        if not code:
+            continue
+        positions_map[code] = {
+            "qty": float(row.get("qty", 0.0) or 0.0),
+            "market_val_usd": float(row.get("market_val_usd", 0.0) or 0.0),
+            "market_val_local": float(row.get("market_val", 0.0) or 0.0),
+            "stock_name": row.get("stock_name", ""),
         }
 
     summary = raw.get("position_summary", {}) if isinstance(raw.get("position_summary"), dict) else {}
@@ -195,7 +294,83 @@ def build_futu_snapshot() -> dict[str, Any]:
         "long_positions_market_value_usd": float(summary.get("long_positions_market_value_usd", 0.0)) if summary.get("long_positions_market_value_usd") is not None else None,
         "long_positions_market_value_hkd": None,
         "reserve_sellable_usd": float(summary.get("reserve_positions_sellable_usd", 0.0)) if summary.get("reserve_positions_sellable_usd") is not None else None,
+        "positions_map": positions_map,
         "warnings": raw.get("snapshot_warnings", []),
+    }
+
+
+def resolve_cadence(requested: str) -> str:
+    if requested in {"daily", "weekly"}:
+        return requested
+    return "weekly" if datetime.now().weekday() == 0 else "daily"
+
+
+def cadence_label(cadence: str) -> str:
+    return "Weekly Formal Board" if cadence == "weekly" else "Daily Light Check"
+
+
+def position_sleeve(row: dict[str, Any], config: dict[str, Any]) -> str:
+    return str(row.get("sleeve") or classify_sleeve(row["name"], config))
+
+
+def position_theme(row: dict[str, Any], config: dict[str, Any]) -> str:
+    return str(row.get("theme") or classify_theme(row["name"], config))
+
+
+def build_v6_allocated_positions(
+    base_positions: list[dict[str, Any]],
+    v6_positions: dict[str, float],
+    futu_snapshot: dict[str, Any],
+    portfolio_meta: dict[str, Any],
+    config: dict[str, Any],
+) -> dict[str, Any]:
+    total_assets_usd = portfolio_meta.get("total_assets_usd")
+    existing_names = {row["name"] for row in base_positions}
+    position_map = futu_snapshot.get("positions_map", {}) or {}
+    out: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    if not total_assets_usd:
+        return {"positions": [], "current_pct": 0.0, "warnings": ["total_assets_denominator_missing"]}
+
+    for code, qty in v6_positions.items():
+        if float(qty) <= 0:
+            continue
+        plain = normalize_v6_name(code)
+        if plain in existing_names:
+            warnings.append(f"skip_existing_{plain}")
+            continue
+        snap = position_map.get(code, {})
+        mv_usd = snap.get("market_val_usd")
+        if mv_usd is None or float(mv_usd) <= 0:
+            warnings.append(f"missing_market_value_{code}")
+            continue
+        pct = round(float(mv_usd) / float(total_assets_usd) * 100, 1)
+        if pct <= 0:
+            continue
+        out.append(
+            {
+                "name": plain,
+                "current_pct": pct,
+                "target_min": None,
+                "target_max": None,
+                "target_short": "V6 managed",
+                "action": "由 V6 managed state 管理",
+                "status": "ok",
+                "sleeve": "V6",
+                "theme": config["v6_themes"].get(code, "V6未映射主题"),
+                "synthetic": True,
+                "source": "futu_v6_managed_state",
+                "market_val_usd": round(float(mv_usd), 2),
+                "qty": float(qty),
+                "code": code,
+            }
+        )
+
+    return {
+        "positions": out,
+        "current_pct": round(sum(row["current_pct"] for row in out), 1),
+        "warnings": warnings,
     }
 
 
@@ -216,10 +391,10 @@ def build_firm_snapshot(positions: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def build_sleeve_rows(positions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def build_sleeve_rows(positions: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
     buckets: dict[str, dict[str, Any]] = {}
     for row in positions:
-        sleeve = classify_sleeve(row["name"])
+        sleeve = position_sleeve(row, config)
         bucket = buckets.setdefault(
             sleeve,
             {"sleeve": sleeve, "current_pct": 0.0, "names": [], "over_count": 0, "under_count": 0},
@@ -238,47 +413,35 @@ def build_sleeve_rows(positions: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         row = buckets[sleeve]
         row["current_pct"] = round(row["current_pct"], 1)
-        row["names"] = " / ".join(row["names"][:6]) if row["names"] else "—"
+        row["names"] = " / ".join(row["names"][:8]) if row["names"] else "—"
         rows.append(row)
     return rows
 
 
-def build_theme_rows(positions: list[dict[str, Any]], v6_positions: dict[str, float]) -> list[dict[str, Any]]:
+def build_theme_rows(positions: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
     theme_totals: dict[str, float] = {}
     for row in positions:
         pct = float(row["current_pct"])
         if pct <= 0:
             continue
-        theme = classify_theme(row["name"])
+        theme = position_theme(row, config)
         theme_totals[theme] = theme_totals.get(theme, 0.0) + pct
 
-    for code in v6_positions:
-        theme = V6_THEME_MAP.get(code, "V6未映射主题")
-        # v1 先只标主题存在，不把 V6 managed state 二次计入总账户百分比，避免与主账本重复计算
-        theme_totals.setdefault(theme, theme_totals.get(theme, 0.0))
-
-    rows = [
-        {"theme": theme, "current_pct": round(weight, 1)}
-        for theme, weight in theme_totals.items()
-        if weight > 0
-    ]
+    rows = [{"theme": theme, "current_pct": round(weight, 1)} for theme, weight in theme_totals.items() if weight > 0]
     rows.sort(key=lambda item: item["current_pct"], reverse=True)
     return rows
 
 
-def build_overlap_section(positions: list[dict[str, Any]], v6_positions: dict[str, float]) -> dict[str, Any]:
-    main_names = {row["name"] for row in positions if classify_sleeve(row["name"]) == "Value Main Book" and row["current_pct"] > 0}
+def build_overlap_section(base_positions: list[dict[str, Any]], v6_positions: dict[str, float], config: dict[str, Any]) -> dict[str, Any]:
+    main_names = {row["name"] for row in base_positions if position_sleeve(row, config) == "Value Main Book" and row["current_pct"] > 0}
     v6_plain = {normalize_v6_name(code) for code, qty in v6_positions.items() if qty > 0}
     direct_overlap = sorted(main_names & v6_plain)
 
-    main_themes = {classify_theme(row["name"]) for row in positions if classify_sleeve(row["name"]) == "Value Main Book" and row["current_pct"] > 0}
-    v6_themes = {V6_THEME_MAP.get(code, "V6未映射主题") for code, qty in v6_positions.items() if qty > 0}
+    main_themes = {position_theme(row, config) for row in base_positions if position_sleeve(row, config) == "Value Main Book" and row["current_pct"] > 0}
+    v6_themes = {config["v6_themes"].get(code, "V6未映射主题") for code, qty in v6_positions.items() if qty > 0}
     thematic_overlap = sorted(main_themes & v6_themes)
 
-    return {
-        "direct_overlap": direct_overlap,
-        "thematic_overlap": thematic_overlap,
-    }
+    return {"direct_overlap": direct_overlap, "thematic_overlap": thematic_overlap}
 
 
 def build_freshness(payload_generated_at: str, portfolio_last_updated: str, v6_state_updated: str, futu_snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -301,15 +464,7 @@ def build_freshness(payload_generated_at: str, portfolio_last_updated: str, v6_s
             yellow_reasons.append(f"ledger_age={ledger_age_days}d")
     else:
         red_reasons.append("ledger_date_missing")
-    rows.append(
-        {
-            "item": "Master risk ledger",
-            "updated_at": portfolio_last_updated or "unknown",
-            "age": fmt_age_days(ledger_age_days),
-            "status": ledger_status,
-            "note": "26年阶段性组合策略计划.html",
-        }
-    )
+    rows.append({"item": "Master risk ledger", "updated_at": portfolio_last_updated or "unknown", "age": fmt_age_days(ledger_age_days), "status": ledger_status, "note": "26年阶段性组合策略计划.html"})
 
     v6_dt = parse_dt(v6_state_updated)
     v6_age_hours: float | None = None
@@ -325,15 +480,7 @@ def build_freshness(payload_generated_at: str, portfolio_last_updated: str, v6_s
             yellow_reasons.append(f"v6_state_age={v6_age_hours:.1f}h")
     else:
         red_reasons.append("v6_state_missing")
-    rows.append(
-        {
-            "item": "V6 managed state",
-            "updated_at": v6_state_updated or "unknown",
-            "age": fmt_age_hours(v6_age_hours),
-            "status": v6_status,
-            "note": "managed positions / blockers",
-        }
-    )
+    rows.append({"item": "V6 managed state", "updated_at": v6_state_updated or "unknown", "age": fmt_age_hours(v6_age_hours), "status": v6_status, "note": "managed positions / blockers"})
 
     futu_dt = parse_dt(futu_snapshot.get("timestamp", ""))
     futu_age_hours: float | None = None
@@ -349,21 +496,9 @@ def build_freshness(payload_generated_at: str, portfolio_last_updated: str, v6_s
             yellow_reasons.append(f"futu_snapshot_age={futu_age_hours:.1f}h")
     else:
         yellow_reasons.append("futu_snapshot_unavailable")
-    rows.append(
-        {
-            "item": "Futu broker snapshot",
-            "updated_at": futu_snapshot.get("timestamp", "unknown") or "unknown",
-            "age": fmt_age_hours(futu_age_hours),
-            "status": futu_status,
-            "note": futu_snapshot.get("mode", "unknown"),
-        }
-    )
+    rows.append({"item": "Futu broker snapshot", "updated_at": futu_snapshot.get("timestamp", "unknown") or "unknown", "age": fmt_age_hours(futu_age_hours), "status": futu_status, "note": futu_snapshot.get("mode", "unknown")})
 
-    return {
-        "rows": rows,
-        "red_reasons": red_reasons,
-        "yellow_reasons": yellow_reasons,
-    }
+    return {"rows": rows, "red_reasons": red_reasons, "yellow_reasons": yellow_reasons}
 
 
 def classify_board_status(snapshot: dict[str, Any], themes: list[dict[str, Any]], alerts: list[dict[str, Any]], freshness: dict[str, Any]) -> tuple[str, list[str]]:
@@ -395,38 +530,56 @@ def classify_board_status(snapshot: dict[str, Any], themes: list[dict[str, Any]]
 def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> list[str]:
     if not rows:
         return ["_None_"]
-    out = [
-        "| " + " | ".join(label for _, label in columns) + " |",
-        "| " + " | ".join("---" for _ in columns) + " |",
-    ]
+    out = ["| " + " | ".join(label for _, label in columns) + " |", "| " + " | ".join("---" for _ in columns) + " |"]
     for row in rows:
         out.append("| " + " | ".join(str(row.get(key, "")) for key, _ in columns) + " |")
     return out
 
 
-def build_payload() -> dict[str, Any]:
+def render_html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
+    if not rows:
+        return "<p>None</p>"
+    head = "".join(f"<th>{html.escape(label)}</th>" for _, label in columns)
+    body_rows = []
+    for row in rows:
+        tds = "".join(f"<td>{html.escape(str(row.get(key, '')))}</td>" for key, _ in columns)
+        body_rows.append(f"<tr>{tds}</tr>")
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(body_rows)}</tbody></table>"
+
+
+def build_payload(requested_cadence: str) -> dict[str, Any]:
+    config = load_board_config()
+    cadence = resolve_cadence(requested_cadence)
     portfolio = collect_portfolio_html()
     v6 = collect_v6()
     events = collect_events(14)
     generated_at = datetime.now().isoformat(timespec="seconds")
-    positions = portfolio.get("positions", [])
+    portfolio_meta = extract_portfolio_meta()
+    base_positions = portfolio.get("positions", [])
     alerts = portfolio.get("alerts", [])
-    snapshot = build_firm_snapshot(positions)
-    sleeves = build_sleeve_rows(positions)
-    themes = build_theme_rows(positions, v6.get("positions", {}))
-    overlap = build_overlap_section(positions, v6.get("positions", {}))
     futu_snapshot = build_futu_snapshot()
+    v6_allocated = build_v6_allocated_positions(base_positions, v6.get("positions", {}), futu_snapshot, portfolio_meta, config)
+    positions = [*base_positions, *v6_allocated["positions"]]
+    snapshot = build_firm_snapshot(positions)
+    sleeves = build_sleeve_rows(positions, config)
+    themes = build_theme_rows(positions, config)
+    overlap = build_overlap_section(base_positions, v6.get("positions", {}), config)
     freshness = build_freshness(generated_at, portfolio.get("last_updated", ""), v6.get("state_updated", ""), futu_snapshot)
     status, reasons = classify_board_status(snapshot, themes, alerts, freshness)
     return {
+        "version": "v1.2",
+        "requested_cadence": requested_cadence,
+        "cadence": cadence,
+        "cadence_label": cadence_label(cadence),
         "generated_at": generated_at,
         "portfolio_last_updated": portfolio.get("last_updated", ""),
+        "portfolio_error": portfolio.get("error", ""),
+        "portfolio_meta": portfolio_meta,
         "status": status,
         "status_reasons": reasons,
-        "portfolio_error": portfolio.get("error", ""),
         "firm_snapshot": snapshot,
         "sleeves": sleeves,
-        "themes": themes[:8],
+        "themes": themes[:10],
         "freshness": freshness,
         "futu_snapshot": futu_snapshot,
         "target_alerts": alerts,
@@ -436,60 +589,24 @@ def build_payload() -> dict[str, Any]:
             "managed_positions": v6.get("positions", {}),
             "state_updated": v6.get("state_updated", ""),
         },
+        "v6_allocated": v6_allocated,
         "overlap": overlap,
         "events": events,
         "known_limits": [
-            "v1 total-account view still relies on 26年阶段性组合策略计划.html as the master risk ledger.",
-            "v1 does not yet explode V6 managed holdings into total-account percentage weights automatically.",
-            "Futu snapshot is currently used as broker-level sanity/freshness only, not a full-firm denominator.",
-            "theme mapping is partly manual and should be upgraded into a formal mapping table.",
+            "total-account 主账本仍然依赖 26年阶段性组合策略计划.html 的人工更新频率。",
+            "V6 曝露目前只对 master ledger 缺失的 managed names 做增量折算，避免与已入账主仓名称双重计算。",
+            "Futu snapshot 仍然主要承担 broker-level sanity / freshness，不是完整全资产分母来源。",
+            "theme mapping 已配置化，但映射质量仍取决于后续持续补表。",
         ],
     }
 
 
-def write_markdown(path: Path, payload: dict[str, Any]) -> None:
-    snapshot = payload["firm_snapshot"]
-    lines = [
-        "# Central Risk Board v1.1",
-        "",
-        f"- Generated: `{payload['generated_at']}`",
-        f"- Master risk ledger date: `{payload['portfolio_last_updated']}`",
-        f"- Overall status: `{payload['status']}`",
-        f"- Status reasons: `{', '.join(payload['status_reasons']) or 'none'}`",
-        "",
-        "## One-Line Read",
-        "",
-    ]
+def build_top_rows(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
+    return [{"name": row["name"], "current_pct": fmt_pct(row["current_pct"]), "target": row["target_short"], "action": row["action"]} for row in snapshot["top5"]]
 
-    if payload["status"] == "RED":
-        lines.append("- 当前不是“策略坏了”，而是总账户集中度仍然过高，核心风险继续集中在少数大仓与单一主题。")
-    elif payload["status"] == "YELLOW":
-        lines.append("- 当前总账户可运行，但集中度和目标偏离已经需要正式讨论，不能只靠感觉管理。")
-    else:
-        lines.append("- 当前总账户风险大体在可接受范围内，中央风险层未发现明显失真。")
 
-    lines.extend(
-        [
-            "",
-            "## Firm Snapshot",
-            "",
-            f"- Top 2 positions sum: `{fmt_pct(snapshot['top2_sum'])}`",
-            f"- Top 3 positions sum: `{fmt_pct(snapshot['top3_sum'])}`",
-            f"- Top 5 positions sum: `{fmt_pct(snapshot['top5_sum'])}`",
-            f"- Largest single position: `{fmt_pct(snapshot['max_position'])}`",
-            "",
-            "### Top Positions",
-            "",
-        ]
-    )
-    top_rows = [
-        {"name": row["name"], "current_pct": fmt_pct(row["current_pct"]), "target": row["target_short"], "action": row["action"]}
-        for row in snapshot["top5"]
-    ]
-    lines.extend(render_table(top_rows, [("name", "position"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
-
-    lines.extend(["", "## Sleeve Risk", ""])
-    sleeve_rows = [
+def build_sleeve_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
         {
             "sleeve": row["sleeve"],
             "current_pct": fmt_pct(row["current_pct"]),
@@ -499,25 +616,88 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         }
         for row in payload["sleeves"]
     ]
-    lines.extend(
-        render_table(
-            sleeve_rows,
-            [("sleeve", "sleeve"), ("current_pct", "current"), ("over_count", "over-target"), ("under_count", "under-target"), ("names", "main names")],
-        )
-    )
+
+
+def build_theme_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [{"theme": row["theme"], "current_pct": fmt_pct(row["current_pct"])} for row in payload["themes"]]
+
+
+def build_alert_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [{"name": row["name"], "current_pct": fmt_pct(row["current_pct"]), "target": row["target_short"], "action": row["action"]} for row in payload["target_alerts"]]
+
+
+def build_event_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [{"date": row["date"], "domain": row.get("domain", ""), "days": row.get("_days", ""), "text": row.get("text", ""), "action": row.get("action", "")} for row in payload["events"]]
+
+
+def build_v6_embedded_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "code": row.get("code", ""),
+            "name": row["name"],
+            "qty": int(row.get("qty", 0)),
+            "market_val_usd": fmt_usd(row.get("market_val_usd")),
+            "current_pct": fmt_pct(row["current_pct"]),
+            "theme": row.get("theme", ""),
+        }
+        for row in payload["v6_allocated"]["positions"]
+    ]
+
+
+def one_line_read(payload: dict[str, Any]) -> str:
+    if payload["status"] == "RED":
+        return "当前不是“策略坏了”，而是总账户集中度仍然过高，核心风险继续集中在少数大仓与单一主题。"
+    if payload["status"] == "YELLOW":
+        return "当前总账户可运行，但集中度和目标偏离已经需要正式讨论，不能只靠感觉管理。"
+    return "当前总账户风险大体在可接受范围内，中央风险层未发现明显失真。"
+
+
+def write_markdown(path: Path, payload: dict[str, Any]) -> None:
+    snapshot = payload["firm_snapshot"]
+    portfolio_meta = payload["portfolio_meta"]
+    lines = [
+        f"# Central Risk Board {payload['version']}",
+        "",
+        f"- Cadence: `{payload['cadence']}` ({payload['cadence_label']})",
+        f"- Generated: `{payload['generated_at']}`",
+        f"- Master risk ledger date: `{payload['portfolio_last_updated']}`",
+        f"- Overall status: `{payload['status']}`",
+        f"- Status reasons: `{', '.join(payload['status_reasons']) or 'none'}`",
+        "",
+        "## One-Line Read",
+        "",
+        f"- {one_line_read(payload)}",
+        "",
+        "## Capital Base",
+        "",
+        f"- Total account denominator: `{fmt_usd(portfolio_meta.get('total_assets_usd'))}`",
+        f"- Futu executable capital base: `{fmt_usd(portfolio_meta.get('futu_executable_assets_usd'))}`",
+        f"- V6 embedded exposure added into denominator: `{fmt_pct(payload['v6_allocated']['current_pct'])}`",
+        "",
+        "## Firm Snapshot",
+        "",
+        f"- Top 2 positions sum: `{fmt_pct(snapshot['top2_sum'])}`",
+        f"- Top 3 positions sum: `{fmt_pct(snapshot['top3_sum'])}`",
+        f"- Top 5 positions sum: `{fmt_pct(snapshot['top5_sum'])}`",
+        f"- Largest single position: `{fmt_pct(snapshot['max_position'])}`",
+        "",
+        "### Top Positions",
+        "",
+    ]
+    lines.extend(render_table(build_top_rows(snapshot), [("name", "position"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
+
+    lines.extend(["", "## Sleeve Risk", ""])
+    lines.extend(render_table(build_sleeve_display_rows(payload), [("sleeve", "sleeve"), ("current_pct", "current"), ("over_count", "over-target"), ("under_count", "under-target"), ("names", "main names")]))
 
     lines.extend(["", "## Theme Concentration", ""])
-    theme_rows = [{"theme": row["theme"], "current_pct": fmt_pct(row["current_pct"])} for row in payload["themes"]]
-    lines.extend(render_table(theme_rows, [("theme", "theme"), ("current_pct", "current")]))
+    lines.extend(render_table(build_theme_display_rows(payload), [("theme", "theme"), ("current_pct", "current")]))
+
+    if payload["v6_allocated"]["positions"]:
+        lines.extend(["", "## V6 Embedded Exposure", ""])
+        lines.extend(render_table(build_v6_embedded_rows(payload), [("code", "code"), ("name", "name"), ("qty", "qty"), ("market_val_usd", "market_value"), ("current_pct", "total_account_pct"), ("theme", "theme")]))
 
     lines.extend(["", "## Data Freshness", ""])
-    freshness_rows = payload["freshness"]["rows"]
-    lines.extend(
-        render_table(
-            freshness_rows,
-            [("item", "item"), ("updated_at", "updated_at"), ("age", "age"), ("status", "status"), ("note", "note")],
-        )
-    )
+    lines.extend(render_table(payload["freshness"]["rows"], [("item", "item"), ("updated_at", "updated_at"), ("age", "age"), ("status", "status"), ("note", "note")]))
 
     lines.extend(["", "## Futu Broker Snapshot", ""])
     futu_snapshot = payload["futu_snapshot"]
@@ -546,56 +726,269 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.append(f"- V6 managed state updated: `{fmt_dt(payload['v6']['state_updated'])}`")
 
     lines.extend(["", "## Target Drift Alerts", ""])
-    alert_rows = [
-        {"name": row["name"], "current_pct": fmt_pct(row["current_pct"]), "target": row["target_short"], "action": row["action"]}
-        for row in payload["target_alerts"]
-    ]
-    lines.extend(render_table(alert_rows, [("name", "name"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
+    lines.extend(render_table(build_alert_display_rows(payload), [("name", "name"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
 
     lines.extend(["", "## Event Window (14d)", ""])
-    event_rows = [
-        {
-            "date": row["date"],
-            "domain": row.get("domain", ""),
-            "days": row.get("_days", ""),
-            "text": row.get("text", ""),
-            "action": row.get("action", ""),
-        }
-        for row in payload["events"]
-    ]
-    lines.extend(render_table(event_rows, [("date", "date"), ("domain", "domain"), ("days", "days"), ("text", "event"), ("action", "action")]))
+    lines.extend(render_table(build_event_display_rows(payload), [("date", "date"), ("domain", "domain"), ("days", "days"), ("text", "event"), ("action", "action")]))
 
     lines.extend(["", "## Known Limits", ""])
     for item in payload["known_limits"]:
         lines.append(f"- {item}")
 
     lines.extend(["", "## Next Step", ""])
-    lines.append("- v1.1 之后最重要的升级不是换策略，而是把 V6 managed holdings 真正折算进 total-account 分母，并把主题映射表正式配置化。")
+    lines.append("- 现在最重要的升级不是换策略，而是继续提高 total-account 主账本的自动化程度，并让主题映射和 sleeve attribution 进入稳定维护。")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_html(payload: dict[str, Any]) -> str:
+    snapshot = payload["firm_snapshot"]
+    top_rows = build_top_rows(snapshot)
+    sleeve_rows = build_sleeve_display_rows(payload)
+    theme_rows = build_theme_display_rows(payload)
+    v6_rows = build_v6_embedded_rows(payload)
+    freshness_rows = payload["freshness"]["rows"]
+    alert_rows = build_alert_display_rows(payload)
+    event_rows = build_event_display_rows(payload)
+    portfolio_meta = payload["portfolio_meta"]
+    status_color = {"GREEN": "#16a34a", "YELLOW": "#d97706", "RED": "#dc2626"}.get(payload["status"], "#2563eb")
+
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Central Risk Board {payload['cadence_label']}</title>
+  <style>
+    body {{
+      margin: 0;
+      padding: 24px;
+      background: #f5f7fb;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      line-height: 1.55;
+    }}
+    .wrap {{
+      max-width: 1120px;
+      margin: 0 auto;
+    }}
+    .hero {{
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      border-radius: 22px;
+      padding: 24px 28px;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
+    }}
+    .chips {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }}
+    .chip {{
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+    }}
+    .status {{
+      background: {status_color};
+      color: white;
+    }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }}
+    .card {{
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }}
+    .kicker {{
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }}
+    .num {{
+      margin-top: 8px;
+      font-size: 28px;
+      font-weight: 800;
+    }}
+    h2 {{
+      margin: 26px 0 12px;
+      font-size: 20px;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }}
+    th, td {{
+      padding: 11px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }}
+    th {{
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+    }}
+    .note {{
+      margin-top: 12px;
+      color: #475569;
+      font-size: 13px;
+    }}
+    ul {{
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }}
+    @media (max-width: 900px) {{
+      .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div style="font-size:12px;font-weight:800;opacity:.85;">Central Risk Board {payload['version']}</div>
+      <h1 style="margin:10px 0 8px;font-size:32px;">{html.escape(payload['cadence_label'])}</h1>
+      <div>{html.escape(one_line_read(payload))}</div>
+      <div class="chips">
+        <div class="chip status">{html.escape(payload['status'])}</div>
+        <div class="chip">Generated {html.escape(payload['generated_at'])}</div>
+        <div class="chip">Ledger {html.escape(payload['portfolio_last_updated'])}</div>
+        <div class="chip">Top2 {html.escape(fmt_pct(snapshot['top2_sum']))}</div>
+        <div class="chip">Largest {html.escape(fmt_pct(snapshot['max_position']))}</div>
+        <div class="chip">V6 Embedded {html.escape(fmt_pct(payload['v6_allocated']['current_pct']))}</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="kicker">Total Denominator</div><div class="num">{html.escape(fmt_usd(portfolio_meta.get('total_assets_usd')))}</div></div>
+      <div class="card"><div class="kicker">Futu Executable Base</div><div class="num">{html.escape(fmt_usd(portfolio_meta.get('futu_executable_assets_usd')))}</div></div>
+      <div class="card"><div class="kicker">Top Theme</div><div class="num">{html.escape(theme_rows[0]['theme'] if theme_rows else '—')}</div></div>
+      <div class="card"><div class="kicker">Top Theme Weight</div><div class="num">{html.escape(theme_rows[0]['current_pct'] if theme_rows else '—')}</div></div>
+    </div>
+
+    <h2>Top Positions</h2>
+    {render_html_table(top_rows, [('name', 'position'), ('current_pct', 'current'), ('target', 'target'), ('action', 'action')])}
+
+    <h2>Sleeve Risk</h2>
+    {render_html_table(sleeve_rows, [('sleeve', 'sleeve'), ('current_pct', 'current'), ('over_count', 'over-target'), ('under_count', 'under-target'), ('names', 'main names')])}
+
+    <h2>Theme Concentration</h2>
+    {render_html_table(theme_rows, [('theme', 'theme'), ('current_pct', 'current')])}
+
+    {"<h2>V6 Embedded Exposure</h2>" + render_html_table(v6_rows, [('code', 'code'), ('name', 'name'), ('qty', 'qty'), ('market_val_usd', 'market_value'), ('current_pct', 'total_account_pct'), ('theme', 'theme')]) if v6_rows else ""}
+
+    <h2>Data Freshness</h2>
+    {render_html_table(freshness_rows, [('item', 'item'), ('updated_at', 'updated_at'), ('age', 'age'), ('status', 'status'), ('note', 'note')])}
+
+    <h2>Target Drift Alerts</h2>
+    {render_html_table(alert_rows, [('name', 'name'), ('current_pct', 'current'), ('target', 'target'), ('action', 'action')])}
+
+    <h2>Event Window</h2>
+    {render_html_table(event_rows, [('date', 'date'), ('domain', 'domain'), ('days', 'days'), ('text', 'event'), ('action', 'action')])}
+
+    <h2>Overlap Risk</h2>
+    <div class="card">
+      <ul>
+        <li>Direct main-book vs V6 overlap: {html.escape(', '.join(payload['overlap']['direct_overlap']) if payload['overlap']['direct_overlap'] else 'none')}</li>
+        <li>Thematic overlap: {html.escape(', '.join(payload['overlap']['thematic_overlap']) if payload['overlap']['thematic_overlap'] else 'none')}</li>
+        <li>V6 signal: {html.escape(payload['v6']['signal'])}</li>
+        <li>V6 blockers: {html.escape(str(payload['v6']['blockers']))}</li>
+      </ul>
+    </div>
+
+    <div class="note">
+      自动化建议：daily 仅看异常，weekly 才做正式调整。当前邮件版已经支持两种 cadence，可挂到 launchd。
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+
+def send_email(subject: str, html_content: str) -> bool:
+    try:
+        notifier = importlib.import_module("notifier").EmailNotifier()
+        sent = bool(notifier.send(subject, html_content, is_html=True))
+        if sent:
+            print(f"✓ 邮件已发送 → {getattr(notifier, 'recipient', '?')}")
+        else:
+            print("⚠️ 邮件发送失败")
+        return sent
+    except Exception as exc:
+        print(f"✗ notifier 不可用: {exc}")
+        return False
+
+
+def build_email_subject(payload: dict[str, Any]) -> str:
+    cadence = "Weekly" if payload["cadence"] == "weekly" else "Daily"
+    status = payload["status"]
+    extra = f" · {len(payload['target_alerts'])} alerts" if payload["target_alerts"] else ""
+    return f"🛡️ Central Risk Board {cadence} {date.today()} · {status}{extra}"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate the firm-level Central Risk Board.")
-    parser.add_argument("--tag", default=datetime.now().strftime("%Y%m%d_v1_1"))
+    parser.add_argument("--tag", default=datetime.now().strftime("%Y%m%dT%H%M%S"))
+    parser.add_argument("--cadence", choices=["auto", "daily", "weekly"], default="weekly")
+    parser.add_argument("--email", action="store_true")
     args = parser.parse_args()
 
-    payload = build_payload()
+    payload = build_payload(args.cadence)
+    cadence = payload["cadence"]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    json_path = OUT_DIR / f"central_risk_board_{args.tag}.json"
-    md_path = OUT_DIR / f"central_risk_board_{args.tag}.md"
+
+    base = OUT_DIR / f"central_risk_board_{cadence}_{args.tag}"
+    json_path = Path(f"{base}.json")
+    md_path = Path(f"{base}.md")
+    html_path = Path(f"{base}.html")
+
     latest_json = OUT_DIR / "latest.json"
     latest_md = OUT_DIR / "latest.md"
+    latest_html = OUT_DIR / "latest.html"
+    cadence_latest_json = OUT_DIR / f"latest_{cadence}.json"
+    cadence_latest_md = OUT_DIR / f"latest_{cadence}.md"
+    cadence_latest_html = OUT_DIR / f"latest_{cadence}.html"
 
     safe_payload = sanitize(payload)
+    html_content = build_html(payload)
     json_path.write_text(json.dumps(safe_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     write_markdown(md_path, payload)
+    html_path.write_text(html_content, encoding="utf-8")
+
     latest_json.write_text(json.dumps(safe_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     latest_md.write_text(md_path.read_text(encoding="utf-8"), encoding="utf-8")
+    latest_html.write_text(html_content, encoding="utf-8")
+
+    cadence_latest_json.write_text(json.dumps(safe_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    cadence_latest_md.write_text(md_path.read_text(encoding="utf-8"), encoding="utf-8")
+    cadence_latest_html.write_text(html_content, encoding="utf-8")
 
     print("== Central Risk Board ==")
-    print(f"JSON:   {json_path}")
-    print(f"Report: {md_path}")
-    print(f"Status: {payload['status']}")
+    print(f"Cadence: {payload['cadence']} ({payload['cadence_label']})")
+    print(f"JSON:    {json_path}")
+    print(f"Report:  {md_path}")
+    print(f"HTML:    {html_path}")
+    print(f"Status:  {payload['status']}")
+    print(f"V6 add:  {payload['v6_allocated']['current_pct']:.1f}% of total account")
+
+    if args.email:
+        send_email(build_email_subject(payload), html_content)
 
 
 if __name__ == "__main__":
