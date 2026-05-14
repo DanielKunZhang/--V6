@@ -1,0 +1,2 @@
+case_id,opened_at,closed_at,status,lane,underlying,structure,budget_usd,premium_debit_usd,max_loss_usd,thesis,entry_trigger,invalidation,time_stop,profit_taking,execution_mode,realized_pnl_usd,return_pct,notes,review
+001,2026-05-13,,watch,Lane A,CRDO,2027-01 long call only if budget-fit,1500,,1500,AI interconnect / DSP / scale-out multi-quarter thesis,Stand above 200-203 or reclaim 190-195,Daily close below 180 and 3 days no reclaim,2026-08-31,+80%~+120% or stock 230-240,manual,,,Budget mismatch unless a budget-fit contract exists,Not yet a real sample

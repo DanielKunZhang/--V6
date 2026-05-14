@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dingcle.monthly-research-review</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+    <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/monthly_research_review.py</string>
+    <string>--tag</string>
+    <string>auto_monthly</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Day</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>10</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/monthly_research_review/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/monthly_research_review/launchd.err.log</string>
+</dict>
+</plist>

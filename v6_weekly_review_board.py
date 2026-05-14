@@ -547,13 +547,21 @@ def main() -> None:
     BACKLOG_DIR.mkdir(parents=True, exist_ok=True)
     board_json = OUT_DIR / f"v6_weekly_review_{args.tag}.json"
     board_md = OUT_DIR / f"v6_weekly_review_{args.tag}.md"
+    latest_board_json = OUT_DIR / "latest.json"
+    latest_board_md = OUT_DIR / "latest.md"
     backlog_json = BACKLOG_DIR / f"v6_research_backlog_{args.tag}.json"
     backlog_md = BACKLOG_DIR / f"v6_research_backlog_{args.tag}.md"
+    latest_backlog_json = BACKLOG_DIR / "latest.json"
+    latest_backlog_md = BACKLOG_DIR / "latest.md"
 
     board_json.write_text(json.dumps(board, ensure_ascii=False, indent=2), encoding="utf-8")
     board_md.write_text(render_board_md(board), encoding="utf-8")
+    latest_board_json.write_text(json.dumps(board, ensure_ascii=False, indent=2), encoding="utf-8")
+    latest_board_md.write_text(board_md.read_text(encoding="utf-8"), encoding="utf-8")
     backlog_json.write_text(json.dumps(backlog_items, ensure_ascii=False, indent=2), encoding="utf-8")
     backlog_md.write_text(render_backlog_md(backlog_items, args.tag), encoding="utf-8")
+    latest_backlog_json.write_text(json.dumps(backlog_items, ensure_ascii=False, indent=2), encoding="utf-8")
+    latest_backlog_md.write_text(backlog_md.read_text(encoding="utf-8"), encoding="utf-8")
 
     print(f"Board JSON:   {board_json}")
     print(f"Board MD:     {board_md}")
