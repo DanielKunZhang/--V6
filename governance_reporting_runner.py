@@ -28,6 +28,11 @@ REPORT_SPECS = {
         "out_dir": ROOT / "backtest_results" / "monthly_research_review",
         "desktop_prefix": "Monthly_Research_Review_LATEST",
     },
+    "external_short_network_review": {
+        "script": ROOT / "external_short_network_review.py",
+        "out_dir": ROOT / "backtest_results" / "external_short_network_review",
+        "desktop_prefix": "外部短线网络样本复盘_EXTERNAL_SHORT_NETWORK_LATEST",
+    },
     "investment_company_dashboard": {
         "script": ROOT / "investment_company_dashboard.py",
         "out_dir": ROOT / "backtest_results" / "investment_company_dashboard",
@@ -37,7 +42,8 @@ REPORT_SPECS = {
 
 SCOPE_REPORTS = {
     "daily": ["performance_attribution", "overlay_trade_journal", "investment_company_dashboard"],
-    "monthly": ["performance_attribution", "overlay_trade_journal", "monthly_research_review", "investment_company_dashboard"],
+    "weekly": ["external_short_network_review", "investment_company_dashboard"],
+    "monthly": ["performance_attribution", "overlay_trade_journal", "external_short_network_review", "monthly_research_review", "investment_company_dashboard"],
 }
 
 
@@ -47,7 +53,7 @@ def run_report(name: str, tag: str) -> None:
     if not script.exists():
         raise FileNotFoundError(f"Missing report script: {script}")
     cmd = [str(PYTHON), str(script), "--tag", tag]
-    if name == "investment_company_dashboard":
+    if name in {"investment_company_dashboard", "external_short_network_review"}:
         cmd.append("--sync-desktop")
     subprocess.run(cmd, cwd=ROOT, check=True)
 
@@ -61,7 +67,7 @@ def sync_report(name: str) -> None:
         if name == "investment_company_dashboard" and ext == "md":
             continue
         if not src.exists():
-            raise FileNotFoundError(f"Missing latest report: {src}")
+            continue
         dst = DESKTOP_DIR / f"{desktop_prefix}.{ext}"
         shutil.copy2(src, dst)
 

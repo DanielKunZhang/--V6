@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dingcle.radar-theme-weekly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+    <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/governance_reporting_runner.py</string>
+    <string>--scope</string>
+    <string>weekly</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>7</integer>
+    <key>Hour</key>
+    <integer>9</integer>
+    <key>Minute</key>
+    <integer>35</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/external_short_network_review/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/external_short_network_review/launchd.err.log</string>
+</dict>
+</plist>
