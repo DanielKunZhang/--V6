@@ -1,0 +1,70 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-14",
+  "strategy": "V6-A ATTACK_EQUAL_REPLAY",
+  "lane": "balanced_challenger_cutover_preview_only",
+  "default_mode": "plan_only",
+  "capital": {
+    "strategy_capital_usd": 5000,
+    "max_gross": 1.0,
+    "max_total_notional_usd": 5000,
+    "max_order_value_usd": 5000,
+    "min_order_value_usd": 25
+  },
+  "data": {
+    "daily_replay_csv": "backtest_results/v6a_core_replay/v6a_core_replay_daily_20260514_bridge_refresh_v1_v6a_core_balanced.csv",
+    "replay_composite_csv": "backtest_results/v6a_core_replay/v6a_core_replay_composite_20260514_bridge_refresh_v1_v6a_core_balanced.csv",
+    "replay_summary_csv": "backtest_results/v6a_core_replay/v6a_core_replay_summary_20260514_bridge_refresh_v1_v6a_core_balanced.csv",
+    "max_signal_age_days": 7,
+    "max_quote_age_minutes": 20
+  },
+  "futu": {
+    "host": "127.0.0.1",
+    "port": 11111,
+    "real_acc_id": "281756481449956811",
+    "trd_env": "REAL"
+  },
+  "release_gate": {
+    "min_full_ann": 25.0,
+    "min_oos_ann": 18.0,
+    "max_full_dd": -30.0,
+    "min_oos_sharpe": 0.8,
+    "min_equity_pct": 70.0,
+    "min_rolling_3y_ann": 0.0,
+    "min_quote_count": 3
+  },
+  "execution": {
+    "auto_real_orders_allowed": false,
+    "manual_confirm_phrase": "GO_BALANCED_CUTOVER_EXECUTE",
+    "allow_sell_orders": true,
+    "allow_buy_orders": true,
+    "net_existing_positions": false,
+    "net_managed_positions": true,
+    "managed_positions_state_file": "backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json",
+    "update_managed_state_after_execution": false,
+    "require_regular_market_hours_for_real": true,
+    "require_fresh_preview_for_real": true
+  },
+  "risk_guards": {
+    "block_if_release_gate_fails": true,
+    "block_if_preview_has_warnings": true,
+    "block_if_account_has_warnings": true,
+    "block_if_quote_has_warnings": true,
+    "block_if_total_notional_exceeds_policy": true,
+    "block_if_any_order_value_invalid": true,
+    "block_if_no_executable_orders": false,
+    "block_if_sell_exceeds_managed_state": true,
+    "block_if_managed_state_strategy_mismatch": true
+  },
+  "audit": {
+    "output_dir": "backtest_results/v6a_balanced_guarded_runner",
+    "latest_json": "latest_run.json",
+    "latest_md": "latest_run.md"
+  },
+  "boundaries": [
+    "This lane exists only for balanced challenger preview, cutover evidence, and migration planning.",
+    "It reuses the current V6-A managed state only to net existing V6 sleeve shares and show cutover deltas.",
+    "A PASS here does not authorize immediate live execution or same-day baseline replacement.",
+    "Cutover still requires the formal 2026-05-26 decision-day SOP, fresh replay, preview clarity, and migration diff review."
+  ]
+}

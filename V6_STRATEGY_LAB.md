@@ -377,6 +377,29 @@ backtest_results/v6_reporting/
      - 到期时不靠主观感觉拍板
      - 把评估、切换、切后观察和 rollback 条件写死
 
+20. `2026-05-14 V6-A balanced challenger cutover prep` 已推进到 preview/migration 层
+   - fresh replay 重跑：
+     - 脚本：`python3 v6a_core_deterministic_replay.py --config v6_strategy_lab/configs/v6a_core_replay_bridge_v1.json --tag 20260514_bridge_refresh_v1`
+     - 结果：数值结论保持不变，但 `latest_date` 仍停在 `2026-05-05`
+     - 含义：`balanced challenger` 的核心 research 优势仍在，但 `signal freshness` blocker 依旧存在，当前还不能通过 cutover gate
+   - 新增 preview policy：
+     - `v6_strategy_lab/configs/v6a_balanced_challenger_guarded_runner_policy_v1.json`
+     - 作用：把 `balanced challenger` 单候选 replay artifacts 接进 guarded-runner 生产链路，用于 cutover 预演，不碰当前 live ATTACK sleeve
+   - 新增 migration diff 工具：
+     - 脚本：`python3 v6a_cutover_migration_diff.py --tag 20260514_balanced_cutover_v2`
+     - 产物：`backtest_results/v6a_cutover/v6a_cutover_migration_diff_20260514_balanced_cutover_v2.md`
+   - 当前 snapshot-fallback diff：
+     - `ownership_transfer + buy`：`AMZN 4 -> 6`、`AVGO 2 -> 3`
+     - `buy only`：`NVDA 0 -> 7`
+     - `sell only`：`BIL 6 -> 0`、`GLD 1 -> 0`、`GOOGL 2 -> 0`
+   - 当前 blocker 解释：
+     - `preview wiring` 已打通，但今天直接打 OpenD 的 `quote/account` 路径不稳定，guarded-runner 仍可能因 timeout 阻断
+     - 就算 timeout 消失，`freshness gate` 仍会因为 `signal_date=2026-05-05` 卡住
+   - 下一步：
+     - 先解决 `2026-05-05 -> 当前日` 的 replay freshness
+     - 再补一轮成功的 `balanced challenger` live preview（quotes/account/orders 全 PASS）
+     - 最后在 `2026-05-26` 决策日按 SOP 汇总 `live pilot + fresh replay + preview + migration diff`
+
 今天不能做的事：
 
 - 不能消耗 Futu 历史 K 线额度继续拉全量数据。

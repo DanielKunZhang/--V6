@@ -1,0 +1,240 @@
+{
+  "_comment": "实际持仓明细。每次交易后手动更新。用于机会成本基准计算。",
+  "_last_updated": "2026-05-14",
+  "_total_summary": {
+    "腾讯合计": "500(富途HK)+400(港股通)+1200(RSU) = 2100股",
+    "泡泡玛特合计": "400(富途HK)+400(港股通) = 800股"
+  },
+
+  "positions": {
+
+    "NVDA": {
+      "company": "NVIDIA Corporation",
+      "account": "富途美股",
+      "shares": 225,
+      "cost_basis": 34.62,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Semiconductors / AI Infrastructure",
+      "notes": "成本极低$34.62，浮盈巨大。机会成本=NVDA未来3年预期年化回报（AI周期红利，估计20%+）"
+    },
+
+    "PDD": {
+      "company": "PDD Holdings Inc.",
+      "account": "富途美股",
+      "shares": 825,
+      "cost_basis": 110.61,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": "PDD",
+      "ev_fcf_at_cost": 6.5,
+      "sector": "Consumer Cyclical / E-commerce",
+      "notes": "正股825股；另有1张 2028-01-21 110C 作为替代型弹性仓。V_base=$181，V_base_geo=$127，Temu关税风险持续。"
+    },
+
+    "QCOM": {
+      "company": "Qualcomm Inc.",
+      "account": "富途美股",
+      "shares": 150,
+      "cost_basis": 144.39,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Semiconductors / Mobile",
+      "notes": "手机芯片+汽车芯片布局。当前持仓成本约$144.39。"
+    },
+
+    "ADBE": {
+      "company": "Adobe Inc.",
+      "account": "富途美股",
+      "shares": 30,
+      "cost_basis": 246.29,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": "ADBE",
+      "ev_fcf_at_cost": null,
+      "sector": "Software / Creative Cloud",
+      "notes": "已完成初始建仓，后续按计划分段向目标仓位推进。"
+    },
+
+    "IT": {
+      "company": "Gartner Inc.",
+      "account": "富途美股",
+      "shares": 50,
+      "cost_basis": 152.57,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": "IT",
+      "ev_fcf_at_cost": null,
+      "sector": "Information Services / Research",
+      "notes": "灵活舒服仓。2026-05-14 已进入$140-$150观察/可加区，但资本优先级仍低于 ADBE 与核心击球区。"
+    },
+
+    "NU": {
+      "company": "Nu Holdings Ltd.",
+      "account": "富途美股",
+      "shares": 600,
+      "cost_basis": 12.92,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": "NU",
+      "ev_fcf_at_cost": null,
+      "sector": "Fintech / Digital Banking",
+      "notes": "已完成初始仓。2026-05-14 现价跌破$13，进入正式击球区，但仍按分段加仓纪律执行。"
+    },
+
+    "CRDO": {
+      "company": "Credo Technology Group Holding Ltd.",
+      "account": "富途美股",
+      "shares": 10,
+      "cost_basis": 198.50,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": "CRDO",
+      "ev_fcf_at_cost": null,
+      "sector": "Semiconductors / Connectivity",
+      "notes": "小额进攻仓，和 Radar / Overlay 研究联动，但不算价值主仓核心。"
+    },
+
+    "BIL": {
+      "company": "SPDR Bloomberg 1-3 Month T-Bill ETF",
+      "account": "富途美股",
+      "shares": 6,
+      "cost_basis": 91.48,
+      "currency": "USD",
+      "exchange": "US",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Cash Management / Treasury Bills",
+      "notes": "富途近现金仓，也用于 V6 managed sleeve 的临时防守停泊。"
+    },
+
+    "0700.HK_富途": {
+      "company": "腾讯控股（富途港股账户）",
+      "account": "富途港股",
+      "shares": 500,
+      "cost_basis": 549.90,
+      "currency": "HKD",
+      "exchange": "HK",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Technology / Internet Platform",
+      "notes": "富途港股账户持有500股@549.9HKD"
+    },
+
+    "9992.HK_富途": {
+      "company": "泡泡玛特（富途港股账户）",
+      "account": "富途港股",
+      "shares": 400,
+      "cost_basis": 150.30,
+      "currency": "HKD",
+      "exchange": "HK",
+      "watchlist_key": "9992.HK",
+      "ev_fcf_at_cost": null,
+      "sector": "Consumer / IP Collectibles",
+      "notes": "富途港股400股@150.3HKD"
+    },
+
+    "9999.HK_option": {
+      "_type": "option",
+      "company": "网易-S Short Put",
+      "account": "富途港股",
+      "underlying": "9999.HK",
+      "direction": "short_put",
+      "contracts": -1,
+      "strike": 160,
+      "expiry": "2026-06-29",
+      "premium_received": 7.15,
+      "currency": "HKD",
+      "notes": "Short Put 1张，到期日2026-06-29（260629），行权价160HKD，权利金已收7.15HKD。正股已平仓换入泡泡玛特。若行权则以152.85HKD成本新增400股。"
+    },
+
+    "hk_cash": {
+      "_type": "cash",
+      "company": "富途港股可用现金",
+      "account": "富途港股",
+      "amount": 51000,
+      "currency": "HKD",
+      "notes": "可用于加仓或新仓。约$6500 USD等值。"
+    },
+
+    "000333.SZ": {
+      "company": "美的集团（A股）",
+      "account": "A股/港股通",
+      "shares": 5000,
+      "cost_basis": 78.83,
+      "currency": "CNY",
+      "exchange": "A",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Consumer Appliances / Smart Home",
+      "notes": "5000股@78.83RMB。家电龙头，确定性高，增速放缓。"
+    },
+
+    "9992.HK_港股通": {
+      "company": "泡泡玛特（港股通账户）",
+      "account": "A股/港股通",
+      "shares": 400,
+      "cost_basis": 152.94,
+      "currency": "HKD",
+      "exchange": "HK",
+      "watchlist_key": "9992.HK",
+      "ev_fcf_at_cost": null,
+      "sector": "Consumer / IP Collectibles",
+      "notes": "原有200股@149.27HKD，2026-05-14 再买200股@156.6HKD，合并成本约152.94HKD。与富途港股合计800股泡泡玛特。"
+    },
+
+    "0700.HK_港股通": {
+      "company": "腾讯控股（港股通账户）",
+      "account": "A股/港股通",
+      "shares": 400,
+      "cost_basis": 608.51,
+      "currency": "HKD",
+      "exchange": "HK",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Technology / Internet Platform",
+      "notes": "港股通400股@608.51HKD。与富途港股+RSU合计2100股腾讯。"
+    },
+
+    "600036.SS": {
+      "company": "招商银行（A股）",
+      "account": "A股/港股通",
+      "shares": 2700,
+      "cost_basis": 38.79,
+      "currency": "CNY",
+      "exchange": "A",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Banking / Financial Services",
+      "notes": "2026-05-14 卖出800股，剩2700股@38.79RMB。国内零售银行龙头，高股息，低估值，但只作为RMB停泊仓。"
+    },
+
+    "0700.HK_RSU": {
+      "company": "腾讯控股（RSU，已完税）",
+      "account": "腾讯RSU",
+      "shares": 1200,
+      "cost_basis": 0.0,
+      "currency": "HKD",
+      "exchange": "HK",
+      "watchlist_key": null,
+      "ev_fcf_at_cost": null,
+      "sector": "Technology / Internet Platform",
+      "notes": "1200股RSU，已赋予并完税，实际成本=0。机会成本=卖出腾讯换入候选标的的相对回报。"
+    }
+
+  },
+
+  "hurdle_config": {
+    "_comment": "机会成本门槛配置",
+    "method": "composite_opportunity_vs_holdings",
+    "pe_ttm_discount_vs_holdings": 0.25,
+    "_method_note": "候选标的需在 PE_TTM、质量（ROE/毛利率/净利率/ROIC/现金流）、增长、行业相对估值 四个维度综合优于现有持仓，才触发⭐️潜在替换标记",
+    "min_implied_upside_vs_vbase": 0.50,
+    "_upside_note": "若候选有V_base（来自watchlist），需MoS≥50%才算显著优于持仓",
+    "exclude_same_sector": false
+  }
+}
