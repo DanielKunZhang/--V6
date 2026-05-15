@@ -10,7 +10,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from morning_brief import HTML_PORTFOLIO, collect_events, collect_portfolio_futu, collect_portfolio_html, collect_v6
+from morning_brief import HTML_PORTFOLIO, collect_events, collect_kline_quota, collect_portfolio_futu, collect_portfolio_html, collect_todos, collect_v6
 
 
 ROOT = Path(__file__).resolve().parent
@@ -828,6 +828,26 @@ def build_expansion_gate(status: str, radar_sample_loop: dict[str, Any], v6: dic
     }
 
 
+def build_morning_ops_summary() -> dict[str, Any]:
+    quota = collect_kline_quota()
+    todos = collect_todos()
+    todo_count = sum(len(items) for items in todos.values())
+    return {
+        "kline_quota": quota or {},
+        "todos": todos,
+        "todo_count": todo_count,
+    }
+
+
+def build_todo_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    todos = payload.get("morning_ops", {}).get("todos", {}) or {}
+    for domain in ["V6", "价值投资", "估值", "Radar", "通用"]:
+        for item in todos.get(domain, [])[:5]:
+            rows.append({"domain": domain, "todo": item})
+    return rows
+
+
 def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> list[str]:
     if not rows:
         return ["_None_"]
@@ -870,6 +890,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions, ledger_reconciliation)
     mapping_quality = build_mapping_quality(positions, config)
     radar_sample_loop = load_radar_sample_loop_summary()
+    morning_ops = build_morning_ops_summary()
     events = build_event_rows(config)
     status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
     expansion_gate = build_expansion_gate(status, radar_sample_loop, v6)
@@ -892,6 +913,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "mapping_quality": mapping_quality,
         "radar_sample_loop": radar_sample_loop,
         "expansion_gate": expansion_gate,
+        "morning_ops": morning_ops,
         "freshness": freshness,
         "futu_snapshot": futu_snapshot,
         "target_alerts": alerts,
@@ -1086,6 +1108,18 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.extend(["", f"## Event Window ({payload['event_window_days']}d)", ""])
     lines.extend(render_table(build_event_display_rows(payload), [("date", "date"), ("domain", "domain"), ("days", "days"), ("text", "event"), ("action", "action"), ("source", "source")]))
 
+    lines.extend(["", "## System Morning Ops", ""])
+    quota = payload.get("morning_ops", {}).get("kline_quota", {}) or {}
+    if quota:
+        used = int(quota.get("used") or 0)
+        total = int(quota.get("total") or 0)
+        pct = used / total * 100 if total else 0.0
+        lines.append(f"- Futu history K-line quota: `{used}/{total}` used ({pct:.0f}%)")
+    else:
+        lines.append("- Futu history K-line quota: `unavailable`")
+    lines.append(f"- Open todo count: `{payload.get('morning_ops', {}).get('todo_count', 0)}`")
+    lines.extend(render_table(build_todo_display_rows(payload), [("domain", "domain"), ("todo", "todo")]))
+
     lines.extend(["", "## Known Limits", ""])
     for item in payload["known_limits"]:
         lines.append(f"- {item}")
@@ -1105,15 +1139,24 @@ def build_html(payload: dict[str, Any]) -> str:
     alert_rows = build_alert_display_rows(payload)
     event_rows = build_event_display_rows(payload)
     mapping_rows = build_mapping_display_rows(payload)
+    todo_rows = build_todo_display_rows(payload)
     portfolio_meta = payload["portfolio_meta"]
     status_color = {"GREEN": "#16a34a", "YELLOW": "#d97706", "RED": "#dc2626"}.get(payload["status"], "#2563eb")
+    quota = payload.get("morning_ops", {}).get("kline_quota", {}) or {}
+    if quota:
+        quota_used = int(quota.get("used") or 0)
+        quota_total = int(quota.get("total") or 0)
+        quota_pct = quota_used / quota_total * 100 if quota_total else 0.0
+        quota_text = f"{quota_used}/{quota_total} used ({quota_pct:.0f}%)"
+    else:
+        quota_text = "unavailable"
 
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Central Risk Board {payload['cadence_label']}</title>
+  <title>投资系统早间总览 {payload['cadence_label']}</title>
   <style>
     body {{
       margin: 0;
@@ -1218,8 +1261,8 @@ def build_html(payload: dict[str, Any]) -> str:
 <body>
   <div class="wrap">
     <div class="hero">
-      <div style="font-size:12px;font-weight:800;opacity:.85;">Central Risk Board {payload['version']}</div>
-      <h1 style="margin:10px 0 8px;font-size:32px;">{html.escape(payload['cadence_label'])}</h1>
+      <div style="font-size:12px;font-weight:800;opacity:.85;">Investment System Board {payload['version']}</div>
+      <h1 style="margin:10px 0 8px;font-size:32px;">投资系统早间总览 · {html.escape(payload['cadence_label'])}</h1>
       <div>{html.escape(one_line_read(payload))}</div>
       <div class="chips">
         <div class="chip status">{html.escape(payload['status'])}</div>
@@ -1281,6 +1324,16 @@ def build_html(payload: dict[str, Any]) -> str:
     <h2>Event Window</h2>
     {render_html_table(event_rows, [('date', 'date'), ('domain', 'domain'), ('days', 'days'), ('text', 'event'), ('action', 'action'), ('source', 'source')])}
 
+    <h2>System Morning Ops</h2>
+    <div class="card">
+      <ul>
+        <li>Futu history K-line quota: {html.escape(quota_text)}</li>
+        <li>Open todo count: {html.escape(str(payload.get('morning_ops', {}).get('todo_count', 0)))}</li>
+        <li>Policy: this email is the single investment-system morning entry; detailed reports are generated as files and linked from the daily dashboard.</li>
+      </ul>
+    </div>
+    {render_html_table(todo_rows, [('domain', 'domain'), ('todo', 'todo')]) if todo_rows else ""}
+
     <h2>Overlap Risk</h2>
     <div class="card">
       <ul>
@@ -1329,7 +1382,7 @@ def build_email_subject(payload: dict[str, Any]) -> str:
     cadence = "Weekly" if payload["cadence"] == "weekly" else "Daily"
     status = payload["status"]
     extra = f" · {len(payload['target_alerts'])} alerts" if payload["target_alerts"] else ""
-    return f"🛡️ Central Risk Board {cadence} {date.today()} · {status}{extra}"
+    return f"📋 投资系统早间总览 {cadence} {date.today()} · {status}{extra}"
 
 
 def main() -> None:
