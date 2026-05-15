@@ -13,6 +13,11 @@ DESKTOP_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司")
 PYTHON = Path("/Library/Frameworks/Python.framework/Versions/3.12/bin/python3")
 
 REPORT_SPECS = {
+    "central_risk_board": {
+        "script": ROOT / "central_risk_board.py",
+        "out_dir": ROOT / "backtest_results" / "central_risk_board",
+        "desktop_prefix": "中央风控看板_CENTRAL_RISK_BOARD_LATEST",
+    },
     "performance_attribution": {
         "script": ROOT / "performance_attribution.py",
         "out_dir": ROOT / "backtest_results" / "performance_attribution",
@@ -38,6 +43,11 @@ REPORT_SPECS = {
         "out_dir": ROOT / "backtest_results" / "radar_theme_rotation_scanner",
         "desktop_prefix": "Radar_主线扩散自动扫描_LATEST",
     },
+    "radar_sample_loop": {
+        "script": ROOT / "radar_sample_loop.py",
+        "out_dir": ROOT / "backtest_results" / "radar_sample_loop",
+        "desktop_prefix": "Radar_样本闭环表_LATEST",
+    },
     "investment_company_dashboard": {
         "script": ROOT / "investment_company_dashboard.py",
         "out_dir": ROOT / "backtest_results" / "investment_company_dashboard",
@@ -46,21 +56,23 @@ REPORT_SPECS = {
 }
 
 SCOPE_REPORTS = {
-    "daily": ["performance_attribution", "overlay_trade_journal", "investment_company_dashboard"],
-    "weekly": ["radar_theme_rotation_scanner", "external_short_network_review", "investment_company_dashboard"],
-    "monthly": ["performance_attribution", "overlay_trade_journal", "radar_theme_rotation_scanner", "external_short_network_review", "monthly_research_review", "investment_company_dashboard"],
+    "daily": ["central_risk_board", "performance_attribution", "overlay_trade_journal", "radar_sample_loop", "investment_company_dashboard"],
+    "weekly": ["central_risk_board", "radar_theme_rotation_scanner", "external_short_network_review", "radar_sample_loop", "investment_company_dashboard"],
+    "monthly": ["central_risk_board", "performance_attribution", "overlay_trade_journal", "radar_theme_rotation_scanner", "external_short_network_review", "radar_sample_loop", "monthly_research_review", "investment_company_dashboard"],
 }
 
 
-def run_report(name: str, tag: str) -> None:
+def run_report(name: str, tag: str, scope: str) -> None:
     spec = REPORT_SPECS[name]
     script = spec["script"]
     if not script.exists():
         raise FileNotFoundError(f"Missing report script: {script}")
     cmd = [str(PYTHON), str(script), "--tag", tag]
+    if name == "central_risk_board":
+        cmd.extend(["--cadence", "daily" if scope == "daily" else "weekly"])
     if name == "radar_theme_rotation_scanner":
         cmd.append("--exclude-external-samples")
-    if name in {"investment_company_dashboard", "external_short_network_review", "radar_theme_rotation_scanner"}:
+    if name in {"investment_company_dashboard", "external_short_network_review", "radar_theme_rotation_scanner", "radar_sample_loop"}:
         cmd.append("--sync-desktop")
     subprocess.run(cmd, cwd=ROOT, check=True)
 
@@ -90,7 +102,7 @@ def main() -> None:
 
     for report in reports:
         print(f"== Running {report} ==", flush=True)
-        run_report(report, tag)
+        run_report(report, tag, args.scope)
         sync_report(report)
 
     print("== Governance reporting runner complete ==")

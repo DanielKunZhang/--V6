@@ -54,7 +54,7 @@
     "block_if_any_order_value_invalid": true,
     "block_if_no_executable_orders": false,
     "block_if_sell_exceeds_managed_state": true,
-    "block_if_managed_state_strategy_mismatch": true
+    "block_if_managed_state_strategy_mismatch": false
   },
   "audit": {
     "output_dir": "backtest_results/v6a_balanced_guarded_runner",

@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from central_risk_board import extract_portfolio_meta
+
 
 ROOT = Path(__file__).resolve().parent
 DESKTOP_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司")
@@ -22,7 +24,43 @@ SOURCES = {
     "v6_weekly": ROOT / "backtest_results" / "v6_weekly_review" / "latest.json",
     "v6_backlog": ROOT / "backtest_results" / "v6_research_backlog" / "latest.json",
     "theme_rotation": ROOT / "backtest_results" / "radar_theme_rotation_scanner" / "latest.json",
+    "missing_opportunity": ROOT / "backtest_results" / "v6b_missing_opportunity_review" / "latest.json",
+    "external_short_network": ROOT / "backtest_results" / "external_short_network_review" / "latest.json",
+    "radar_sample_loop": ROOT / "backtest_results" / "radar_sample_loop" / "latest.json",
 }
+
+CURRENT_OPERATING_BACKLOG = [
+    {
+        "priority": "P0",
+        "lane": "V6-A cutover",
+        "title": "2026-05-15 连续性证据已补齐",
+        "next_step": "今日不切换；等待 2026-05-26 由 SOP 重新跑 pilot review、preflight、fresh replay、migration diff 后再判定 GO/HOLD/PAUSE。",
+    },
+    {
+        "priority": "P1",
+        "lane": "Radar independent discovery",
+        "title": "Radar 独立发现结果已接入每日驾驶舱",
+        "next_step": "继续观察 independent_discovery、external_sample_review、missing_opportunity_review 的差异；交易前先看 chase_risk / trade_posture。",
+    },
+    {
+        "priority": "P1",
+        "lane": "Radar sample loop",
+        "title": "Radar 样本闭环表已建立",
+        "next_step": "后续刷新价格缓存后更新 fwd_5d/10d/20d/60d 和 review_verdict，用真实样本决定能否进入 V6-B / Overlay 预算。",
+    },
+    {
+        "priority": "P2",
+        "lane": "Central Risk Board",
+        "title": "Central Risk Board 已接入 Expansion Gate",
+        "next_step": "当前总账户仍为 RED；V6 / Radar / Overlay 只能研究、复盘、preview，不能扩容，直到集中度和样本证据改善。",
+    },
+    {
+        "priority": "P3",
+        "lane": "V6-B / Radar data refresh",
+        "title": "等待 6月1日数据额度刷新后执行正式验证",
+        "next_step": "补 K 线、重跑 independent discovery、Missing Review、V6-B challenger 和 triage。",
+    },
+]
 
 DESKTOP_LINKS = {
     "central_risk": "中央风控看板_CENTRAL_RISK_BOARD_LATEST.html",
@@ -34,6 +72,8 @@ DESKTOP_LINKS = {
     "v6b_preflight": "2026-06-01_V6B_执行预检报告.md",
     "theme_rotation": "Radar_主线扩散自动扫描_LATEST.md",
     "external_short_network": "外部短线网络样本复盘_EXTERNAL_SHORT_NETWORK_LATEST.md",
+    "radar_sample_loop": "Radar_样本闭环表_LATEST.md",
+    "v6a_continuity_update": "2026-05-15_v6a_balanced_cutover_continuity_update_v1.md",
     "overview": "投资系统全景图_SYSTEM_OVERVIEW.html",
     "plan": "26年阶段性组合策略计划.html",
 }
@@ -62,6 +102,12 @@ def fmt_pct(value: float | int | None) -> str:
     return f"{float(value):.1f}%"
 
 
+def fmt_momentum(value: float | int | None) -> str:
+    if value is None:
+        return "—"
+    return f"{float(value) * 100:.1f}%"
+
+
 def first_line_from_md(path: Path) -> str:
     if not path.exists():
         return ""
@@ -72,6 +118,25 @@ def first_line_from_md(path: Path) -> str:
     return ""
 
 
+def compact_radar_rows(rows: list[dict[str, Any]], limit: int = 5) -> list[dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    for row in rows[:limit]:
+        compact.append(
+            {
+                "ticker": row.get("ticker"),
+                "theme": row.get("theme_label") or row.get("theme") or row.get("theme_id"),
+                "layer": row.get("layer_label") or row.get("buckets") or row.get("bucket_id"),
+                "score": row.get("score"),
+                "mom20": row.get("mom20"),
+                "mom60": row.get("mom60"),
+                "chase_risk": row.get("chase_risk") or "待补",
+                "trade_posture": row.get("trade_posture") or row.get("action") or "待复核",
+                "entry_note": row.get("entry_note") or row.get("gap_attribution") or "",
+            }
+        )
+    return compact
+
+
 def build_payload() -> dict[str, Any]:
     central = read_json(SOURCES["central_risk"])
     performance = read_json(SOURCES["performance"])
@@ -80,6 +145,10 @@ def build_payload() -> dict[str, Any]:
     v6_weekly = read_json(SOURCES["v6_weekly"])
     v6_backlog = read_json(SOURCES["v6_backlog"])
     theme_rotation = read_json(SOURCES["theme_rotation"])
+    missing_opportunity = read_json(SOURCES["missing_opportunity"])
+    external_short_network = read_json(SOURCES["external_short_network"])
+    radar_sample_loop = read_json(SOURCES["radar_sample_loop"])
+    portfolio_meta = extract_portfolio_meta()
 
     coverage = performance.get("coverage", {}) if isinstance(performance.get("coverage"), dict) else {}
     overlay_stats = overlay.get("stats", {}) if isinstance(overlay.get("stats"), dict) else {}
@@ -87,7 +156,7 @@ def build_payload() -> dict[str, Any]:
     monthly_registry = monthly.get("registry_summary", {}) if isinstance(monthly.get("registry_summary"), dict) else {}
 
     backlog_items = v6_backlog if isinstance(v6_backlog, list) else monthly.get("backlog_items", [])
-    top_backlog = backlog_items[:5] if isinstance(backlog_items, list) else []
+    research_backlog = backlog_items[:3] if isinstance(backlog_items, list) else []
 
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -100,6 +169,9 @@ def build_payload() -> dict[str, Any]:
             "one_line": first_line_from_md(ROOT / "backtest_results" / "central_risk_board" / "latest.md"),
         },
         "performance": {
+            "total_assets_usd": portfolio_meta.get("total_assets_usd"),
+            "futu_executable_assets_usd": portfolio_meta.get("futu_executable_assets_usd"),
+            "portfolio_meta_source": portfolio_meta.get("source"),
             "coverage": coverage.get("covered_ratio_pct"),
             "broker_pl": coverage.get("unrealized_pl_usd"),
             "broker_pl_pct": coverage.get("unrealized_pl_pct_broker_equity"),
@@ -116,6 +188,18 @@ def build_payload() -> dict[str, Any]:
             "coverage_gaps": monthly_missing.get("coverage_gap_count"),
             "critical_misses": monthly_missing.get("critical_miss_count"),
             "priority_watch": monthly_registry.get("top_watch", []),
+            "independent_discovery_count": len(theme_rotation.get("candidates", [])) if isinstance(theme_rotation.get("candidates"), list) else 0,
+            "external_sample_review_count": (theme_rotation.get("summary", {}) or {}).get("external_sample_review_count")
+            or external_short_network.get("sample_count"),
+            "missing_opportunity_count": (missing_opportunity.get("summary", {}) or {}).get("critical_miss_count"),
+            "independent_discovery": compact_radar_rows(theme_rotation.get("candidates", []) if isinstance(theme_rotation.get("candidates"), list) else []),
+            "external_sample_review": compact_radar_rows(
+                theme_rotation.get("external_sample_review", []) if isinstance(theme_rotation.get("external_sample_review"), list) else []
+            ),
+            "missing_opportunity_review": compact_radar_rows(
+                missing_opportunity.get("critical_misses", []) if isinstance(missing_opportunity.get("critical_misses"), list) else []
+            ),
+            "sample_loop_count": radar_sample_loop.get("sample_count"),
         },
         "overlay": {
             "closed_samples": overlay_stats.get("closed_sample_count"),
@@ -132,7 +216,8 @@ def build_payload() -> dict[str, Any]:
         "monthly": {
             "one_line": first_line_from_md(ROOT / "backtest_results" / "monthly_research_review" / "latest.md"),
         },
-        "top_backlog": top_backlog,
+        "top_backlog": CURRENT_OPERATING_BACKLOG,
+        "research_backlog": research_backlog,
     }
 
 
@@ -152,6 +237,8 @@ def action_groups(payload: dict[str, Any]) -> dict[str, list[str]]:
         groups["可观察"].append(
             f"Radar 自动主线扫描当前最高主线：{theme_rotation.get('top_theme')} / {theme_rotation.get('top_theme_stage')}；只作为候选供给，不直接交易。"
         )
+    if int(radar.get("independent_discovery_count") or 0) > 0:
+        groups["可观察"].append("Radar 已区分独立发现、外部样本和漏网复盘；任何标的必须先过 chase_risk / trade_posture，不能把好主线直接当好买点。")
     overlay = payload["overlay"]
     if int(overlay.get("closed_samples") or 0) == 0:
         groups["禁止动作"].append("Overlay 还没有真实关闭样本，不能用 watch 项目推断策略有效，也不能扩大预算。")
@@ -168,6 +255,11 @@ LANE_LABELS = {
     "v6b_turnaround": "V6-B 反转动量",
     "v6b_bottleneck": "V6-B 瓶颈链",
     "radar_missing_opportunity": "Radar 漏网复盘",
+    "V6-A cutover": "V6-A 切换准备",
+    "Radar independent discovery": "Radar 独立发现",
+    "Radar sample loop": "Radar 样本闭环",
+    "Central Risk Board": "中央风控",
+    "V6-B / Radar data refresh": "V6-B / Radar 数据刷新",
 }
 
 TEXT_TRANSLATIONS = {
@@ -222,6 +314,31 @@ def build_html(payload: dict[str, Any]) -> str:
         for title, items in groups.items()
     )
     priority_watch = ", ".join(str(item) for item in radar.get("priority_watch", [])[:8]) or "none"
+
+    radar_rows: list[str] = []
+    radar_sections = [
+        ("独立发现", radar.get("independent_discovery", [])),
+        ("外部样本复盘", radar.get("external_sample_review", [])),
+        ("漏网机会复盘", radar.get("missing_opportunity_review", [])),
+    ]
+    for label, rows in radar_sections:
+        if not isinstance(rows, list):
+            continue
+        for row in rows[:5]:
+            radar_rows.append(
+                "<tr>"
+                f"<td>{html.escape(label)}</td>"
+                f"<td>{html.escape(str(row.get('ticker') or '—'))}</td>"
+                f"<td>{html.escape(str(row.get('theme') or '—'))}</td>"
+                f"<td>{html.escape(str(row.get('layer') or '—'))}</td>"
+                f"<td>{html.escape(str(row.get('score') if row.get('score') is not None else '—'))}</td>"
+                f"<td>{html.escape(fmt_momentum(row.get('mom20')))}</td>"
+                f"<td>{html.escape(fmt_momentum(row.get('mom60')))}</td>"
+                f"<td>{html.escape(str(row.get('chase_risk') or '—'))}</td>"
+                f"<td>{html.escape(str(row.get('trade_posture') or '—'))}</td>"
+                "</tr>"
+            )
+    radar_table_body = "".join(radar_rows) or "<tr><td colspan='9'>暂无 Radar 数据</td></tr>"
 
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -356,12 +473,14 @@ def build_html(payload: dict[str, Any]) -> str:
         <a href="{DESKTOP_LINKS['v6b_preflight']}">V6-B 预检</a>
         <a href="{DESKTOP_LINKS['theme_rotation']}">Radar 主线扫描</a>
         <a href="{DESKTOP_LINKS['external_short_network']}">外部样本复盘</a>
+        <a href="{DESKTOP_LINKS['radar_sample_loop']}">Radar 样本闭环</a>
+        <a href="{DESKTOP_LINKS['v6a_continuity_update']}">V6-A cutover 连续性更新</a>
       </div>
     </header>
 
     <div class="grid">
       <div class="card"><div class="k">中央风控</div><div class="v red">{html.escape(str(risk['status']))}</div><div class="small">前二合计 {html.escape(fmt_pct(risk['top2_sum']))} · 最大单仓 {html.escape(fmt_pct(risk['max_position']))}</div></div>
-      <div class="card"><div class="k">富途浮盈亏</div><div class="v blue">{html.escape(fmt_usd(performance['broker_pl']))}</div><div class="small">覆盖率 {html.escape(fmt_pct(performance['coverage']))} · 占富途 {html.escape(fmt_pct(performance['broker_pl_pct']))}</div></div>
+      <div class="card"><div class="k">总资产预估</div><div class="v blue">{html.escape(fmt_usd(performance['total_assets_usd']))}</div><div class="small">富途执行账户约 {html.escape(fmt_usd(performance['futu_executable_assets_usd']))} · 人工总账本口径</div></div>
       <div class="card"><div class="k">V6</div><div class="v orange">{html.escape(str(v6['decision']))}</div><div class="small">试运行结论 {html.escape(str(v6['pilot_decision']))}</div></div>
       <div class="card"><div class="k">Radar 供给链</div><div class="v">{html.escape(str(radar['registry_count'] or '—'))}</div><div class="small">覆盖缺口 {html.escape(str(radar['coverage_gaps'] or 0))} · 严重漏网 {html.escape(str(radar['critical_misses'] or 0))}</div></div>
       <div class="card"><div class="k">Overlay 样本</div><div class="v">{html.escape(str(overlay['closed_samples'] or 0))}</div><div class="small">观察中 {html.escape(str(overlay['live_or_watch'] or 0))} · 已实现 {html.escape(fmt_usd(overlay['realized_pnl']))}</div></div>
@@ -373,7 +492,17 @@ def build_html(payload: dict[str, Any]) -> str:
         <li>当前最高主线：{html.escape(str(theme_rotation['top_theme'] or '暂无'))}</li>
         <li>当前阶段：{html.escape(str(theme_rotation['top_theme_stage'] or '暂无'))}</li>
         <li>候选数：{html.escape(str(theme_rotation['candidate_count'] or 0))} · 缺失价格缓存：{html.escape(str(theme_rotation['missing_cache_count'] or 0))}</li>
+        <li>独立发现：{html.escape(str(radar.get('independent_discovery_count') or 0))} · 外部样本：{html.escape(str(radar.get('external_sample_review_count') or 0))} · 漏网复盘：{html.escape(str(radar.get('missing_opportunity_count') or 0))}</li>
+        <li>样本闭环表：{html.escape(str(radar.get('sample_loop_count') or 0))} 条；后续用 5/10/20/60 日真实表现判断 Radar 是否有独立 alpha。</li>
       </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Radar 独立发现与追高风险</h2>
+      <table>
+        <thead><tr><th>来源</th><th>标的</th><th>主线</th><th>层级</th><th>分数</th><th>20日动量</th><th>60日动量</th><th>追高风险</th><th>交易姿态</th></tr></thead>
+        <tbody>{radar_table_body}</tbody>
+      </table>
     </section>
 
     <section class="panel">
@@ -386,6 +515,7 @@ def build_html(payload: dict[str, Any]) -> str:
       <ul>
         <li>{html.escape(str(risk['one_line'] or 'Central risk data unavailable'))}</li>
         <li>{html.escape(str(performance['one_line'] or 'Performance data unavailable'))}</li>
+        <li>总资产预估来自阶段性组合计划的人工总账本；富途前端持仓收益不在驾驶舱主卡显示，避免和系统净归因口径混用。</li>
         <li>{html.escape(str(payload['monthly']['one_line'] or 'Monthly review data unavailable'))}</li>
         <li>{html.escape(str(overlay['one_line'] or 'Overlay data unavailable'))}</li>
       </ul>

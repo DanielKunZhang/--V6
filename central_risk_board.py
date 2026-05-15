@@ -19,6 +19,7 @@ CONFIG_PATH = ROOT / "central_risk_board_config.json"
 STRUCTURED_LEDGER_PATH = ROOT / "central_risk_master_ledger.json"
 CASH_ALPHA_FUTU_SNAPSHOT = ROOT / "cash_alpha_v3_repo" / "backtest_results" / "futu_account_snapshot_latest.json"
 ATTACK_PREVIEW_DIR = ROOT / "backtest_results" / "attack_engine_live_preview"
+RADAR_SAMPLE_LOOP_PATH = ROOT / "backtest_results" / "radar_sample_loop" / "latest.json"
 
 DEFAULT_CONFIG = {
     "board": {
@@ -162,6 +163,32 @@ def latest_json_path(directory: Path) -> Path | None:
         return None
     files = sorted([path for path in directory.iterdir() if path.suffix == ".json"], key=lambda path: path.stat().st_mtime, reverse=True)
     return files[0] if files else None
+
+
+def load_radar_sample_loop_summary() -> dict[str, Any]:
+    if not RADAR_SAMPLE_LOOP_PATH.exists():
+        return {"available": False, "sample_count": 0, "by_source": {}, "pending_forward_review": 0, "source": str(RADAR_SAMPLE_LOOP_PATH)}
+    try:
+        payload = json.loads(RADAR_SAMPLE_LOOP_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {"available": False, "sample_count": 0, "by_source": {}, "pending_forward_review": 0, "source": str(RADAR_SAMPLE_LOOP_PATH)}
+    rows = payload.get("rows", []) if isinstance(payload.get("rows"), list) else []
+    by_source: dict[str, int] = {}
+    pending = 0
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source = str(row.get("source_channel") or "unknown")
+        by_source[source] = by_source.get(source, 0) + 1
+        if str(row.get("review_verdict") or "").startswith("PENDING"):
+            pending += 1
+    return {
+        "available": True,
+        "sample_count": int(payload.get("sample_count") or len(rows)),
+        "by_source": by_source,
+        "pending_forward_review": pending,
+        "source": str(RADAR_SAMPLE_LOOP_PATH),
+    }
 
 
 def load_cached_futu_snapshot() -> dict[str, Any]:
@@ -776,6 +803,31 @@ def classify_board_status(
     return "GREEN", []
 
 
+def build_expansion_gate(status: str, radar_sample_loop: dict[str, Any], v6: dict[str, Any]) -> dict[str, Any]:
+    blockers: list[str] = []
+    if status == "RED":
+        blockers.append("central_risk_red_no_expansion")
+    if int(radar_sample_loop.get("pending_forward_review") or 0) > 0:
+        blockers.append("radar_forward_review_pending")
+    if str(v6.get("signal") or "").upper() == "BLOCKED":
+        blockers.append("v6_operational_signal_blocked")
+
+    return {
+        "status": "BLOCK_EXPANSION" if blockers else "ALLOW_NEXT_REVIEW",
+        "blockers": blockers,
+        "allowed_actions": [
+            "允许研究、复盘、生成 preview；禁止扩容和未确认自动交易"
+            if blockers
+            else "允许继续小额试运行或按 SOP 进入下一阶段"
+        ],
+        "rules": [
+            "Central Risk Board 为总闸门；当总账户 RED 时，V6 / Radar / Overlay 只能做小额 pilot、研究和复盘，不能扩容。",
+            "Radar 样本必须先进入闭环表，跑出 5/10/20/60 日真实表现后，才允许讨论预算。",
+            "V6-A balanced cutover 即使技术通过，也只能在 2026-05-26 SOP 输出 GO 后再进入受控切换。",
+        ],
+    }
+
+
 def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> list[str]:
     if not rows:
         return ["_None_"]
@@ -817,10 +869,12 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     freshness = build_freshness(generated_at, portfolio.get("last_updated", ""), v6.get("state_updated", ""), futu_snapshot)
     ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions, ledger_reconciliation)
     mapping_quality = build_mapping_quality(positions, config)
+    radar_sample_loop = load_radar_sample_loop_summary()
     events = build_event_rows(config)
     status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
+    expansion_gate = build_expansion_gate(status, radar_sample_loop, v6)
     return {
-        "version": "v1.4",
+        "version": "v1.5",
         "requested_cadence": requested_cadence,
         "cadence": cadence,
         "cadence_label": cadence_label(cadence),
@@ -836,6 +890,8 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "themes": themes[:10],
         "ledger_quality": ledger_quality,
         "mapping_quality": mapping_quality,
+        "radar_sample_loop": radar_sample_loop,
+        "expansion_gate": expansion_gate,
         "freshness": freshness,
         "futu_snapshot": futu_snapshot,
         "target_alerts": alerts,
@@ -855,6 +911,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
             "V6 曝露目前只对 master ledger 缺失的 managed names 做增量折算，避免与已入账主仓名称双重计算。",
             "Futu snapshot 仍然主要承担 broker-level sanity / freshness，不是完整全资产分母来源。",
             "theme mapping 已配置化并有未映射报警，但映射质量仍取决于后续持续补表。",
+            "Radar / V6-B 必须先经过样本闭环表和 Central Risk Board，不能从“发现强势标的”直接跳到“扩大交易”。",
         ],
     }
 
@@ -1009,6 +1066,19 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.append(f"- V6 operational signal: `{payload['v6']['signal']}`")
     lines.append(f"- V6 blockers: `{payload['v6']['blockers']}`")
     lines.append(f"- V6 managed state updated: `{fmt_dt(payload['v6']['state_updated'])}`")
+
+    lines.extend(["", "## Expansion Gate", ""])
+    gate = payload["expansion_gate"]
+    radar_loop = payload["radar_sample_loop"]
+    lines.append(f"- Status: `{gate['status']}`")
+    lines.append(f"- Blockers: `{', '.join(gate['blockers']) if gate['blockers'] else 'none'}`")
+    lines.append(f"- Allowed actions: `{'; '.join(gate['allowed_actions'])}`")
+    lines.append(f"- Radar sample loop: `{radar_loop.get('sample_count', 0)}` samples, `{radar_loop.get('pending_forward_review', 0)}` pending forward review")
+    by_source = radar_loop.get("by_source", {}) or {}
+    if by_source:
+        lines.append(f"- Sample source mix: `{', '.join(f'{k}={v}' for k, v in by_source.items())}`")
+    for rule in gate["rules"]:
+        lines.append(f"- {rule}")
 
     lines.extend(["", "## Target Drift Alerts", ""])
     lines.extend(render_table(build_alert_display_rows(payload), [("name", "name"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
@@ -1218,6 +1288,17 @@ def build_html(payload: dict[str, Any]) -> str:
         <li>Thematic overlap: {html.escape(', '.join(payload['overlap']['thematic_overlap']) if payload['overlap']['thematic_overlap'] else 'none')}</li>
         <li>V6 signal: {html.escape(payload['v6']['signal'])}</li>
         <li>V6 blockers: {html.escape(str(payload['v6']['blockers']))}</li>
+      </ul>
+    </div>
+
+    <h2>Expansion Gate</h2>
+    <div class="card">
+      <ul>
+        <li>Status: {html.escape(str(payload['expansion_gate']['status']))}</li>
+        <li>Blockers: {html.escape(', '.join(payload['expansion_gate']['blockers']) if payload['expansion_gate']['blockers'] else 'none')}</li>
+        <li>Allowed actions: {html.escape('; '.join(payload['expansion_gate']['allowed_actions']))}</li>
+        <li>Radar sample loop: {html.escape(str(payload['radar_sample_loop'].get('sample_count', 0)))} samples, {html.escape(str(payload['radar_sample_loop'].get('pending_forward_review', 0)))} pending forward review</li>
+        <li>Rules: {html.escape(' / '.join(payload['expansion_gate']['rules']))}</li>
       </ul>
     </div>
 
