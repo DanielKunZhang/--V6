@@ -13,7 +13,7 @@
     {"name": "NVDA", "current_pct": 12.8, "target_min": 12.0, "target_max": 14.0, "target_short": "12-14%", "action": "持有，不追高", "sleeve": "Value Main Book", "theme": "AI半导体"},
     {"name": "ADBE", "current_pct": 1.9, "target_min": 8.0, "target_max": 10.0, "target_short": "8-10%", "action": "分段建仓", "sleeve": "Value Main Book", "theme": "美国软件"},
     {"name": "PDD", "current_pct": 20.3, "target_min": 10.0, "target_max": 12.0, "target_short": "10-12%", "action": "只减不加", "sleeve": "Value Main Book", "theme": "中国平台互联网"},
-    {"name": "NU", "current_pct": 2.0, "target_min": 8.0, "target_max": 10.0, "target_short": "8-10%", "action": "已建 1%-2% 初始仓", "sleeve": "Value Main Book", "theme": "拉美金融科技"},
+    {"name": "NU", "current_pct": 2.0, "target_min": 8.0, "target_max": 10.0, "target_short": "8-10%", "action": "观察仓持有，暂停加仓；Q2信用质量验证后再评估", "sleeve": "Value Main Book", "theme": "拉美金融科技"},
     {"name": "泡泡玛特", "current_pct": 4.1, "target_min": 5.0, "target_max": 6.0, "target_short": "5-6%", "action": "持有为主；回落或完整财报再加", "sleeve": "Value Main Book", "theme": "中国消费/IP"},
     {"name": "Radar", "current_pct": 0.0, "target_min": 0.0, "target_max": 3.0, "target_short": "0-3%", "action": "暂停单独加仓，转入 V6-B 回测", "sleeve": "Radar Overlay", "theme": "动态研究输入"},
     {"name": "V6 量化策略仓", "current_pct": 0.0, "target_min": 5.0, "target_max": 8.0, "target_short": "5-8%", "action": "先完成模拟/小额实盘", "sleeve": "V6", "theme": "系统化进攻"},
