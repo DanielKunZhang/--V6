@@ -7,26 +7,28 @@
 
 聊天平台里的完整对话不应被当作长期记忆源。长期可继承的上下文应该沉淀在本地文件和 GitHub 中。
 
-新 AI 接入时，优先读取这些文件：
+新 AI 接入时，优先读取唯一同步文件：
 
-1. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_HANDOFF_CURRENT.md`（本文件）
-2. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_COLLAB_LOG.md`（⭐ 双向协作日志，最近的决策和变更都在这里）
-3. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_STRATEGY_LAB.md`
-4. `/Users/zhangkun/WorkBuddy/程序化/量化程序/MICRO_FUTURES_LAB.md`（若接手 micro 期货独立实验线）
+1. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
+
+其他文件只作为证据层或深挖时使用：
+
+2. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_HANDOFF_CURRENT.md`（本文件，保留历史 handoff）
+3. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_COLLAB_LOG.md`（双向协作底层流水账）
+4. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_STRATEGY_LAB.md`
 5. `/Users/zhangkun/WorkBuddy/程序化/量化程序/V6_PRODUCTIONIZATION_SOP.md`
-6. `/Users/zhangkun/Desktop/AI个人投资公司/知识库_v1/README.md`
-7. `/Users/zhangkun/Desktop/AI个人投资公司/投资系统全景图_SYSTEM_OVERVIEW.html`
-8. `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_INVESTMENT_COMPANY_12M_UPGRADE_ROADMAP.md`
-9. `/Users/zhangkun/WorkBuddy/程序化/量化程序/CENTRAL_RISK_BOARD_SPEC.md`
+6. `/Users/zhangkun/Desktop/AI个人投资公司/投资系统全景图_SYSTEM_OVERVIEW.html`
+7. `/Users/zhangkun/Desktop/AI个人投资公司/AI个人投资公司_每日驾驶舱.html`
 
 ## AI 协作同步机制
 
 Claude 和 GPT 通过 `AI_COLLAB_LOG.md` 共享协作状态，避免知识分叉。
 
 同步规则：
-- Claude：每次会话结束前将关键产出写入 `AI_COLLAB_LOG.md`
-- GPT 产出：用户运行 `python collab_sync.py add-gpt "内容"` 追加
-- GPT 读取：每次新会话时上传 `AI_COLLAB_EXPORT_FOR_GPT.md`（运行 `python collab_sync.py export` 生成）
+- Claude / GPT：每次会话结束前将关键产出写入 `AI_COLLAB_LOG.md`
+- 统一对外同步：运行 `python3 collab_sync.py export-current`，刷新 `AI_WORK_SYNC_CURRENT.md`
+- 以后给任何新 AI 都优先上传 `AI_WORK_SYNC_CURRENT.md`
+- `AI_COLLAB_EXPORT_FOR_GPT.md` 仅保留旧兼容用途，不再作为主要入口
 
 collab_sync.py 工具位置：`/Users/zhangkun/WorkBuddy/程序化/量化程序/collab_sync.py`
 
@@ -46,6 +48,35 @@ collab_sync.py 工具位置：`/Users/zhangkun/WorkBuddy/程序化/量化程序/
 - 腾讯要纳入 RSU 和港股通后的真实总敞口管理。
 - Radar 不再用情绪化彩票思路，未来更偏 V6-B 动态资源池。
 - Micro Futures Lab 与 V6 分开记账、分开评估、分开验收，不能混算绩效。
+
+## A股 Radar 当前执行口径（2026-05-18 更新）
+
+A股 Radar 当前不是自动交易系统，正式阶段为：
+
+```text
+Phase 1A = FutuAPI 拉行情/生成信号/复盘 + 长江证券手动下单
+```
+
+当前用户计划用约 5 万 RMB 训练 A股 Radar。目标是打磨主线识别、龙头/中军/补涨判断、买点过滤和退潮信号，不是打板、排板或高频交易。
+
+关键规则：
+- 当前不接长江证券 PTrade / QMT / miniQMT 委托接口。
+- FutuAPI 可用于行情、K线、成交额、MA5/MA10、执行卡生成。
+- 真实交易若发生，用户在长江证券客户端手动下单。
+- PTrade 极速版客户经理反馈门槛约为 100 万信用账户净资产；它是未来规模化工具，不是当前验证期前置条件。
+- 资金接近 50 万时再评估是否接长江行情/持仓；100 万以上才考虑申请 PTrade，且先只接行情/持仓。
+- 只有 50 笔以上实盘样本证明正期望后，才允许讨论小额半自动/自动委托。
+
+相关文件：
+```text
+investment_screener/radar_astock.json
+investment_screener/A_SHARE_RADAR_REVIEW_SOP.md
+investment_screener/A_SHARE_RADAR_AUTOMATION_ROADMAP.md
+REVIEW_CADENCE_POLICY.md
+events_calendar.json
+```
+
+Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡和事件提醒，不写自动下单代码，不触碰券商委托接口。
 
 ## V6 当前状态
 
