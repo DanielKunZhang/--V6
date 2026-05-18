@@ -114,6 +114,11 @@ def build_gate(args: argparse.Namespace) -> Dict[str, Any]:
     else:
         orders = pd.DataFrame()
     checks.append(check("live_preview_orders_exist", not orders.empty, str(orders_path)))
+
+    # Order intent counts — used for stale data mode classification below
+    buy_count = int((orders["side"] == "BUY").sum()) if not orders.empty and "side" in orders.columns else 0
+    sell_count = int((orders["side"] == "SELL").sum()) if not orders.empty and "side" in orders.columns else 0
+
     if not orders.empty and "preview_order_value" in orders.columns:
         buy_notional = float(orders.loc[orders.get("side", "") == "BUY", "preview_order_value"].sum())
         executable_notional = float(orders.loc[orders.get("side", "").isin(["BUY", "SELL"]), "preview_order_value"].abs().sum())
@@ -130,6 +135,28 @@ def build_gate(args: argparse.Namespace) -> Dict[str, Any]:
         )
         bad_order_values = int((orders.get("order_value_ok", True) == False).sum())
         checks.append(check("order_value_gate", bad_order_values == 0, f"bad_order_value_lines={bad_order_values}"))
+
+    # Stale data mode: signal_freshness_gate failed → attack blocked, but SELL orders need human review
+    # Per stale_data_risk_exit_policy_v1: BUY/ADD blocked; RISK_EXIT_SELL/MANUAL_RISK_REDUCE exempt from freshness gate
+    stale_data_mode = any(
+        c["name"] == "signal_freshness_gate" and not c["passed"]
+        for c in checks
+    )
+    if stale_data_mode:
+        if buy_count > 0:
+            checks.append(check(
+                "attack_orders_blocked",
+                False,
+                f"STALE_DATA_MODE: {buy_count} BUY order(s) blocked — signal expired; attack actions require fresh K-line signal",
+                "warning",
+            ))
+        if sell_count > 0:
+            checks.append(check(
+                "sell_side_review_required",
+                False,
+                f"STALE_DATA_MODE: {sell_count} SELL order(s) present — classify as RISK_EXIT_SELL/MANUAL_RISK_REDUCE for human review; exempt from signal_freshness_gate per stale_data_risk_exit_policy_v1",
+                "warning",
+            ))
 
     quotes = load_json(quotes_path)
     checks.append(check("live_quotes_gate", bool(quotes.get("ok")), f"warnings={quotes.get('warnings', [])}"))
@@ -149,6 +176,10 @@ def build_gate(args: argparse.Namespace) -> Dict[str, Any]:
         "strategy": args.strategy_label,
         "checks": checks,
         "failed_blockers": blocker_failed,
+        "stale_data_mode": stale_data_mode,
+        "sell_orders_need_review": stale_data_mode and sell_count > 0,
+        "buy_order_count": buy_count,
+        "sell_order_count": sell_count,
         "summary": {
             "full_ann_ret": full_ann,
             "oos_ann_ret": oos_ann,
@@ -179,12 +210,13 @@ def write_report(path: Path, payload: Dict[str, Any]) -> None:
         lines.append(f"| {key} | {value} |")
     lines.extend(["", "## Checks", "", "| check | result | severity | detail |", "| --- | --- | --- | --- |"])
     for item in payload["checks"]:
+        result = "PASS" if item["passed"] else ("WARN" if item["severity"] == "warning" else "FAIL")
         lines.append(
             "| "
             + " | ".join(
                 [
                     str(item["name"]),
-                    "PASS" if item["passed"] else "FAIL",
+                    result,
                     str(item["severity"]),
                     str(item["detail"]).replace("|", "/"),
                 ]
@@ -196,6 +228,23 @@ def write_report(path: Path, payload: Dict[str, Any]) -> None:
         lines.append("- V6-A is eligible for small-capital live launch preview. Manual approval is still required before placing orders.")
     else:
         lines.append("- V6-A is not ready for live launch. Failed blockers must be resolved before any real order execution.")
+
+    if payload.get("stale_data_mode"):
+        lines.extend([
+            "",
+            "## Order Intent Classification (STALE_DATA_MODE)",
+            "",
+            "⚠️ **Signal freshness gate failed — STALE_DATA_MODE active.**",
+            "",
+            "| order_intent | count | gate_behavior |",
+            "| --- | ---: | --- |",
+            f"| BUY / ADD (attack) | {payload.get('buy_order_count', 0)} | **BLOCKED** — signal expired, no fresh K-line |",
+            f"| SELL (defense) | {payload.get('sell_order_count', 0)} | **NEEDS HUMAN REVIEW** — classify as RISK_EXIT_SELL or MANUAL_RISK_REDUCE |",
+            "",
+            "Per `stale_data_risk_exit_policy_v1`: attack orders require fresh signal; defense orders are exempt from signal_freshness_gate but still require human confirmation.",
+            "Do NOT use expired signal as basis for any BUY. Do NOT let stale data block a necessary RISK_EXIT_SELL.",
+        ])
+
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

@@ -40,6 +40,7 @@ OUTPUT_DIR      = ROOT / "backtest_results" / "morning_brief"
 HTML_PORTFOLIO  = Path("/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html")
 
 REAL_ACC_ID = 281756481449956811
+RELEASE_GATE_DIR = ROOT / "backtest_results" / "attack_engine_release_gate"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -61,6 +62,56 @@ def latest_json_in(directory: Path) -> dict:
         key=lambda f: f.stat().st_mtime, reverse=True
     )
     return read_json(files[0]) if files else {}
+
+
+def latest_daily_release_gate_file() -> Path | None:
+    if not RELEASE_GATE_DIR.exists():
+        return None
+    files = sorted(
+        RELEASE_GATE_DIR.glob("attack_engine_release_gate_v6_daily_auto_*_plan_only_gate.json"),
+        key=lambda f: f.stat().st_mtime,
+        reverse=True,
+    )
+    return files[0] if files else None
+
+
+def _to_float(value: Any) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+def _orders_path_from_gate(payload: dict) -> Path | None:
+    for check in payload.get("checks", []):
+        if check.get("name") != "live_preview_orders_exist":
+            continue
+        detail = str(check.get("detail", "")).strip()
+        if not detail:
+            return None
+        path = Path(detail)
+        return path if path.is_absolute() else ROOT / path
+    return None
+
+
+def _count_order_sides_from_gate(payload: dict) -> tuple[int, int]:
+    orders_path = _orders_path_from_gate(payload)
+    if not orders_path or not orders_path.exists():
+        return 0, 0
+    buy_count = 0
+    sell_count = 0
+    with orders_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            side = str(row.get("side") or row.get("action") or "").upper()
+            qty = _to_float(row.get("preview_qty") or row.get("qty") or row.get("quantity") or row.get("target_qty"))
+            notional = _to_float(row.get("preview_order_value") or row.get("estimated_notional_usd") or row.get("notional_usd"))
+            if abs(qty) <= 0 and abs(notional) <= 0:
+                continue
+            if "BUY" in side:
+                buy_count += 1
+            elif "SELL" in side:
+                sell_count += 1
+    return buy_count, sell_count
 
 
 def _strip_html(text: str) -> str:
@@ -286,6 +337,47 @@ def collect_kline_quota() -> dict | None:
         return None
 
 
+# ── Stale data mode detection ────────────────────────────────────────────────
+
+def collect_stale_data_status() -> dict:
+    """Read the latest release gate JSON and detect STALE_DATA_MODE.
+
+    Returns a dict with:
+      is_stale              — signal_freshness_gate failed
+      sell_orders_need_review — SELL orders present in stale mode
+      sell_order_count      — number of SELL orders
+      buy_order_count       — number of BUY orders blocked
+      signal_date           — latest_signal_date from gate summary
+      gate_file             — filename of the gate JSON that was read
+    """
+    gate_file = latest_daily_release_gate_file()
+    if not gate_file:
+        return {"is_stale": False, "sell_orders_need_review": False,
+                "sell_order_count": 0, "buy_order_count": 0, "signal_date": "", "gate_file": ""}
+    payload = read_json(gate_file)
+
+    # Prefer explicit field from new gate format; fall back to scanning checks
+    stale = bool(payload.get("stale_data_mode", False))
+    if not stale:
+        stale = any(
+            c.get("name") == "signal_freshness_gate" and not c.get("passed")
+            for c in payload.get("checks", [])
+        )
+
+    inferred_buy_count, inferred_sell_count = _count_order_sides_from_gate(payload)
+    sell_count = int(payload.get("sell_order_count", inferred_sell_count))
+    buy_count = int(payload.get("buy_order_count", inferred_buy_count))
+    sell_review = bool(payload.get("sell_orders_need_review", stale and sell_count > 0))
+    return {
+        "is_stale": stale,
+        "sell_orders_need_review": sell_review,
+        "sell_order_count": sell_count,
+        "buy_order_count": buy_count,
+        "signal_date": str(payload.get("summary", {}).get("latest_signal_date", "")),
+        "gate_file": gate_file.name,
+    }
+
+
 # ── collab 待办 ──────────────────────────────────────────────────────────────
 
 def collect_todos() -> dict[str, list[str]]:
@@ -377,7 +469,7 @@ def _date_from_decision(row: dict) -> date | None:
         return None
 
 
-def collect_workflow_actions(events: list[dict]) -> list[dict]:
+def collect_workflow_actions(events: list[dict], stale_status: dict | None = None) -> list[dict]:
     """
     Daily 报告的任务中枢：只告诉用户今天该做什么、用什么关键词触发。
     不在这里做投资分析，也不自动触发交易。
@@ -520,6 +612,26 @@ def collect_workflow_actions(events: list[dict]) -> list[dict]:
             "X Radar 扫描",
             "可选择把高价值X链接/文字贴给Claude整理；不是交易触发器",
         )
+
+    # 6) Stale data mode — 进攻信号过期时注入警告和风险退出提醒
+    if stale_status and stale_status.get("is_stale"):
+        signal_date = stale_status.get("signal_date", "未知")
+        add(
+            "MED",
+            "V6",
+            f"V6 处于 STALE_DATA_MODE（最近信号日期：{signal_date}）",
+            "复盘 V6-A",
+            "K线额度不足或信号过期；BUY/ADD 已阻断；等待约月初额度恢复（~2026-06-01）后重新评估",
+        )
+        if stale_status.get("sell_orders_need_review") and stale_status.get("sell_order_count", 0) > 0:
+            sell_count = stale_status["sell_order_count"]
+            add(
+                "HIGH",
+                "V6",
+                f"⚠️ RISK_EXIT_PENDING：{sell_count} 笔 SELL 订单需人工复核",
+                "复盘 V6-A 风险退出",
+                "STALE_DATA_MODE 下防守型订单须人工判断是否属于 RISK_EXIT_SELL / MANUAL_RISK_REDUCE；确认后在富途客户端手动执行",
+            )
 
     order = {"HIGH": 0, "MED": 1, "LOW": 2}
     return sorted(actions, key=lambda a: (order.get(a["priority"], 9), a["domain"], a["item"]))
@@ -681,6 +793,7 @@ def build_html(
     todos: dict,
     quota: dict | None,
     workflow_actions: list[dict],
+    stale_status: dict | None = None,
 ) -> str:
     today_str = date.today().strftime("%Y年%m月%d日")
     now_str   = datetime.now().strftime("%H:%M")
@@ -728,6 +841,31 @@ def build_html(
             f"<b style=\"color:{color_q}\">{used}/{total_q}（{pct_q:.0f}%已用）</b></p>"
         )
 
+    stale_banner_html = ""
+    if stale_status and stale_status.get("is_stale"):
+        signal_date = stale_status.get("signal_date", "未知")
+        buy_count = stale_status.get("buy_order_count", 0)
+        sell_count = stale_status.get("sell_order_count", 0)
+        sell_review = stale_status.get("sell_orders_need_review", False)
+        blocked_line = (
+            f"&nbsp;&nbsp;🔴 <b>STALE_DATA_BLOCKED</b>：{buy_count} 笔 BUY 已阻断，信号过期"
+            if buy_count > 0 else ""
+        )
+        review_line = (
+            f"&nbsp;&nbsp;🟡 <b>RISK_EXIT_PENDING</b>：{sell_count} 笔 SELL 需人工复核"
+            if sell_review and sell_count > 0 else ""
+        )
+        stale_banner_html = (
+            "<div style=\"background:#fff7ed;border:2px solid #f97316;"
+            "padding:8px 12px;border-radius:6px;margin:6px 0\">"
+            f"⚠️ <b>V6 当前处于 STALE_DATA_MODE — 进攻信号已过期（{signal_date}）</b><br>"
+            "<span style=\"font-size:12px;color:#78350f\">"
+            "有K线时用完整信号；没有K线时只允许刹车，不允许踩油门。所有 BUY/ADD 已阻断。</span>"
+            + (f"<br><span style=\"font-size:12px\">{blocked_line}</span>" if blocked_line else "")
+            + (f"<br><span style=\"font-size:12px\">{review_line}</span>" if review_line else "")
+            + "</div>"
+        )
+
     # 全局告警横幅
     global_alerts = ""
     if port_html and not port_html.get("error") and port_html.get("alerts"):
@@ -759,6 +897,7 @@ def build_html(
 {_workflow_actions_html(workflow_actions)}
 
 <h3>⚙️ [V6] 量化策略</h3>
+{stale_banner_html}
 <table style="font-size:13px">
   <tr><td style="padding:2px 6px;width:120px">Reconciliation</td><td>{recon_ok}</td></tr>
   <tr><td style="padding:2px 6px">换仓信号</td><td>{sig_icon} {sig_text}</td></tr>
@@ -795,6 +934,7 @@ def build_plain(
     todos: dict,
     quota: dict | None,
     workflow_actions: list[dict],
+    stale_status: dict | None = None,
 ) -> str:
     today_str = date.today().isoformat()
     sig_icon, sig_text = SIGNAL_LABEL.get(v6["signal"], ("❓", v6["signal"]))
@@ -810,12 +950,18 @@ def build_plain(
         lines.append("   ✅ 今日无必须动作。默认策略：等待。")
     lines.append("")
 
-    lines += [
-        "⚙️  [V6]",
+    v6_lines = ["⚙️  [V6]"]
+    if stale_status and stale_status.get("is_stale"):
+        signal_date = stale_status.get("signal_date", "未知")
+        v6_lines.append(f"   ⚠️ STALE_DATA_MODE（信号日期：{signal_date}）— 所有 BUY/ADD 已阻断")
+        if stale_status.get("sell_orders_need_review") and stale_status.get("sell_order_count", 0) > 0:
+            v6_lines.append(f"   🟡 RISK_EXIT_PENDING：{stale_status['sell_order_count']} 笔 SELL 需人工复核")
+    v6_lines += [
         f"   Reconciliation : {'PASS ✓' if not v6['recon_events'] else '⚠️ 有异常'}",
         f"   换仓信号       : {sig_icon} {sig_text}",
         "   Pending订单    : " + ("无" if v6["pending_count"] == 0 else f"⚠️ {v6['pending_count']}笔"),
     ]
+    lines += v6_lines
     for code, qty in v6["positions"].items():
         lines.append(f"     {code.replace('US.',''):<8} × {int(qty)}")
 
@@ -882,13 +1028,14 @@ def main():
 
     print(f"[{datetime.now().strftime('%H:%M:%S')}] 生成早间简报（全投资体系版）...")
 
-    v6        = collect_v6()
-    port_html = collect_portfolio_html()
-    futu      = collect_portfolio_futu()   # 仅用于 V6 实时价格，失败不影响主报告
-    events    = collect_events(days_ahead=7)
-    todos     = collect_todos()
-    quota     = collect_kline_quota()
-    workflows = collect_workflow_actions(events)
+    v6           = collect_v6()
+    port_html    = collect_portfolio_html()
+    futu         = collect_portfolio_futu()   # 仅用于 V6 实时价格，失败不影响主报告
+    events       = collect_events(days_ahead=7)
+    todos        = collect_todos()
+    quota        = collect_kline_quota()
+    stale_status = collect_stale_data_status()
+    workflows    = collect_workflow_actions(events, stale_status=stale_status)
 
     # 打印持仓监控状态
     if port_html and "error" not in port_html:
@@ -907,8 +1054,11 @@ def main():
     if quota:
         print(f"  K线额度：{quota['used']}/{quota['total']}")
 
-    html_content = build_html(v6, port_html, futu, events, todos, quota, workflows)
-    plain_text   = build_plain(v6, port_html, futu, events, todos, quota, workflows)
+    html_content = build_html(v6, port_html, futu, events, todos, quota, workflows, stale_status=stale_status)
+    plain_text   = build_plain(v6, port_html, futu, events, todos, quota, workflows, stale_status=stale_status)
+
+    if stale_status.get("is_stale"):
+        print(f"  ⚠️  V6 STALE_DATA_MODE（信号日期：{stale_status.get('signal_date', '未知')}）")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     tag = datetime.now().strftime("%Y%m%dT%H%M%S")

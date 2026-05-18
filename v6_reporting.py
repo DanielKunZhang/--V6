@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent
 DEFAULT_POLICY = ROOT / "v6_strategy_lab" / "configs" / "v6_reporting_policy_v1.json"
 DEFAULT_OUTPUT_DIR = ROOT / "backtest_results" / "v6_reporting"
 DEFAULT_V6A_REAL_STATE = ROOT / "backtest_results" / "v6a_state" / "v6a_managed_positions_real_281756481449956811.json"
+RELEASE_GATE_DIR = ROOT / "backtest_results" / "attack_engine_release_gate"
 
 
 def now_text() -> str:
@@ -60,6 +61,47 @@ def latest_file(directory: Path, pattern: str) -> Path | None:
         return None
     files = sorted(directory.glob(pattern), key=lambda item: item.stat().st_mtime)
     return files[-1] if files else None
+
+
+def latest_daily_release_gate_path(fallback: Path) -> Path:
+    """Prefer production daily PLAN_ONLY gate over static launch evidence."""
+    if not RELEASE_GATE_DIR.exists():
+        return fallback
+    files = sorted(
+        RELEASE_GATE_DIR.glob("attack_engine_release_gate_v6_daily_auto_*_plan_only_gate.json"),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+    return files[0] if files else fallback
+
+
+def extract_orders_path_from_gate(payload: dict[str, Any]) -> Path | None:
+    for check in payload.get("checks", []):
+        if check.get("name") != "live_preview_orders_exist":
+            continue
+        detail = str(check.get("detail", "")).strip()
+        if detail:
+            return resolve_path(detail)
+    return None
+
+
+def count_order_sides_from_gate(payload: dict[str, Any]) -> tuple[int, int]:
+    orders_path = extract_orders_path_from_gate(payload)
+    if not orders_path:
+        return 0, 0
+    buy_count = 0
+    sell_count = 0
+    for row in read_csv_rows(orders_path, limit=200):
+        side = str(row.get("side") or row.get("action") or "").upper()
+        qty = as_float(row.get("preview_qty") or row.get("qty") or row.get("quantity") or row.get("target_qty"))
+        notional = as_float(row.get("preview_order_value") or row.get("estimated_notional_usd") or row.get("notional_usd"))
+        if abs(qty) <= 0 and abs(notional) <= 0:
+            continue
+        if "BUY" in side:
+            buy_count += 1
+        elif "SELL" in side:
+            sell_count += 1
+    return buy_count, sell_count
 
 
 def rel(path: Path | None) -> str:
@@ -127,10 +169,22 @@ def period_label(period: str) -> str:
 def summarize_release_gate(path: Path) -> dict[str, Any]:
     payload = read_json(path)
     if not payload:
-        return {"exists": False, "path": rel(path)}
+        return {"exists": False, "path": rel(path), "stale_data_mode": False, "sell_orders_need_review": False}
     gate_result = str(payload.get("gate_result", "")).upper()
     failed_blockers = payload.get("failed_blockers", [])
     overall_passed = bool(payload.get("overall_passed", False)) or gate_result == "PASS"
+
+    # Detect stale_data_mode — either from explicit field (new gate format) or by scanning checks
+    stale_data_mode = bool(payload.get("stale_data_mode", False))
+    if not stale_data_mode:
+        stale_data_mode = any(
+            c.get("name") == "signal_freshness_gate" and not c.get("passed")
+            for c in payload.get("checks", [])
+        )
+    inferred_buy_count, inferred_sell_count = count_order_sides_from_gate(payload)
+    buy_order_count = int(payload.get("buy_order_count", inferred_buy_count))
+    sell_order_count = int(payload.get("sell_order_count", inferred_sell_count))
+
     return {
         "exists": True,
         "path": rel(path),
@@ -142,6 +196,10 @@ def summarize_release_gate(path: Path) -> dict[str, Any]:
         "candidate_id": str(payload.get("candidate_id", "")),
         "blockers": payload.get("blockers", []) or payload.get("pre_live_blockers", []) or failed_blockers,
         "summary": payload.get("summary", {}),
+        "stale_data_mode": stale_data_mode,
+        "sell_orders_need_review": bool(payload.get("sell_orders_need_review", stale_data_mode and sell_order_count > 0)),
+        "buy_order_count": buy_order_count,
+        "sell_order_count": sell_order_count,
     }
 
 
@@ -267,10 +325,16 @@ def decide_action(payload: dict[str, Any]) -> str:
     gate = payload["v6a"]["release_gate"]
     real = payload["v6a"]["real_pilot"]
     allocator = payload["allocator"]
-    if real.get("armed"):
-        return "需要用户确认：检测到 armed 执行记录，复核订单和仓位。"
     if not gate.get("exists"):
         return "禁止实盘：缺少 V6-A release gate。"
+    if gate.get("stale_data_mode"):
+        if gate.get("sell_orders_need_review") and gate.get("sell_order_count", 0) > 0:
+            return f"需要用户确认：STALE_DATA_MODE 下有 {gate.get('sell_order_count', 0)} 笔 SELL 需判断是否为风险退出。"
+        if gate.get("buy_order_count", 0) > 0:
+            return f"无需操作：STALE_DATA_MODE 下 {gate.get('buy_order_count', 0)} 笔 BUY 已被阻断，等待 K 线额度恢复。"
+        return "无需操作：V6-A 处于 STALE_DATA_MODE，未发现需人工处理的风险退出。"
+    if real.get("armed"):
+        return "需要用户确认：检测到 armed 执行记录，复核订单和仓位。"
     if not gate.get("overall_passed"):
         return "禁止实盘：V6-A release gate 未通过。"
     if allocator.get("weights", {}).get("V6-B", 0) not in {0, 0.0, "0", "0.0"}:
@@ -284,7 +348,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     launch_policy = read_json(launch_policy_path)
     evidence = launch_policy.get("latest_real_pilot_evidence", {})
 
-    release_gate_path = resolve_path(evidence.get("release_gate") or policy["artifacts"]["release_gate"])
+    release_gate_path = latest_daily_release_gate_path(resolve_path(evidence.get("release_gate") or policy["artifacts"]["release_gate"]))
     preview_report_path = resolve_path(evidence.get("live_preview_report") or policy["artifacts"]["live_preview_report"])
     preview_orders_path = resolve_path(evidence.get("live_preview_orders") or policy["artifacts"]["live_preview_orders"])
 
@@ -359,6 +423,31 @@ def render_markdown(payload: dict[str, Any]) -> str:
         for row in managed.get("pending_orders", [])
     ] or [["-", "-", "-", "-", "-"]]
 
+    stale_md_lines: list[str] = []
+    if gate.get("stale_data_mode"):
+        stale_md_lines = [
+            "## ⚠️ STALE_DATA_MODE — 进攻信号已过期",
+            "",
+            "> 有 K 线时用完整信号；没有 K 线时只允许刹车，不允许踩油门。",
+            "",
+        ]
+        buy_count = gate.get("buy_order_count", 0)
+        sell_count = gate.get("sell_order_count", 0)
+        if buy_count > 0:
+            stale_md_lines += [
+                "### STALE_DATA_BLOCKED",
+                f"- {buy_count} BUY 订单已阻断 — 信号过期，等待 K 线额度恢复后重新评估",
+                "",
+            ]
+        if gate.get("sell_orders_need_review") and sell_count > 0:
+            stale_md_lines += [
+                "### RISK_EXIT_PENDING",
+                f"- {sell_count} SELL 订单需人工复核",
+                "- 判断是否属于 RISK_EXIT_SELL 或 MANUAL_RISK_REDUCE",
+                "- 防守型订单不受信号新鲜度约束，但须人工确认后执行",
+                "",
+            ]
+
     return "\n".join(
         [
             f"# {payload['title']}",
@@ -367,6 +456,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"- 统计区间：`{payload['period_range']}`",
             f"- 本期动作：{payload['weekly_action']}",
             "",
+        ]
+        + stale_md_lines
+        + [
             "## V6-A 状态",
             "",
             md_table(
@@ -481,6 +573,58 @@ def metric_card(label: str, value: str, sub: str = "", tone: str = "neutral") ->
     """
 
 
+def _stale_data_html(gate: dict[str, Any]) -> str:
+    """Generate STALE_DATA_MODE warning block for render_html().
+
+    Shows two sections:
+      STALE_DATA_BLOCKED  — attack orders blocked (BUY/ADD)
+      RISK_EXIT_PENDING   — sell orders needing human review
+    """
+    if not gate.get("stale_data_mode"):
+        return ""
+    buy_count = gate.get("buy_order_count", 0)
+    sell_count = gate.get("sell_order_count", 0)
+    sell_review = gate.get("sell_orders_need_review", False)
+
+    blocked_html = ""
+    if buy_count > 0:
+        blocked_html = (
+            f'<div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;">'
+            f'<strong style="color:#991b1b;">STALE_DATA_BLOCKED</strong>'
+            f'<span style="color:#7f1d1d;font-size:13px;margin-left:10px;">'
+            f'{buy_count} BUY 订单已阻断 — 信号过期，进攻动作需新鲜 K 线信号。等待 K 线额度恢复（约月初）后重新评估。'
+            f'</span></div>'
+        )
+
+    review_html = ""
+    if sell_review and sell_count > 0:
+        review_html = (
+            f'<div style="margin-top:8px;padding:10px 14px;border-radius:10px;background:#fef3c7;border:1px solid #fde68a;">'
+            f'<strong style="color:#92400e;">RISK_EXIT_PENDING</strong>'
+            f'<span style="color:#78350f;font-size:13px;margin-left:10px;">'
+            f'{sell_count} SELL 订单需人工复核 — 请判断是否属于 RISK_EXIT_SELL 或 MANUAL_RISK_REDUCE。'
+            f'防守型订单不受信号新鲜度约束，但须人工确认后才能执行。'
+            f'</span></div>'
+        )
+    elif sell_count == 0 and gate.get("stale_data_mode"):
+        review_html = (
+            f'<div style="margin-top:8px;padding:10px 14px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;">'
+            f'<span style="color:#166534;font-size:13px;">当前无 SELL 订单，无需风险退出复核。</span>'
+            f'</div>'
+        )
+
+    return (
+        f'<div style="margin-top:18px;background:#fef9c3;border:2px solid #facc15;border-radius:16px;padding:16px 18px;">'
+        f'<div style="font-size:15px;font-weight:800;color:#78350f;">⚠️ V6 当前处于 STALE_DATA_MODE — 进攻信号已过期</div>'
+        f'<div style="font-size:13px;color:#92400e;margin-top:4px;">'
+        f'有 K 线时用完整信号；没有 K 线时只允许刹车，不允许踩油门。'
+        f'</div>'
+        f'{blocked_html}'
+        f'{review_html}'
+        f'</div>'
+    )
+
+
 def render_html(payload: dict[str, Any], markdown: str) -> str:
     v6a = payload["v6a"]
     gate = v6a["release_gate"]
@@ -523,6 +667,8 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
         for item in payload.get("boundaries", [])
     )
     notes = "; ".join(str(item) for item in allocator.get("notes", []))
+    stale_block = _stale_data_html(gate)
+
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -541,6 +687,8 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
       <div style="font-size:17px;font-weight:800;line-height:1.45;">{html_badge('待办', action_tone)} <span style="margin-left:8px;">{html_escape(action)}</span></div>
     </div>
   </div>
+
+  {stale_block}
 
   <table cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 6px;"><tr>
     {metric_card("V6-A 上线闸门", "通过" if gate.get("overall_passed") else "失败", gate.get("gate_result", ""), gate_tone)}
