@@ -158,6 +158,9 @@ def main() -> int:
     check_file(rep, ROOT / "central_risk_board.py", "Central Risk Board script")
     check_json(rep, OFFICIAL_EVENTS, "Official events_calendar.json")
     check_file(rep, ROOT / "requirements.txt", "Root requirements.txt")
+    check_json(rep, ROOT / "investment_screener" / "radar_astock.json", "A-share Radar tracking JSON")
+    check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_REVIEW_SOP.md", "A-share Radar review SOP")
+    check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_AUTOMATION_ROADMAP.md", "A-share Radar automation roadmap")
 
     duplicate_calendar = DESKTOP_ROOT / "events_calendar.json"
     if duplicate_calendar.exists():
