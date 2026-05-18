@@ -10,6 +10,7 @@
 - 策略/研究脚本：V6、Radar、A股 Radar、估值辅助、健康检查相关 `.py`
 - 迁移和运维文档：`MIGRATION_CHECKLIST.md`、`BACKUP_MANIFEST.md`、`README*.md`、`AI_HANDOFF_CURRENT.md`
 - 事件源：`events_calendar.json`
+- A股 Radar 观察样本：`investment_screener/radar_astock.json`
 - 依赖清单：`requirements.txt`、子项目内 `requirements.txt`
 - 配置模板：`*.example.json`、`*.example.yaml`、不含隐私的 policy/config 文件
 - SOP/设计文档：A股 Radar、X Radar、Friend Alpha、Daily Board、V6 治理相关 Markdown
@@ -61,4 +62,3 @@ python3 system_health_check.py --deep
 - `0 fail(s)`
 - Futu OpenD warning 只有在 OpenD 未启动时允许存在
 - V6 独立邮件变量 warning 只有在确认走 `IC_EMAIL_PASSWORD` fallback 时允许存在
-

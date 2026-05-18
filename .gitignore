@@ -11,6 +11,7 @@ data/
 backtest_results/
 *.json
 !events_calendar.json
+!investment_screener/radar_astock.json
 !*example.json
 !*.example.json
 !central_risk_board_config.json
