@@ -1,0 +1,36 @@
+[
+  {
+    "_comment": "手动维护的事件日历。用户或GPT添加条目，morning_brief自动展示未来7天的事件。",
+    "_format": {"date": "YYYY-MM-DD", "domain": "估值|价值投资|Radar|V6|通用", "text": "事件描述", "action": "可选：建议动作"}
+  },
+  {
+    "date": "2026-05-18",
+    "domain": "Radar",
+    "text": "A股Radar收盘轻量复盘：三丰智能、纽威数控、绿的谐波",
+    "action": "触发：复盘 A股Radar；只复盘观察样本表现、主线是否成立、龙头/中军/补涨判断、是否出现计划内买点，不做价值投资估值"
+  },
+  {
+    "date": "2026-05-19",
+    "domain": "价值投资",
+    "text": "PDD Q1财报后主仓重估",
+    "action": "触发：复盘 PDD；执行财报数据核查、Thesis Re-underwrite、SOP v2.5估值更新、仓位决策，最后归档到交易决策日志"
+  },
+  {
+    "date": "2026-05-20",
+    "domain": "估值",
+    "text": "NVDA Q1 FY2027财报后AI核心持仓复核",
+    "action": "触发：复盘 NVDA；更新AI-Core v2.6估值、持仓上限和AI右尾期权观察"
+  },
+  {
+    "date": "2026-05-26",
+    "domain": "V6",
+    "text": "V6-A Pilot 满2周复盘",
+    "action": "评估执行质量（滑点/舍入/成交时间），决定是否进入 REAL_PILOT_AUTO_REVIEWED"
+  },
+  {
+    "date": "2026-06-01",
+    "domain": "Radar",
+    "text": "Futu历史K线额度月度刷新（估计）",
+    "action": "额度刷新后启动V6-B standalone回测：AMD/MU/TSM/ANET/WDC/INTC数据拉取"
+  }
+]
