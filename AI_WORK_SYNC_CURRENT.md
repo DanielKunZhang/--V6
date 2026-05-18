@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-18 18:00:02`
+- Last updated: `2026-05-18 18:21:34`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -619,6 +619,19 @@ events_calendar.json
 
 Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡和事件提醒，不写自动下单代码，不触碰券商委托接口。
 
+## 数据源成本纪律（2026-05-18 更新）
+
+当前全资产规模约 300 万 RMB，系统阶段仍以打磨流程、风控和复盘为主，不增加不必要固定成本。
+
+正式口径：
+- 1000 万 RMB 总资产之前，不新增 EODHD / Tiingo / Polygon / Nasdaq Data Link 等付费数据源订阅。
+- 当前数据源优先级仍为 Futu OpenD / FutuAPI。
+- Futu 历史 K 线额度不足时，不用付费源绕过进攻信号 gate；进入 stale data / degraded mode。
+- 外部付费数据源只作为未来 1000 万 RMB 以上资产规模后的升级项，用于稳定历史日 K / 周 K / 跨市场数据冗余。
+- TradingView 不作为程序化主数据源。
+
+相关设计：`v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md`
+
 ## V6 当前状态
 
 V6 的长期形态：
@@ -890,6 +903,7 @@ dc58870 feat: add V6 daily report automation
 
 - [17:56] [发现] A股Radar新增每周五自动新主题/新标的发现链路：Daily Board 周五提示“扫描 A股Radar 新候选”；该流程只生成 AddToRadarCandidate / ThemeWatch 候选报告，不自动写入 radar_astock.json，不生成交易指令。每日复盘继续负责现有样本保留/降级/退出；新候选扫描负责发现新主题/新标的，且必须用户确认后才可入池。已更新 morning_brief.py、REVIEW_CADENCE_POLICY.md、A_SHARE_RADAR_REVIEW_SOP.md、A_SHARE_RADAR_AUTOMATION_ROADMAP.md。
 - [17:59] [发现] A股Radar周五新候选扫描纪律补充：扫描每周可自动跑，但不是每周必须新增；默认结论应为 NoNewCandidate。固定输出三类：NoNewCandidate / ThemeWatch / AddToRadarCandidate。只有主题层同主题≥2只放量、强于大盘、非单日孤立脉冲，且个股层成交额>5日均额1.5x、涨幅>5%或突破平台/20日新高、不是一字板/高开低走，并且相对现有样本更强或补足缺口时，才允许给 AddToRadarCandidate。即使给候选，也必须用户确认后才能写入 radar_astock.json。
+- [18:21] [发现] 数据源成本纪律锁定：当前全资产约300万RMB，1000万RMB总资产之前不新增EODHD/Tiingo/Polygon/Nasdaq Data Link等付费数据源订阅；继续以Futu OpenD/FutuAPI为主。Futu历史K线额度不足时，不用付费源绕过进攻信号gate，而是进入STALE_DATA_MODE：禁止BUY/ADD/ROTATE_IN，保留实时价+managed state支持的人工风险退出提醒。外部付费数据源仅作为未来1000万RMB以上资产规模后的升级项；TradingView不作为程序化主数据源。
 ### Claude
 
 - [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。

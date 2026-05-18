@@ -78,6 +78,19 @@ events_calendar.json
 
 Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡和事件提醒，不写自动下单代码，不触碰券商委托接口。
 
+## 数据源成本纪律（2026-05-18 更新）
+
+当前全资产规模约 300 万 RMB，系统阶段仍以打磨流程、风控和复盘为主，不增加不必要固定成本。
+
+正式口径：
+- 1000 万 RMB 总资产之前，不新增 EODHD / Tiingo / Polygon / Nasdaq Data Link 等付费数据源订阅。
+- 当前数据源优先级仍为 Futu OpenD / FutuAPI。
+- Futu 历史 K 线额度不足时，不用付费源绕过进攻信号 gate；进入 stale data / degraded mode。
+- 外部付费数据源只作为未来 1000 万 RMB 以上资产规模后的升级项，用于稳定历史日 K / 周 K / 跨市场数据冗余。
+- TradingView 不作为程序化主数据源。
+
+相关设计：`v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md`
+
 ## V6 当前状态
 
 V6 的长期形态：
