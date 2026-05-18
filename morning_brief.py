@@ -18,6 +18,7 @@ Morning Brief — 每日早间一屏总览（全投资体系版）
 from __future__ import annotations
 
 import argparse
+import csv
 import importlib
 import json
 import re
@@ -29,6 +30,9 @@ from typing import Any
 ROOT            = Path(__file__).resolve().parent
 COLLAB_LOG      = ROOT / "AI_COLLAB_LOG.md"
 EVENTS_CAL      = ROOT / "events_calendar.json"
+DECISION_LOG    = Path("/Users/zhangkun/Desktop/AI个人投资公司/交易决策日志/decision_log.csv")
+FRIEND_ALPHA_LOG = Path("/Users/zhangkun/Desktop/AI个人投资公司/朋友Alpha影子跟踪/friend_alpha_shadow_log.csv")
+X_RADAR_DAILY   = Path("/Users/zhangkun/Desktop/AI个人投资公司/信息源扫描/X_Radar/daily")
 V6A_STATE       = ROOT / "backtest_results" / "v6a_state" / "v6a_managed_positions_real_281756481449956811.json"
 RECON_DIR       = ROOT / "backtest_results" / "v6a_reconciliation"
 RUNNER_DIR      = ROOT / "backtest_results" / "v6a_guarded_runner"
@@ -318,6 +322,199 @@ def collect_todos() -> dict[str, list[str]]:
     return todos
 
 
+# ── 今日工作流动作清单 ───────────────────────────────────────────────────────
+
+def _keyword_for_event(event: dict) -> str:
+    domain = event.get("domain", "")
+    text = event.get("text", "")
+    action = event.get("action", "")
+    joined = f"{text} {action}"
+    upper = joined.upper()
+
+    for sym in ["PDD", "NVDA", "MSFT", "GOOGL", "AAPL", "ADBE", "AAOI", "MU", "COHR", "LITE"]:
+        if sym in upper:
+            if "财报" in joined or "估值" in joined or domain in {"估值", "价值投资"}:
+                return f"复盘 {sym}"
+            return f"研究 {sym}"
+
+    if "V6-A" in joined or "Pilot" in joined or "pilot" in joined:
+        return "V6 Pilot 总结"
+    if "V6-B" in joined or "standalone" in joined or "回测" in joined:
+        return "复盘 V6-B"
+    if "A股" in joined or "SH." in joined or "SZ." in joined or "纽威数控" in joined or "绿的谐波" in joined or "三丰智能" in joined:
+        return "复盘 A股Radar"
+    if "X" in joined or "信息源" in joined:
+        return "X Radar 扫描"
+    if domain == "Radar":
+        return "复盘 Radar"
+    if domain == "估值":
+        return "估值更新"
+    return "复盘"
+
+
+def _read_csv_rows(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as f:
+            return list(csv.DictReader(f))
+    except Exception:
+        return []
+
+
+def _date_from_decision(row: dict) -> date | None:
+    decision_id = row.get("decision_id", "")
+    m = re.match(r"(\d{8})", decision_id)
+    if m:
+        try:
+            return datetime.strptime(m.group(1), "%Y%m%d").date()
+        except ValueError:
+            pass
+    decision_time = row.get("decision_time", "")
+    try:
+        return datetime.fromisoformat(decision_time[:16]).date()
+    except ValueError:
+        return None
+
+
+def collect_workflow_actions(events: list[dict]) -> list[dict]:
+    """
+    Daily 报告的任务中枢：只告诉用户今天该做什么、用什么关键词触发。
+    不在这里做投资分析，也不自动触发交易。
+    """
+    today = date.today()
+    actions: list[dict] = []
+
+    def add(priority: str, domain: str, item: str, trigger: str, reason: str) -> None:
+        key = (domain, item, trigger)
+        if any((a["domain"], a["item"], a["trigger"]) == key for a in actions):
+            return
+        for a in actions:
+            if a["trigger"] == trigger:
+                order = {"HIGH": 0, "MED": 1, "LOW": 2}
+                if order.get(priority, 9) < order.get(a["priority"], 9):
+                    a["priority"] = priority
+                if reason not in a["reason"]:
+                    a["reason"] = f"{a['reason']}；{reason}"
+                return
+        actions.append({
+            "priority": priority,
+            "domain": domain,
+            "item": item,
+            "trigger": trigger,
+            "reason": reason,
+        })
+
+    # 1) 事件日历：今天/未来3天作为动作提醒，未来7天仍在事件区展示。
+    for e in events:
+        days = int(e.get("_days", 999))
+        if days > 3:
+            continue
+        priority = "HIGH" if days == 0 else ("MED" if days <= 2 else "LOW")
+        day_label = "今天" if days == 0 else ("明天" if days == 1 else f"{days}天后")
+        add(
+            priority,
+            e.get("domain", "事件"),
+            e.get("text", ""),
+            _keyword_for_event(e),
+            f"事件日历：{day_label}，需要提前准备或触发对应流程",
+        )
+
+    # 2) 交易决策日志：PLANNED 且到期/临近，提示进入对应复盘/重估流程。
+    for row in _read_csv_rows(DECISION_LOG):
+        status = (row.get("status") or "").upper()
+        if status not in {"PLANNED", "EXECUTED", "CLOSED"}:
+            continue
+        d = _date_from_decision(row)
+        if d is None:
+            continue
+        days = (d - today).days
+        if days < -7 or days > 3:
+            continue
+
+        symbol = row.get("symbol", "")
+        system = row.get("system_source", "")
+        setup = row.get("setup_type", "")
+        if system == "主仓" or setup == "Earnings_ReUnderwrite":
+            trigger = f"复盘 {symbol}"
+            item = f"{symbol} 主仓财报重估 / Thesis Re-underwrite"
+        elif "Radar-CN" in system or "CN_" in setup:
+            trigger = "复盘 A股Radar"
+            item = f"{symbol} A股Radar 样本复盘"
+        elif "V6" in system or "Radar" in system:
+            trigger = f"复盘 {system}"
+            item = f"{symbol} {system} 样本复盘"
+        else:
+            trigger = f"复盘 {symbol}"
+            item = f"{symbol} 决策日志复盘"
+
+        priority = "HIGH" if days <= 0 else ("MED" if days <= 2 else "LOW")
+        add(
+            priority,
+            "工作流",
+            item,
+            trigger,
+            f"decision_log.csv 状态={status}，目标日期 {d.isoformat()}",
+        )
+
+    # 3) Friend Alpha：样本达到阶段门槛时才提醒，不每天制造噪音。
+    friend_rows = _read_csv_rows(FRIEND_ALPHA_LOG)
+    sample_count = len([r for r in friend_rows if any((v or "").strip() for v in r.values())])
+    if sample_count in {20, 50}:
+        add(
+            "HIGH",
+            "Friend Alpha",
+            f"Friend Alpha 已累计 {sample_count} 个样本",
+            "复盘 Friend Alpha",
+            "达到20/50样本门槛，需要判断是否继续观察或制度化",
+        )
+
+    # 4) 固定节奏提醒：把机制收敛为 Daily 顶部的人工入口。
+    # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。
+    if today.weekday() < 5:
+        add(
+            "LOW",
+            "Radar-CN",
+            "A股 Radar 日更复盘（仅当今天有候选/交易/观察标的时执行）",
+            "复盘 A股Radar",
+            "A股 Radar 需要高频训练；无交易或无候选则可忽略",
+        )
+
+    # 美股 Radar / V6-B 以周度或事件驱动为主，不做每日噪音提醒。
+    if today.weekday() == 4:
+        add(
+            "LOW",
+            "Radar-US",
+            "美股 Radar / V6-B 周度样本复盘",
+            "复盘 V6-B",
+            "美股 Radar/V6-B 是周度或事件驱动复盘，不需要每天人工处理",
+        )
+
+    # 非交易日也给出明确状态，避免 Daily/Weekly 邮件看起来“没有今日待办”。
+    if today.weekday() >= 5:
+        add(
+            "LOW",
+            "通用",
+            "非交易日系统维护/研究日",
+            "无需操作",
+            "可选：整理交易决策日志、阅读估值报告、准备下周观察清单；没有必须动作",
+        )
+
+    # 5) X Radar：只在交易日提示轻量扫描，避免周末噪音。
+    today_daily = X_RADAR_DAILY / f"{today.isoformat()}_X_Radar_Daily.md"
+    if today.weekday() < 5 and not today_daily.exists():
+        add(
+            "LOW",
+            "Radar",
+            "今日 X Radar 尚未整理",
+            "X Radar 扫描",
+            "可选择把高价值X链接/文字贴给Claude整理；不是交易触发器",
+        )
+
+    order = {"HIGH": 0, "MED": 1, "LOW": 2}
+    return sorted(actions, key=lambda a: (order.get(a["priority"], 9), a["domain"], a["item"]))
+
+
 # ── 格式化 HTML ───────────────────────────────────────────────────────────────
 
 SIGNAL_LABEL = {
@@ -430,6 +627,42 @@ def _todos_html(todos: dict) -> str:
     return html or "<p style='color:#888'>暂无待办</p>"
 
 
+def _workflow_actions_html(actions: list[dict]) -> str:
+    if not actions:
+        return (
+            "<div style=\"background:#f6ffed;border-left:4px solid #52c41a;"
+            "padding:8px 12px;margin:8px 0;border-radius:4px\">"
+            "✅ 今日无必须动作。默认策略：等待，不主动增加系统复杂度。</div>"
+        )
+
+    color = {"HIGH": "#e74c3c", "MED": "#f39c12", "LOW": "#3498db"}
+    label = {"HIGH": "必须处理", "MED": "建议准备", "LOW": "可选"}
+    rows = ""
+    for a in actions:
+        c = color.get(a["priority"], "#888")
+        rows += (
+            "<tr>"
+            f"<td style=\"padding:4px 6px;white-space:nowrap;color:{c};font-weight:bold\">"
+            f"{label.get(a['priority'], a['priority'])}</td>"
+            f"<td style=\"padding:4px 6px\">[{a['domain']}] {a['item']}<br>"
+            f"<span style=\"color:#666;font-size:12px\">{a['reason']}</span></td>"
+            f"<td style=\"padding:4px 6px;white-space:nowrap\">"
+            f"<code>{a['trigger']}</code></td>"
+            "</tr>"
+        )
+    return (
+        "<table style=\"width:100%;font-size:13px;border-collapse:collapse\">"
+        "<tr style=\"background:#f5f5f5\">"
+        "<th style=\"padding:4px 6px;text-align:left;width:72px\">优先级</th>"
+        "<th style=\"padding:4px 6px;text-align:left\">事项</th>"
+        "<th style=\"padding:4px 6px;text-align:left;width:120px\">你对AI说</th>"
+        "</tr>"
+        f"{rows}</table>"
+        "<p style=\"margin:6px 0 0;font-size:11px;color:#999\">"
+        "原则：先分析，再归档；主仓走财报重估/估值更新，Radar走样本复盘。</p>"
+    )
+
+
 def build_html(
     v6: dict,
     port_html: dict | None,
@@ -437,6 +670,7 @@ def build_html(
     events: list,
     todos: dict,
     quota: dict | None,
+    workflow_actions: list[dict],
 ) -> str:
     today_str = date.today().strftime("%Y年%m月%d日")
     now_str   = datetime.now().strftime("%H:%M")
@@ -511,6 +745,9 @@ def build_html(
 
 {global_alerts}
 
+<h3>🎯 今日动作清单（工作流入口）</h3>
+{_workflow_actions_html(workflow_actions)}
+
 <h3>⚙️ [V6] 量化策略</h3>
 <table style="font-size:13px">
   <tr><td style="padding:2px 6px;width:120px">Reconciliation</td><td>{recon_ok}</td></tr>
@@ -547,10 +784,21 @@ def build_plain(
     events: list,
     todos: dict,
     quota: dict | None,
+    workflow_actions: list[dict],
 ) -> str:
     today_str = date.today().isoformat()
     sig_icon, sig_text = SIGNAL_LABEL.get(v6["signal"], ("❓", v6["signal"]))
     lines = [f"📋 早间简报 · {today_str}", ""]
+
+    lines += ["🎯 [今日动作清单]"]
+    if workflow_actions:
+        for a in workflow_actions:
+            lines.append(
+                f"   {a['priority']:<4} [{a['domain']}] {a['item']} → 对AI说：{a['trigger']}"
+            )
+    else:
+        lines.append("   ✅ 今日无必须动作。默认策略：等待。")
+    lines.append("")
 
     lines += [
         "⚙️  [V6]",
@@ -630,6 +878,7 @@ def main():
     events    = collect_events(days_ahead=7)
     todos     = collect_todos()
     quota     = collect_kline_quota()
+    workflows = collect_workflow_actions(events)
 
     # 打印持仓监控状态
     if port_html and "error" not in port_html:
@@ -648,8 +897,8 @@ def main():
     if quota:
         print(f"  K线额度：{quota['used']}/{quota['total']}")
 
-    html_content = build_html(v6, port_html, futu, events, todos, quota)
-    plain_text   = build_plain(v6, port_html, futu, events, todos, quota)
+    html_content = build_html(v6, port_html, futu, events, todos, quota, workflows)
+    plain_text   = build_plain(v6, port_html, futu, events, todos, quota, workflows)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     tag = datetime.now().strftime("%Y%m%dT%H%M%S")

@@ -1,7 +1,12 @@
 [
   {
     "_comment": "手动维护的事件日历。用户或GPT添加条目，morning_brief自动展示未来7天的事件。",
-    "_format": {"date": "YYYY-MM-DD", "domain": "估值|价值投资|Radar|V6|通用", "text": "事件描述", "action": "可选：建议动作"}
+    "_format": {
+      "date": "YYYY-MM-DD",
+      "domain": "估值|价值投资|Radar|V6|通用",
+      "text": "事件描述",
+      "action": "可选：建议动作"
+    }
   },
   {
     "date": "2026-05-18",
@@ -14,6 +19,12 @@
     "domain": "价值投资",
     "text": "PDD Q1财报后主仓重估",
     "action": "触发：复盘 PDD；执行财报数据核查、Thesis Re-underwrite、SOP v2.5估值更新、仓位决策，最后归档到交易决策日志"
+  },
+  {
+    "date": "2026-05-19",
+    "domain": "Radar",
+    "text": "纽威数控 SH.688697 — 角色跟踪（待定→退出？）",
+    "action": "20260518全量复盘触发：DIVERGE_WARNING第1天。收盘后判断：1) 若再次弱势（开高走低/收跌/成交萎缩）则 role=退出，signal_state=EXIT_WATCH，暂停操作；2) 若低开后强力企稳收>24.18，则重新评估并暂维持待定；3) 同步检查绿的谐波是否回踩MA10区间265-275（量缩0.7x以下），触发则生成pullback_10d执行卡。"
   },
   {
     "date": "2026-05-20",

@@ -1,26 +1,47 @@
 {
   "_comment": "A股Radar观察样本 — 手动维护。角色字段：龙头/中军/补涨/待定/退出。每次复盘后更新 last_reviewed 和 role。",
   "theme": "精密传动/谐波减速器/高端机床",
-  "theme_note": "人形机器人核心零部件主线，20260518午盘表现强，是否进入主升浪需收盘和后续K线确认",
+  "theme_note": "人形机器人核心零部件主线，20260518全量复盘：主线成立，龙头/中军均强势，纽威数控出现内部分化待观察。",
   "last_reviewed": "2026-05-18",
   "stocks": {
     "SH.688017": {
       "name": "绿的谐波",
       "role": "龙头",
       "added_date": "2026-05-18",
-      "note": "20260518 午盘 40亿成交量 +7.2%，主升浪级别确认，龙头地位成立"
+      "note": "20260518 午盘 40亿成交量 +7.2%，龙头地位确认 | 20260518收盘 322.88 +5.69% 53亿，低开高走再创新高，MA5≈289/MA10≈266，主升浪形态，vol_ratio≈1.2x，暂无回踩买点。潜在pullback_10d买点区间265-275。",
+      "signal_state": "WATCH",
+      "setup_type": null,
+      "trigger_price": null,
+      "invalidation_price": null,
+      "max_position_pct": 30.0,
+      "review_required": false,
+      "last_signal_date": "2026-05-18"
     },
     "SZ.300276": {
       "name": "三丰智能",
       "role": "中军",
       "added_date": "2026-05-18",
-      "note": "20260518 午盘 +7.7%，同步跟涨，中军结构确认"
+      "note": "20260518 午盘 +7.7%，同步跟涨，中军结构确认 | 20260518收盘 8.81 +4.63% 20亿，昨日涨停次日续涨，量能4.6x爆炸，盘中高点9.28(+10.2%)后回落至8.81，高位换手迹象，中军结构维持。",
+      "signal_state": "WATCH",
+      "setup_type": null,
+      "trigger_price": null,
+      "invalidation_price": null,
+      "max_position_pct": 20.0,
+      "review_required": false,
+      "last_signal_date": "2026-05-18"
     },
     "SH.688697": {
       "name": "纽威数控",
       "role": "待定",
       "added_date": "2026-05-18",
-      "note": "20260518 午盘开高走低 -3.1%，相对弱势，待收盘全量复盘判断是补涨位还是强弩之末"
+      "note": "20260518 午盘开高走低 -3.1%，相对弱势，待收盘全量复盘判断 | 20260518收盘 23.00 -4.88% 7.9亿，涨停次日冲高(24.87)回落，主线内持续垫底，第1天DIVERGE_WARNING。review_required=True。20260519需跟踪：若继续弱势则调role→退出。暂停新操作。",
+      "signal_state": "DIVERGE_WARNING",
+      "setup_type": null,
+      "trigger_price": null,
+      "invalidation_price": null,
+      "max_position_pct": 0.0,
+      "review_required": true,
+      "last_signal_date": "2026-05-18"
     }
   }
 }
