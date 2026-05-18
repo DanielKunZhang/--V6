@@ -28,10 +28,12 @@ A股短线最大风险：买太多、买太急、在退潮期还按主升浪逻�
 - 输出结构化 `signal_state` 和 `setup_type`
 - 生成 Markdown 执行卡
 - 执行卡进入 Daily Board（`events_calendar.json`）
+- 每周五生成 A股 Radar 新主题/新标的扫描候选清单；只输出 AddToRadar 候选，不自动入池
 
 交付物：
 - `radar_signal_engine.py`：读取 `radar_astock.json`，拉行情，计算信号，输出执行卡
 - 执行卡存为 `radar_exec_card_YYYYMMDD.md`
+- `radar_candidate_scanner.py`：每周五扫描新主题/新候选，输出候选报告，不写入观察池
 
 **你手动在长江证券客户端下单。系统不触碰任何委托接口。**
 
@@ -352,6 +354,7 @@ A股短线最大风险：买太多、买太急、在退潮期还按主升浪逻�
 |---|---|---|
 | `radar_astock.json` | 观察池（代码/角色/备注） | 扩展信号字段，成为信号状态数据库 |
 | `A股Radar复盘.md` | 人工复盘 SOP | 收盘后由 `radar_signal_engine.py` 辅助生成草稿 |
+| `A_SHARE_RADAR_REVIEW_SOP.md` | 复盘与周度新候选扫描规则 | 定义 `复盘 A股Radar` 与 `扫描 A股Radar 新候选` 两条入口 |
 | `events_calendar.json` | 复盘提醒入口 | 增加"今日 Radar 执行卡已生成"类型事件 |
 | `morning_brief.py` | 早间总览 | 增加展示 Radar 今日信号状态（只展示，不决策） |
 | `system_health_check.py` | 系统文件检查 | 检查 `radar_astock.json` 与 A股 Radar SOP/roadmap 是否存在 |

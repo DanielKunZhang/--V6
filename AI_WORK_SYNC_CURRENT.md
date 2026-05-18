@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-18 17:18:23`
+- Last updated: `2026-05-18 17:56:56`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -888,6 +888,7 @@ dc58870 feat: add V6 daily report automation
 - [10:22] [代码] 确认每日早间邮件不论交易日都显示今日待办：morning_brief非交易日会给出‘非交易日系统维护/研究日/无需操作’低优先级提示；central_risk_board Daily/Weekly Board已接入同一workflow actions。今日2026-05-18已验证Daily和Board均显示：HIGH 复盘A股Radar（三丰智能/纽威数控/绿的谐波）、MED 复盘PDD、LOW X Radar扫描。今晚照常按‘复盘 A股Radar’做轻量复盘。
 
 
+- [17:56] [发现] A股Radar新增每周五自动新主题/新标的发现链路：Daily Board 周五提示“扫描 A股Radar 新候选”；该流程只生成 AddToRadarCandidate / ThemeWatch 候选报告，不自动写入 radar_astock.json，不生成交易指令。每日复盘继续负责现有样本保留/降级/退出；新候选扫描负责发现新主题/新标的，且必须用户确认后才可入池。已更新 morning_brief.py、REVIEW_CADENCE_POLICY.md、A_SHARE_RADAR_REVIEW_SOP.md、A_SHARE_RADAR_AUTOMATION_ROADMAP.md。
 ### Claude
 
 - [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。

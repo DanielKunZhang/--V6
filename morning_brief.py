@@ -480,6 +480,16 @@ def collect_workflow_actions(events: list[dict]) -> list[dict]:
             "A股 Radar 需要高频训练；无交易或无候选则可忽略",
         )
 
+    # A股 Radar 周五自动发现链路：只生成 AddToRadar 候选，不自动入池或交易。
+    if today.weekday() == 4:
+        add(
+            "LOW",
+            "Radar-CN",
+            "A股 Radar 周度新主题/新标的扫描",
+            "扫描 A股Radar 新候选",
+            "每周五自动发现新主题/新标的，只生成 AddToRadar 候选，需人工确认后才写入观察池",
+        )
+
     # 美股 Radar / V6-B 以周度或事件驱动为主，不做每日噪音提醒。
     if today.weekday() == 4:
         add(
