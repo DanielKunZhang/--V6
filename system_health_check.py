@@ -162,6 +162,7 @@ def main() -> int:
     check_json(rep, ROOT / "investment_screener" / "radar_astock.json", "A-share Radar tracking JSON")
     check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_REVIEW_SOP.md", "A-share Radar review SOP")
     check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_AUTOMATION_ROADMAP.md", "A-share Radar automation roadmap")
+    check_file(rep, ROOT / "investment_screener" / "A_SHARE_SHORTLINE_SYSTEM_SPEC.md", "A-share shortline system spec")
 
     duplicate_calendar = DESKTOP_ROOT / "events_calendar.json"
     if duplicate_calendar.exists():

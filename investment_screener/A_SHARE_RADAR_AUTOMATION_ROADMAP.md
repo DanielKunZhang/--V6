@@ -29,11 +29,13 @@ A股短线最大风险：买太多、买太急、在退潮期还按主升浪逻�
 - 生成 Markdown 执行卡
 - 执行卡进入 Daily Board（`events_calendar.json`）
 - 每周五生成 A股 Radar 新主题/新标的扫描候选清单；只输出 AddToRadar 候选，不自动入池
+- 新候选必须通过“非纯概念炒作”过滤：没有订单、业绩、客户验证、产能瓶颈、财报改善或真实供需变化的标的，不能进入候选池
 
 交付物：
 - `radar_signal_engine.py`：读取 `radar_astock.json`，拉行情，计算信号，输出执行卡
 - 执行卡存为 `radar_exec_card_YYYYMMDD.md`
 - `radar_candidate_scanner.py`：每周五扫描新主题/新候选，输出候选报告，不写入观察池
+- `concept_hype_filter`：剔除巨力股份型纯概念炒作样本；即使涨幅/成交额达标，也只能输出硬排除原因，不能输出 AddToRadarCandidate
 
 **你手动在长江证券客户端下单。系统不触碰任何委托接口。**
 
