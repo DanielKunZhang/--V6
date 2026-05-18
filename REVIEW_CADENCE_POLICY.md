@@ -40,3 +40,4 @@
 - 不把 X Radar 内容直接变成交易动作。
 - 不把 A股 Radar 的短线逻辑用于腾讯、PDD、NVDA 等主仓。
 - 不绕过 Daily Board 在子系统里私自维护正式待办。
+- A股 Radar 周五扫描默认结论是 `NoNewCandidate`；不是每周必须新增，只有满足主题共振、量价强度和相对优势标准时才输出 `AddToRadarCandidate`。

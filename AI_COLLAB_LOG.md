@@ -204,6 +204,7 @@
 
 
 - [17:56] [发现] A股Radar新增每周五自动新主题/新标的发现链路：Daily Board 周五提示“扫描 A股Radar 新候选”；该流程只生成 AddToRadarCandidate / ThemeWatch 候选报告，不自动写入 radar_astock.json，不生成交易指令。每日复盘继续负责现有样本保留/降级/退出；新候选扫描负责发现新主题/新标的，且必须用户确认后才可入池。已更新 morning_brief.py、REVIEW_CADENCE_POLICY.md、A_SHARE_RADAR_REVIEW_SOP.md、A_SHARE_RADAR_AUTOMATION_ROADMAP.md。
+- [17:59] [发现] A股Radar周五新候选扫描纪律补充：扫描每周可自动跑，但不是每周必须新增；默认结论应为 NoNewCandidate。固定输出三类：NoNewCandidate / ThemeWatch / AddToRadarCandidate。只有主题层同主题≥2只放量、强于大盘、非单日孤立脉冲，且个股层成交额>5日均额1.5x、涨幅>5%或突破平台/20日新高、不是一字板/高开低走，并且相对现有样本更强或补足缺口时，才允许给 AddToRadarCandidate。即使给候选，也必须用户确认后才能写入 radar_astock.json。
 ### Claude
 
 - [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。
