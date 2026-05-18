@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-18 10:22:05`
+- Last updated: `2026-05-18 17:18:23`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -590,6 +590,35 @@ collab_sync.py 工具位置：`/Users/zhangkun/WorkBuddy/程序化/量化程序/
 - Radar 不再用情绪化彩票思路，未来更偏 V6-B 动态资源池。
 - Micro Futures Lab 与 V6 分开记账、分开评估、分开验收，不能混算绩效。
 
+## A股 Radar 当前执行口径（2026-05-18 更新）
+
+A股 Radar 当前不是自动交易系统，正式阶段为：
+
+```text
+Phase 1A = FutuAPI 拉行情/生成信号/复盘 + 长江证券手动下单
+```
+
+当前用户计划用约 5 万 RMB 训练 A股 Radar。目标是打磨主线识别、龙头/中军/补涨判断、买点过滤和退潮信号，不是打板、排板或高频交易。
+
+关键规则：
+- 当前不接长江证券 PTrade / QMT / miniQMT 委托接口。
+- FutuAPI 可用于行情、K线、成交额、MA5/MA10、执行卡生成。
+- 真实交易若发生，用户在长江证券客户端手动下单。
+- PTrade 极速版客户经理反馈门槛约为 100 万信用账户净资产；它是未来规模化工具，不是当前验证期前置条件。
+- 资金接近 50 万时再评估是否接长江行情/持仓；100 万以上才考虑申请 PTrade，且先只接行情/持仓。
+- 只有 50 笔以上实盘样本证明正期望后，才允许讨论小额半自动/自动委托。
+
+相关文件：
+```text
+investment_screener/radar_astock.json
+investment_screener/A_SHARE_RADAR_REVIEW_SOP.md
+investment_screener/A_SHARE_RADAR_AUTOMATION_ROADMAP.md
+REVIEW_CADENCE_POLICY.md
+events_calendar.json
+```
+
+Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡和事件提醒，不写自动下单代码，不触碰券商委托接口。
+
 ## V6 当前状态
 
 V6 的长期形态：
@@ -857,4 +886,9 @@ dc58870 feat: add V6 daily report automation
 
 - [10:19] [代码] 修复Weekly Formal Board缺少今日待办：central_risk_board.py已接入morning_brief.collect_workflow_actions，并在Markdown/HTML新增Today's Workflow Actions区块；events_calendar新增2026-05-18 A股Radar收盘轻量复盘：三丰智能、纽威数控、绿的谐波，触发词‘复盘 A股Radar’。验证生成central_risk_board_weekly_workflow_actions_preview，已确认包含A股Radar和PDD两条动作。
 - [10:22] [代码] 确认每日早间邮件不论交易日都显示今日待办：morning_brief非交易日会给出‘非交易日系统维护/研究日/无需操作’低优先级提示；central_risk_board Daily/Weekly Board已接入同一workflow actions。今日2026-05-18已验证Daily和Board均显示：HIGH 复盘A股Radar（三丰智能/纽威数控/绿的谐波）、MED 复盘PDD、LOW X Radar扫描。今晚照常按‘复盘 A股Radar’做轻量复盘。
-- [17:20] [决策] A股Radar执行路径已更新为Phase 1A：FutuAPI拉行情/生成信号/复盘 + 长江证券手动下单，不接任何长江PTrade/QMT/miniQMT委托接口。客户经理反馈PTrade极速版门槛约100万信用账户净资产，因此从5万训练资金做到100万之前，优先用FutuAPI半自动化与手动交易；50万附近再评估是否接长江行情/持仓，100万以上才考虑申请PTrade，且先只接行情/持仓；50笔以上实盘正期望后才允许讨论小额半自动/自动委托。Claude后续处理A股Radar时只能做复盘、信号、执行卡、事件提醒，不写自动下单代码。正式文档：investment_screener/A_SHARE_RADAR_AUTOMATION_ROADMAP.md。
+
+
+### Claude
+
+- [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。
+- [17:18] [代码] A股Radar 全量收盘复盘已完成：investment_screener/radar_astock.json 更新三只样本，绿的谐波维持龙头、三丰智能维持中军、纽威数控进入 DIVERGE_WARNING 且 review_required=True、max_position_pct=0；events_calendar.json 写入 2026-05-19 Radar 跟踪事件。GPT review 后修复 morning_brief 路由，确保该事件触发词为“复盘 A股Radar”而不是“X Radar 扫描”。

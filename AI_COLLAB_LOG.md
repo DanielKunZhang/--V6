@@ -149,3 +149,61 @@
 - [2026-05-14] [文件] 新增 `v6_strategy_lab/reports/2026-05-14_v6b_radar_weekly_triage_sop_v1.md` 与 `v6_strategy_lab/scorecards/v6b_radar_weekly_triage_template.md`，正式定义 Radar 周度人工决策流程与 `active_research` 降级规则。
 - [2026-05-14] [阻塞] OpenD 连通性已恢复，但补抓 `US.AAOI / US.ASX / US.LITE / US.ETN / US.HON / US.IR / US.ROK / US.TER` 时统一命中 `历史K线额度不足`。这说明当前 Radar 的下一个真实 blocker 已从“连接问题”转为“历史 K 线额度治理问题”；在 `2026-06-01` 额度刷新前，应先把 registry / triage / downgrade 机制补齐。
 - [2026-05-14] [文件] 新增 `v6_strategy_lab/reports/2026-06-01_v6b_data_refresh_execution_card_v1.md`，作为 6 月额度刷新后的“一页执行卡”。到时只需按卡片顺序补 price cache、重跑 missing review、做 triage、必要时更新 registry/universe，再重跑 weekly board。
+
+---
+
+## 2026-05-16
+
+### GPT
+
+- [15:11] [决策] 以后跨 AI 同步统一使用 AI_WORK_SYNC_CURRENT.md 作为唯一对外同步文件；AI_COLLAB_LOG.md 保留为底层流水账，AI_COLLAB_EXPORT_FOR_GPT.md 作为旧兼容文件，不再作为主要入口。
+- [15:21] [发现] 已读取 Claude 最近补充进 AI_COLLAB_LOG 的进展：micro期货v3过滤器结论、PLTR估值、V6-B rough test和point-in-time纠偏、Options Overlay/Radar Lane A/B重构、V6-A balanced challenger推进、Radar Missing Opportunity Review与6月1日数据刷新执行卡。GPT侧已将这些视为当前上下文，不再重复旧结论。
+- [15:28] [决策] 投资哲学总纲已确认并写入核心文档：以价值投资为底层世界观，以系统化风控和量化工具提高资本配置效率，在不牺牲长期安全性的前提下追求更高复利。主从关系写死：价值主仓是主哲学和大资金底盘；V6 是规则化收益增强工具；Radar 是研究供给链和主线发现工具；Overlay/期权是定义风险表达层；Micro Futures 只属于独立学费仓。
+- [15:39] [决策] GPT/Claude 协作分工更新：GPT 负责方向、边界、原则、优先级、最终判断，以及把用户真实目标函数制度化；Claude 更适合工程执行、跑数、报告生成、查错和批判性审查。Claude 对‘根本冲突/方向偏离’等高层判断不能直接作为最终结论，必须回到用户目标函数和主从关系，由 GPT 侧做最终解释和制度化。协作口径：Claude 负责挑战系统风险，GPT 负责判断这些风险是否构成方向偏离，用户最终确认目标函数。
+- [16:30] [决策] 2026Q1 13F 共识研究已落地：新增系统优化依据文档 2026Q1_13F共识持仓_初筛估值Radar研究_v1.md，并将 GOOGL/MSFT/MCO/SPGI/TSM/AVGO/MA/V 加入 radar_order_valuation_seed.csv 的13F共识/质量池/复核口径。当前结论：GOOGL 为P0完整估值复核；MCO/SPGI 进入长期质量池；TSM/MU/ETN 进入6月1日后V6-B/Radar复核；不因13F直接买入或改变V6-A cutover节奏。
+- [16:32] [发现] 已修正2026Q1 13F研究中的MU收入口径：按官方FY26 Q2披露，MU季度收入约23.86B且收入/毛利率/EPS/FCF创纪录；种子表和13F研究报告已同步更新。结论不变：MU是HBM/存储瓶颈重点样本，但必须按周期峰值折扣处理，不主仓化。
+- [22:45] [决策] A股短线Radar实验仓v1已同步到统一AI_WORK_SYNC_CURRENT及桌面系统同步源文件：定位为A_SHARE_SHORT独立短线实验仓，5万RMB内、1-5日周期、不替代V6/主仓、不自动交易；代码入口为a_share_short_radar_plan.py、a_share_short_radar_review.py、a_share_short_radar_evening_guide.py；Claude审核重点包括mode/仓位安全、缺K线强制0仓位、action_detail/exit_detail主视图、复盘是否按事前计划评估、桌面输出与backtest_results一致性。
+
+---
+
+## 2026-05-17
+
+### GPT
+
+- [00:29] [决策] A股Radar定位正式从短线实验仓降级为A股低频主线确认观察模块：20个交易日纯观察期，真实仓位0，不打板、不排板、不盯盘、不早盘抢票；目标是训练主线识别/买点过滤/退潮信号并反哺美股Radar/V6-B，不作为当前赚钱系统。代码已将OBSERVATION_ONLY=True，所有候选position_size_rmb强制为0，计划和邮件均改为观察/模拟触发口径。
+- [12:07] [决策] A股低频主线确认Radar资金口径微调：当前20个交易日观察期仍真实仓位0；若观察期验证通过，且确认不需要惊心动魄盯盘、不污染主系统和生活节奏，可以评估进入5万RMB低频试运行，不需要极端降到1万。
+- [12:48] [决策] 新增AI核心长期复利候选池：目标是寻找AI时代可长期持有、类似当年AAPL之于段永平的核心复利标的。第一梯队MSFT/GOOGL/AMZN/NVDA；第二梯队META/ADBE/AVGO/TSM；第三梯队ASML/AMD/MU/COHR/ALAB/CRDO/AAOI等只做Radar/V6-B或高弹性候选。Claude执行顺序：MSFT完整SOP估值 -> AMZN完整SOP估值 -> NVDA持仓复核估值 -> META -> ADBE AI颠覆压力测试。禁止因13F或喜欢公司直接买，必须给Bear/Base/Bull、击球区、主仓适配性、仓位上限和机会成本比较。
+- [12:54] [决策] AI核心候选估值框架升级为SOP v2.6：专用于MSFT/GOOGL/AMZN/NVDA/META/ADBE/AVGO/TSM等AI时代长期核心候选。核心原则为‘底线用传统现金流，进攻用AI期权，但仓位必须由验证事实解锁’。每份报告必须输出V_floor/V_base/V_option、Bear/Base/Bull、反向DCF、AI价值创造路径、AI CapEx ROI、验证/反证事实、仓位解锁、期权表达评估和机会成本比较。已写入系统优化升级依据/AI核心候选估值框架_SOP_v2.6.md，并更新同步文档给Claude执行。
+- [13:09] [决策] GPT/用户确认Claude对AI-Core SOP v2.6的资本风险补丁，并正式纳入四项硬约束：(1)V_option必须用概率加权情景法或上限约束计算，不能只写叙事；公式修正为V_AI_probability_weighted=Σ(情景企业价值×概率)，V_option=max(0,V_AI_probability_weighted-V_base)，避免重复计算Base；(2)正股仓位价格前提：Watch≤V_base、Starter≤V_base×0.90、Core≤V_base×0.80、HighConviction≤V_floor×1.10；(3)WACC硬下限：大型科技≥9%、半导体/硬件≥9.5%、地缘风险≥10.5%；(4)V_option不能单独解锁高价正股买入，只能提高观察优先级和长期上行判断，价格>V_base时最多Research Only或Defined-Risk Option Review。
+- [13:11] [决策] AI-Core SOP v2.6 已补充 GPT 执行审查层：新增 V_option 三情景概率加权建模模板、AI贡献可追踪指标、价格与仓位强制判定顺序、与 PDD/腾讯/NVDA/泡泡玛特/现金的机会成本硬比较，以及 Claude 复审问题清单。核心口径不变：V_option 只能让我们更认真地等，不能让我们更贵地买。
+- [13:18] [决策] 估值 SOP v2.5 已完成 GPT 风险补丁：保留其作为主仓价值投资现金流纪律底座，同时修复六项执行风险：Floor 统一为 min(资产/现金流压力底, DCF_Bear)；击球区不自动买入；Kelly 仅做 sanity check；Price<=Floor 改为 THESIS_REUNDERWRITE_REQUIRED 而非自动止损；EV/FCF 极端折价必须先解释折价来源；新增 WACC 硬下限。已同步核心 SOP、Claude /估值 命令入口和知识库卡片。
+- [13:38] [决策] 根据 Claude review 继续修正估值 SOP v2.5 补丁：统一 Section 3.1 中清算价值旧词为资产/现金流压力底；逻辑B改为 Floor=min(TBV×0.7, DCF_Bear)；Step 3.2 Price<=Floor 熔断改为 Downside=Price×20% 仅用于赔率/Kelly 防除零，同时触发 THESIS_REUNDERWRITE_REQUIRED，不默认欺诈、不自动卖出；补充 v2.5/v2.6 WACC 优先级，AI-Core 取 v2.6 或更高下限；明确击球区动作五条件必须全部满足并逐条输出；区分悲观FCFF与独立DCF_Bear。
+- [14:10] [决策] 2026-05-17 GPT 已生成主仓估值更新：PDD/腾讯/泡泡玛特/NU/招商银行按新版 SOP v2.5 补丁重新评估。输出文件：/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/2026-05-17_主要持仓估值更新_SOPv2.5补丁版.md。核心结论：PDD 等 5/19 Q1 不加仓；腾讯核心持有但旧 Kelly/Wheel 降级；泡泡玛特 HK50 附近持有不追；NU 小仓/观察不主动加；招行 RMB 停泊仓不升战略核心。
+- [14:11] [决策] 更正上一条同步：泡泡玛特结论应为 HK$150 附近持有不追；不是 HK50。
+- [14:18] [决策] 已同步更新 /Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html：策略大方向不变，只把 2026-05-17 SOP v2.5 补丁后的主仓估值与动作纪律写入主指导文件。更新点：PDD 等 5/19 Q1 不加仓；腾讯核心持有但 Kelly/Wheel 降级；泡泡玛特 HK50 附近持有不追；NU 小仓/观察；招行 RMB 停泊仓。
+- [14:18] [决策] 更正上一条同步：泡泡玛特结论是 HK$150 附近持有不追，不是 HK50。
+- [15:49] [决策] 2026-05-17 AI右尾期权袖珍仓前置工作完成：新增 /Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/AI右尾期权袖珍仓执行卡_v1.md，并同步进 26年阶段性组合策略计划.html。定位：US Radar/V6-B 的定义风险右尾表达，不是主仓替代或暴富模块；初期总预算 1% 内，验证后上限 1%-3%，单笔 00-,500，默认可归零；5-26 pilot 总结和 6-01 K线额度刷新前只读准备、不实盘。radar_right_tail_option_screener.py 默认候选池已扩到 CRDO/ALAB/COHR/LITE/IREN/CORZ/APLD/BE/CIFR/AAOI/MU/WDC/TSM/AVGO/AMD/ANET/AMKR。
+- [15:49] [决策] 更正上一条同步：AI右尾期权袖珍仓单笔预算应为 $300-$1,500；不是 00-,500。
+- [16:02] [决策] 2026-05-17 GPT 已 review Claude 生成的 MSFT/NVDA/ADBE SOP v2.6 估值报告，输出到 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/AI核心三标的_估值报告_GPT_review_20260517.md。结论：MSFT 质量最高但当前 Research Only，$366 以下重新开门；NVDA 已有 AI 核心暴露，持有不加仓，等 2026-05-20 财报，$260/$280 是估值减仓触发但反证事实可提前触发；ADBE 三者里最便宜但 CEO 继任阻断加仓，正式口径修正为 SOP Floor $189、DCF Bear $260、V_base $430、V_bull $615。
+- [17:14] [决策] 2026-05-17 GPT 已结合第一上海 AAOI PPT 与 Claude AAOI SOP v2.6 报告完成 review，输出到 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/AAOI_初筛估值报告_GPT_review_20260517.md。结论：AAOI 产业逻辑真实，进入 US Radar/V6-B/AI右尾观察池，但当前不是 AI-Core、不是主仓、不是当前价格下 20X 候选；正股 NO_POSITION，期权 NO_OPTION。重要修正：Claude 顶部概率加权价值 $185 与正文表格不一致，正式口径应采用正文 $82；当前 $223 对 $82 溢价约 172%，即使 Bull Case $169 也低于当前价。回调 $140-$170 也必须叠加 Q2 GAAP 转正、Q3 800G 路径≥20万只、ATM 放缓，才考虑 0.5%-1% 观察仓。
+- [17:45] [决策] 完成AAPL SOP v2.5更新估值：按规范化FCFF和新版WACC/Floor纪律，AAPL质量仍高但当前约300美元明显高于V_base约149美元和V_bull约216美元；决策为WATCH_ONLY/NO_NEW_BUY/HOLD_IF_OWNED，低于180美元重新研究，130-150美元才接近Starter区。报告路径：/Users/zhangkun/Desktop/AI个人投资公司/公司估值/AAPL_估值报告_GPT_SOPv2.5更新_20260517.md
+- [22:08] [决策] 完成交易决策日志系统设计v1：目标是把每次主仓/V6/Radar/A股Radar/AI右尾/期权动作变成可复盘、可统计、可纠错样本；字段分为动作前与动作后，动作前不可事后修改；20笔做初评，50笔做扩容判断；Claude落地路径为创建交易决策日志目录、decision_log.csv、模板和PDD财报前第一条样例。设计文档：/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/交易决策日志系统设计_v1.md
+- [22:09] [决策] 补充X信息源自动扫描机制到交易决策日志系统设计v1：定位为信息输入层，不允许单独触发交易；覆盖宏观/利率、波动率/期权、AI Infra/半导体、期权流向弱信号账号；输出raw/daily/weekly结构，字段包含summary_cn、mentioned_symbols、theme_tags、signal_type、importance、action_required、linked_system；建议第一版先半自动复制高价值链接，两周验证后再接X API/RSSHub/Nitter等自动抓取。
+- [22:21] [决策] 完成朋友交易团队信息源接入Radar设计v1：将朋友PDF视为其长期短线edge的信息输入层，允许接入Radar-US/V6-B/A股Radar/AI右尾/期权表达时机，禁止影响主仓估值纪律和大仓位动作；建立Friend Alpha Shadow Track记录朋友观点、理由、我们的Radar是否捕捉、1/5/20日结果、是否有可迁移规则；20样本初评、50样本才制度化。文档：/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/朋友交易团队信息源接入Radar设计_v1.md
+- [22:38] [代码] 升级morning_brief为投资系统任务中枢：新增今日动作清单/工作流入口，自动从events_calendar和交易决策日志识别临近事项并提示用户该说的关键词；例如PDD财报前显示‘复盘 PDD’，主仓走财报重估/Thesis Re-underwrite/SOP估值更新，Radar/V6/Friend Alpha走样本复盘。已补events_calendar：2026-05-19 PDD财报后重估、2026-05-28 NVDA财报后AI核心复核。
+- [22:51] [代码] Daily工作流提醒节奏已固化：A股Radar在交易日提示‘复盘 A股Radar’（仅有候选/交易时执行）；美股Radar/V6-B在周五提示周度样本复盘或由事件触发；V6-A不做每日人工复盘，只在Pilot/节点事件提示；Friend Alpha仅在20/50样本门槛提示复盘。修正review_engine路由：新增V6-A执行质量/Pilot节点复盘，避免误路由到A股Radar。Friend Alpha已初始纳入10个观察样本：AAOI/COHR/LITE/MU/CRDO/ALAB/IREN/CORZ/APLD/BE，均标记为非交易指令。
+
+---
+
+## 2026-05-18
+
+### GPT
+
+- [10:19] [代码] 修复Weekly Formal Board缺少今日待办：central_risk_board.py已接入morning_brief.collect_workflow_actions，并在Markdown/HTML新增Today's Workflow Actions区块；events_calendar新增2026-05-18 A股Radar收盘轻量复盘：三丰智能、纽威数控、绿的谐波，触发词‘复盘 A股Radar’。验证生成central_risk_board_weekly_workflow_actions_preview，已确认包含A股Radar和PDD两条动作。
+- [10:22] [代码] 确认每日早间邮件不论交易日都显示今日待办：morning_brief非交易日会给出‘非交易日系统维护/研究日/无需操作’低优先级提示；central_risk_board Daily/Weekly Board已接入同一workflow actions。今日2026-05-18已验证Daily和Board均显示：HIGH 复盘A股Radar（三丰智能/纽威数控/绿的谐波）、MED 复盘PDD、LOW X Radar扫描。今晚照常按‘复盘 A股Radar’做轻量复盘。
+
+
+### Claude
+
+- [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。
+- [17:18] [代码] A股Radar 全量收盘复盘已完成：investment_screener/radar_astock.json 更新三只样本，绿的谐波维持龙头、三丰智能维持中军、纽威数控进入 DIVERGE_WARNING 且 review_required=True、max_position_pct=0；events_calendar.json 写入 2026-05-19 Radar 跟踪事件。GPT review 后修复 morning_brief 路由，确保该事件触发词为“复盘 A股Radar”而不是“X Radar 扫描”。
