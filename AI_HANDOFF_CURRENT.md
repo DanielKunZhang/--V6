@@ -111,7 +111,7 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 当前目标口径：
 - 稳定底盘层：约 45%-55%，负责长期生存和心理稳定。
 - 强趋势反馈主仓：约 20%-30%，负责推动净值创新高，候选包括 NVDA / AVGO / AI infra / 高质量成长，但必须通过财报、估值、主题强度和拥挤度复核。
-- 腾讯总暴露：从约 31.8% 降向 15%-18%，阶段上限 20%。
+- 腾讯总暴露：2026-05-19 HQ Compounder 重估后，从约 31.8% 降向 12%-15%，阶段上限 18%-20%。
 - PDD 正股：从约 20.3% 降向 8%-10%，阶段上限 12%；LEAP 只作为未来减正股后的替代弹性。
 - 富途回流资金：优先补强趋势反馈主仓 / V6 / 现金，不再继续堆低反馈资产。
 
@@ -125,7 +125,7 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 
 腾讯 2026-05-19 已完成首个 HQ Compounder 重估，文件：`HQ_COMPOUNDER_TENCENT_20260519.md`。结论：`Core HQ Compounder / Hold But Deweight`；保留核心资格，但当前约 31.8% 总暴露过高，目标降至 12%-15%，阶段上限 18%-20%；当前 HK$460 不新增，HK$430-440 以下才重新复核，HK$380-400 以下且 thesis 未破才进入错杀增配区。
 
-每完成一个 HQ Compounder 策略制定或重估，都必须同步进 26 年组合策略计划 HTML。若 `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html` 因 macOS 权限暂时不可写，先写入 `STRATEGY_26_PENDING_HTML_UPDATES.md`，待权限恢复后合并。当前腾讯重估结论已写入该 pending 文件。
+每完成一个 HQ Compounder 策略制定或重估，都必须同步进 26 年组合策略计划 HTML。若 `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html` 因 macOS 权限暂时不可写，先写入 `STRATEGY_26_PENDING_HTML_UPDATES.md`，待权限恢复后合并。当前腾讯重估结论已合并进正式 HTML，并已在 git 仓库保存 HTML 快照。
 
 ## V6 当前状态
 
