@@ -1,0 +1,148 @@
+{
+  "metadata": {
+    "name": "US Radar 13F learning watchlist",
+    "created_at": "2026-05-19",
+    "purpose": "Use selected high-quality macro, multi-strategy, quant, and trading-firm 13F filings as delayed institutional behavior samples for US Radar skills. Do not use as copy-trade signals.",
+    "review_policy": "Quarterly review after 13F deadline windows. Extract changes in theme concentration, crowding, put/call hedge signals, catalyst paths, and Radar universe implications."
+  },
+  "review_windows": [
+    {
+      "quarter": "Q4 prior year",
+      "month": 2,
+      "start_day": 14,
+      "end_day": 24
+    },
+    {
+      "quarter": "Q1",
+      "month": 5,
+      "start_day": 14,
+      "end_day": 24
+    },
+    {
+      "quarter": "Q2",
+      "month": 8,
+      "start_day": 14,
+      "end_day": 24
+    },
+    {
+      "quarter": "Q3",
+      "month": 11,
+      "start_day": 14,
+      "end_day": 24
+    }
+  ],
+  "managers": [
+    {
+      "name": "Situational Awareness LP",
+      "cik": "0002045724",
+      "category": "AI infrastructure / macro thematic",
+      "priority": "P0",
+      "why_track": "Best current sample for AI infrastructure long book plus semiconductor put-hedge structure.",
+      "radar_skill_focus": ["crowding_hedge_skill", "theme_concentration_rank", "institutional_put_hedge_signal"]
+    },
+    {
+      "name": "Duquesne Family Office LLC",
+      "cik": "0001536411",
+      "category": "macro / concentrated family office",
+      "priority": "P0",
+      "why_track": "Druckenmiller-style concentrated macro equity expression; useful for regime fit, concentration, and fast theme rotation.",
+      "radar_skill_focus": ["macro_regime_skill", "concentration_conviction_skill", "invalidation_skill"]
+    },
+    {
+      "name": "Tudor Investment Corp ET AL",
+      "cik": "0000923093",
+      "category": "global macro / risk-first trading",
+      "priority": "P0",
+      "why_track": "Risk-first macro trading DNA; useful for trend confirmation, drawdown control, and option/ETF hedge structure.",
+      "radar_skill_focus": ["macro_regime_skill", "crowding_hedge_skill", "invalidation_skill"]
+    },
+    {
+      "name": "Appaloosa LP",
+      "cik": "0001006438",
+      "category": "macro / opportunistic concentrated equity",
+      "priority": "P1",
+      "why_track": "Tepper-style opportunistic macro equity allocation; useful for cyclical regime and high-conviction sector shifts.",
+      "radar_skill_focus": ["macro_regime_skill", "concentration_conviction_skill"]
+    },
+    {
+      "name": "Soros Fund Management LLC",
+      "cik": "0001029160",
+      "category": "macro / reflexivity",
+      "priority": "P1",
+      "why_track": "Useful primarily as a reflexivity and regime-change lens, not as a direct stock-picking source.",
+      "radar_skill_focus": ["reflexivity_skill", "macro_regime_skill"]
+    },
+    {
+      "name": "Point72 Asset Management LP",
+      "cik": "0001603466",
+      "category": "multi-manager equity long/short",
+      "priority": "P1",
+      "why_track": "Large pod-platform behavior can reveal crowded longs/short proxies and theme breadth.",
+      "radar_skill_focus": ["theme_concentration_rank", "crowding_hedge_skill"]
+    },
+    {
+      "name": "Millennium Management LLC",
+      "cik": "0001273087",
+      "category": "multi-strategy platform",
+      "priority": "P1",
+      "why_track": "Huge platform sample; not useful for single-name copy trading, useful for ETF/sector/crowding and breadth signals.",
+      "radar_skill_focus": ["crowding_hedge_skill", "institutional_validation"]
+    },
+    {
+      "name": "Balyasny Asset Management LP",
+      "cik": "0001218710",
+      "category": "multi-strategy platform",
+      "priority": "P1",
+      "why_track": "Useful as a pod-platform cross-check for crowded growth, AI, software, and event-driven exposures.",
+      "radar_skill_focus": ["crowding_hedge_skill", "catalyst_path_skill"]
+    },
+    {
+      "name": "Citadel Advisors LLC",
+      "cik": "0001423053",
+      "category": "multi-strategy / market maker adjacent",
+      "priority": "P1",
+      "why_track": "Large option and equity book; useful for put/call structure and liquidity/crowding clues, not directional copying.",
+      "radar_skill_focus": ["institutional_put_hedge_signal", "crowding_hedge_skill"]
+    },
+    {
+      "name": "Susquehanna International Group LLP",
+      "cik": "0001446194",
+      "category": "proprietary trading / options market maker",
+      "priority": "P2",
+      "why_track": "Option-heavy book; useful for option-interest and volatility-expression patterns, but must be heavily discounted directionally.",
+      "radar_skill_focus": ["institutional_put_hedge_signal"]
+    },
+    {
+      "name": "Jane Street Group LLC",
+      "cik": "0001595888",
+      "category": "proprietary trading / ETF and options",
+      "priority": "P2",
+      "why_track": "Useful for ETF, factor, and derivatives structure awareness; weak for fundamental long signals.",
+      "radar_skill_focus": ["macro_regime_skill", "institutional_put_hedge_signal"]
+    },
+    {
+      "name": "D. E. Shaw & Co. LP",
+      "cik": "0001009207",
+      "category": "quant / multi-strategy",
+      "priority": "P2",
+      "why_track": "Quant and multi-strat breadth sample; useful for factor breadth, not as a high-conviction discretionary signal.",
+      "radar_skill_focus": ["theme_concentration_rank", "crowding_hedge_skill"]
+    },
+    {
+      "name": "Two Sigma Advisers LP",
+      "cik": "0001478735",
+      "category": "quant",
+      "priority": "P2",
+      "why_track": "Quant breadth and factor sample; useful as a weak validation layer only.",
+      "radar_skill_focus": ["theme_concentration_rank"]
+    },
+    {
+      "name": "Coatue Management LLC",
+      "cik": "0001135730",
+      "category": "technology growth / crossover",
+      "priority": "P2",
+      "why_track": "Not macro, but useful for AI/software/internet growth theme validation and candidate discovery.",
+      "radar_skill_focus": ["institutional_validation", "catalyst_path_skill"]
+    }
+  ]
+}

@@ -43,6 +43,7 @@ REAL_ACC_ID = 281756481449956811
 RELEASE_GATE_DIR      = ROOT / "backtest_results" / "attack_engine_release_gate"
 SA_TRIAL_SPEC         = ROOT / "SEEKING_ALPHA_INPUT_TRIAL.md"
 SA_TRIAL_CSV          = ROOT / "backtest_results" / "external_signal_trials" / "seeking_alpha_trial.csv"
+US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -313,6 +314,43 @@ def collect_events(days_ahead: int = 7) -> list[dict]:
             events.append(item)
     events.sort(key=lambda x: x["_date_obj"])
     return events
+
+
+# ── 13F quarterly learning window ───────────────────────────────────────────
+
+def collect_13f_learning_window(today: date | None = None) -> dict:
+    """Return current quarterly 13F learning reminder state.
+
+    The reminder is intentionally lightweight: it asks the user to trigger
+    the quarterly learning workflow, but does not scrape, trade, or infer
+    current positions automatically from delayed 13F data.
+    """
+    today = today or date.today()
+    config = read_json(US_RADAR_13F_WATCHLIST)
+    windows = config.get("review_windows", []) if isinstance(config, dict) else []
+    managers = config.get("managers", []) if isinstance(config, dict) else []
+
+    for window in windows:
+        try:
+            month = int(window["month"])
+            start_day = int(window["start_day"])
+            end_day = int(window["end_day"])
+        except Exception:
+            continue
+        if today.month == month and start_day <= today.day <= end_day:
+            p0 = [m.get("name", "") for m in managers if m.get("priority") == "P0"]
+            p1_count = sum(1 for m in managers if m.get("priority") == "P1")
+            p2_count = sum(1 for m in managers if m.get("priority") == "P2")
+            return {
+                "active": True,
+                "quarter": str(window.get("quarter", "")),
+                "window": f"{today.year}-{month:02d}-{start_day:02d} 至 {today.year}-{month:02d}-{end_day:02d}",
+                "p0_managers": p0,
+                "p1_count": p1_count,
+                "p2_count": p2_count,
+                "watchlist_path": str(US_RADAR_13F_WATCHLIST.relative_to(ROOT)),
+            }
+    return {"active": False}
 
 
 # ── K线额度 ──────────────────────────────────────────────────────────────────
@@ -603,6 +641,20 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "Seeking Alpha 输入源试验：整理前一日 SA 公开链接/标题/摘要",
             "记录 SA 信号",
             "只整理公开信息，不自动爬取，不绕paywall；用于美股Radar / V6-B / 主仓反证；见 SEEKING_ALPHA_INPUT_TRIAL.md",
+        )
+
+    # 13F quarterly learning: after each 13F filing deadline window, remind
+    # the user to ask AI to update the Radar learning notes. This is a
+    # learning/research workflow, not a buy/sell signal.
+    q13f = collect_13f_learning_window(today)
+    if q13f.get("active"):
+        p0 = "、".join(q13f.get("p0_managers", [])[:3]) or "P0名单"
+        add(
+            "MED",
+            "美股Radar",
+            f"13F 季度学习窗口开启：{q13f.get('quarter')}，更新 P0/P1 基金与自营交易公司样本",
+            "更新13F学习",
+            f"窗口 {q13f.get('window')}；先看 {p0}，再看 P1×{q13f.get('p1_count', 0)} / P2×{q13f.get('p2_count', 0)}；只用于完善 Radar skills，不自动交易",
         )
 
     # 非交易日也给出明确状态，避免 Daily/Weekly 邮件看起来“没有今日待办”。
