@@ -15,18 +15,18 @@
       "currency": "USD",
       "v_base": 430,
       "v_base_geo_adjusted": 430,
-      "floor": 189,
-      "ceiling": 615,
+      "floor": 220,
+      "ceiling": 650,
       "alert_threshold": 0.6,
       "last_price_at_analysis": 247.6,
-      "last_analysis_date": "2026-05-17",
+      "last_analysis_date": "2026-05-19",
       "next_earnings": "2026-06-11",
       "sector": "Software / Creative SaaS",
       "wacc": 0.095,
       "tgr": 0.025,
       "geo_discount_pct": 0,
-      "kelly_position_pct": 0,
-      "notes": "SOP v2.6 AI颠覆压力测试版. 用户持30股观察仓. V_floor=$260(Bear3%增速DCF), V_base=$430(Firefly温和), V_option=$0(概率加权$390<$430), V_bull=$615. SOP Floor=$189(悲观FCFF永续). Price $247.60<V_floor, EV/FCFF 13.1x历史最低, 市场隐含1%永续增速. 决策: HOLD_OBSERVATION_NO_ADD. CEO过渡待解(Narayen离任,继任未定). 加仓触发: ①新CEO公布且质量可信; ②Q2 Firefly ARR加速. 下次财报2026-06-11."
+      "kelly_position_pct": 3.0,
+      "notes": "HQ Compounder 20260519重估：Candidate HQ Compounder / Upgrade After Gates。FY26 Q1收入+12%、订阅收入+13%、OCF $2.96B、AI-first ARR同比3x+、Firefly ARR>$250M；当前约$247.6约10x FY26 non-GAAP EPS，估值像错杀。现阶段只允许3%-5%，Q2与CEO继任gate通过后才升级到5%-8%，阶段上限8%。核心反证：AI-native工具是否侵蚀Creative/Document workflow、净新增ARR和定价权。"
     },
     "IT": {
       "company": "Gartner, Inc.",

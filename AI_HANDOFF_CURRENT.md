@@ -127,7 +127,9 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 
 美的 2026-05-19 已完成 HQ Compounder 重估，正式文件优先存放在 `/Users/zhangkun/Desktop/AI个人投资公司/HQ_COMPOUNDER_MIDEA_20260519.md`，git 备份副本在仓库根目录。结论：`Core HQ Compounder / Position Capped`；保留核心资格，但目标仓位下调到 8%-10%，阶段上限 12%；当前约 14.4% 已高于新上限，持有但不新增；RMB 78 以下只小额复核，75-76 进入舒服补仓区，72 以下且 thesis 未破才做较大补仓复核。
 
-每完成一个 HQ Compounder 策略制定或重估，都必须同步进 26 年组合策略计划 HTML。若 `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html` 因 macOS 权限暂时不可写，先写入 `STRATEGY_26_PENDING_HTML_UPDATES.md`，待权限恢复后合并。当前腾讯、美的重估结论均已合并进正式 HTML，并已在 git 仓库保存 HTML 快照。
+ADBE 2026-05-19 已完成 HQ Compounder 重估，正式文件优先存放在 `/Users/zhangkun/Desktop/AI个人投资公司/HQ_COMPOUNDER_ADBE_20260519.md`，git 备份副本在仓库根目录。结论：`Candidate HQ Compounder / Upgrade After Gates`；当前允许 3%-5%，只有 Q2 FY2026 与 CEO 继任 gate 通过后才升级到 5%-8%，阶段上限 8%；AI 焦虑构成潜在错杀，但必须确认 AI-native 工具没有侵蚀 Creative / Document workflow、净新增 ARR 和定价权。
+
+每完成一个 HQ Compounder 策略制定或重估，都必须同步进 26 年组合策略计划 HTML。若 `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html` 因 macOS 权限暂时不可写，先写入 `STRATEGY_26_PENDING_HTML_UPDATES.md`，待权限恢复后合并。当前腾讯、美的、ADBE 重估结论均已合并进正式 HTML，并已在 git 仓库保存 HTML 快照。
 
 ## V6 当前状态
 
