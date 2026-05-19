@@ -125,6 +125,8 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 
 腾讯 2026-05-19 已完成首个 HQ Compounder 重估，文件：`HQ_COMPOUNDER_TENCENT_20260519.md`。结论：`Core HQ Compounder / Hold But Deweight`；保留核心资格，但当前约 31.8% 总暴露过高，目标降至 12%-15%，阶段上限 18%-20%；当前 HK$460 不新增，HK$430-440 以下才重新复核，HK$380-400 以下且 thesis 未破才进入错杀增配区。
 
+每完成一个 HQ Compounder 策略制定或重估，都必须同步进 26 年组合策略计划 HTML。若 `/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html` 因 macOS 权限暂时不可写，先写入 `STRATEGY_26_PENDING_HTML_UPDATES.md`，待权限恢复后合并。当前腾讯重估结论已写入该 pending 文件。
+
 ## V6 当前状态
 
 V6 的长期形态：
