@@ -87,6 +87,8 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 - 设计文件：`SEEKING_ALPHA_INPUT_TRIAL.md`
 - 付费判断：满足 7 中任意两条才考虑 Premium，当前不订阅
 
+样本边界：`seeking_alpha_trial.csv` 只记录真正来自 Seeking Alpha 的文章/评级/摘要信号。X / unusual_whales / CheddarFlow / OptionsHawk / MenthorQ 等外部社媒信号必须写入 `backtest_results/external_signal_trials/x_radar_signal_trial.csv`，不能混入 SA 试验样本。
+
 ## 数据源成本纪律（2026-05-18 更新）
 
 当前全资产规模约 300 万 RMB，系统阶段仍以打磨流程、风控和复盘为主，不增加不必要固定成本。
@@ -123,7 +125,7 @@ V6 = V6-A baseline + V6-B 动态资源池 + Allocator 风控分配 + 报告/复�
 V6-A real managed state：
 
 ```text
-backtest_results/v6a_state/v6a_managed_positions_real_281756481449956811.json
+backtest_results/v6a_state/v6a_managed_positions_real_<FUTU_ACCOUNT_ID>.json
 ```
 
 截至 2026-05-12，该 state 记录：

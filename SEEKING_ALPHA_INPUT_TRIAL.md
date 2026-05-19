@@ -73,6 +73,18 @@
 
 ## 4. 记录字段
 
+**样本边界（重要）：**
+
+`seeking_alpha_trial.csv` **只记录真正来自 Seeking Alpha 的信号**（文章/评级/摘要/Premium等）。
+
+来自 X（Twitter）/ unusual_whales / CheddarFlow / OptionsHawk / MenthorQ 等账号的信号，不论内容多有价值，均不写入本表，应写入：
+
+```
+backtest_results/external_signal_trials/x_radar_signal_trial.csv
+```
+
+`x_radar_signal_trial.csv` 含 `source_platform`、`source_account` 字段，可追踪不同 X 账号的信号质量。
+
 记录文件：
 
 ```
