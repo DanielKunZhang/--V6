@@ -123,6 +123,8 @@ Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡�
 
 所有底仓标的必须过两道关口：初筛关（Good Business / Good People / Reasonable Growth / 低永久损失风险）和估值关（Bear/Base/Bull、买入区、持有区、减仓区、目标仓位、thesis 破坏条件）。底仓不应过度分散，目标集中在 3-5 只最好的重拳机会；15%+ 单只仓位仅允许极少数特别机会，并必须通过初筛、估值、反证、组合、心理和退出规则六项审核。
 
+腾讯 2026-05-19 已完成首个 HQ Compounder 重估，文件：`HQ_COMPOUNDER_TENCENT_20260519.md`。结论：`Core HQ Compounder / Hold But Deweight`；保留核心资格，但当前约 31.8% 总暴露过高，目标降至 12%-15%，阶段上限 18%-20%；当前 HK$460 不新增，HK$430-440 以下才重新复核，HK$380-400 以下且 thesis 未破才进入错杀增配区。
+
 ## V6 当前状态
 
 V6 的长期形态：
