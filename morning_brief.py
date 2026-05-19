@@ -594,13 +594,13 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "美股 Radar/V6-B 是周度或事件驱动复盘，不需要每天人工处理",
         )
 
-    # Seeking Alpha 输入源试验：每周五/周六一次轻量提醒，不每日打扰。
+    # Seeking Alpha 输入源试验：交易日每日提醒，用户按 X Radar 节奏整理前一日公开信号。
     # 只有在试验规格文件存在时才提醒（避免试验结束后继续噪音）。
-    if today.weekday() in {4, 5} and SA_TRIAL_SPEC.exists():
+    if today.weekday() < 5 and SA_TRIAL_SPEC.exists():
         add(
             "LOW",
             "美股Radar",
-            "Seeking Alpha 输入源试验：本周是否有 SA 链接/标题/摘要需要记录？",
+            "Seeking Alpha 输入源试验：整理前一日 SA 公开链接/标题/摘要",
             "记录 SA 信号",
             "只整理公开信息，不自动爬取，不绕paywall；用于美股Radar / V6-B / 主仓反证；见 SEEKING_ALPHA_INPUT_TRIAL.md",
         )

@@ -41,8 +41,8 @@
   {
     "date": "2026-05-23",
     "domain": "美股Radar",
-    "text": "Seeking Alpha 免费版输入源试验：手动整理本周美股候选/反证信号",
-    "action": "触发：把本周看到的 SA 链接/标题/摘要贴给AI；只记录公开信息，不自动爬取，不绕paywall；用于美股Radar / V6-B / 主仓反证；记录到 backtest_results/external_signal_trials/seeking_alpha_trial.csv"
+    "text": "Seeking Alpha 免费版输入源试验：首周样本小结",
+    "action": "触发：汇总本周每日记录的 SA 公开信号，检查样本数、quality_score>=4 数量、是否进入美股Radar / V6-B / 主仓反证；不自动爬取，不绕paywall。"
   },
   {
     "date": "2026-06-01",
