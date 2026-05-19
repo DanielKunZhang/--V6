@@ -78,6 +78,15 @@ events_calendar.json
 
 Claude 执行 A股 Radar 任务时，应默认只做复盘、信号、执行卡和事件提醒，不写自动下单代码，不触碰券商委托接口。
 
+## Seeking Alpha 输入源试验（2026-05-19 新增）
+
+`Seeking Alpha` 当前处于外部输入源试验，不是交易信号，不自动化爬取，不绕 paywall；只用于美股 Radar / V6-B / 主仓反证的样本记录。
+
+- 阶段：Phase 1 免费版观察期（2周）
+- 记录文件：`backtest_results/external_signal_trials/seeking_alpha_trial.csv`
+- 设计文件：`SEEKING_ALPHA_INPUT_TRIAL.md`
+- 付费判断：满足 7 中任意两条才考虑 Premium，当前不订阅
+
 ## 数据源成本纪律（2026-05-18 更新）
 
 当前全资产规模约 300 万 RMB，系统阶段仍以打磨流程、风控和复盘为主，不增加不必要固定成本。

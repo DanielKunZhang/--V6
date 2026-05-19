@@ -40,7 +40,9 @@ OUTPUT_DIR      = ROOT / "backtest_results" / "morning_brief"
 HTML_PORTFOLIO  = Path("/Users/zhangkun/Desktop/AI个人投资公司/26年阶段性组合策略计划.html")
 
 REAL_ACC_ID = 281756481449956811
-RELEASE_GATE_DIR = ROOT / "backtest_results" / "attack_engine_release_gate"
+RELEASE_GATE_DIR      = ROOT / "backtest_results" / "attack_engine_release_gate"
+SA_TRIAL_SPEC         = ROOT / "SEEKING_ALPHA_INPUT_TRIAL.md"
+SA_TRIAL_CSV          = ROOT / "backtest_results" / "external_signal_trials" / "seeking_alpha_trial.csv"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -590,6 +592,17 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "美股 Radar / V6-B 周度样本复盘",
             "复盘 V6-B",
             "美股 Radar/V6-B 是周度或事件驱动复盘，不需要每天人工处理",
+        )
+
+    # Seeking Alpha 输入源试验：每周五/周六一次轻量提醒，不每日打扰。
+    # 只有在试验规格文件存在时才提醒（避免试验结束后继续噪音）。
+    if today.weekday() in {4, 5} and SA_TRIAL_SPEC.exists():
+        add(
+            "LOW",
+            "美股Radar",
+            "Seeking Alpha 输入源试验：本周是否有 SA 链接/标题/摘要需要记录？",
+            "记录 SA 信号",
+            "只整理公开信息，不自动爬取，不绕paywall；用于美股Radar / V6-B / 主仓反证；见 SEEKING_ALPHA_INPUT_TRIAL.md",
         )
 
     # 非交易日也给出明确状态，避免 Daily/Weekly 邮件看起来“没有今日待办”。

@@ -163,6 +163,8 @@ def main() -> int:
     check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_REVIEW_SOP.md", "A-share Radar review SOP")
     check_file(rep, ROOT / "investment_screener" / "A_SHARE_RADAR_AUTOMATION_ROADMAP.md", "A-share Radar automation roadmap")
     check_file(rep, ROOT / "investment_screener" / "A_SHARE_SHORTLINE_SYSTEM_SPEC.md", "A-share shortline system spec")
+    check_file(rep, ROOT / "SEEKING_ALPHA_INPUT_TRIAL.md", "Seeking Alpha input trial spec")
+    check_file(rep, ROOT / "backtest_results" / "external_signal_trials" / "seeking_alpha_trial.csv", "Seeking Alpha trial CSV")
 
     duplicate_calendar = DESKTOP_ROOT / "events_calendar.json"
     if duplicate_calendar.exists():
