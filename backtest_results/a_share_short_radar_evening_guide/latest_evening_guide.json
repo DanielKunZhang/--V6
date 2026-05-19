@@ -1,0 +1,35 @@
+{
+  "asof": "2026-05-19",
+  "subject": "A股低频主线确认Radar观察计划 2026-05-18 · 主线 人形机器人 31",
+  "summary": {
+    "next_trade_date": "2026-05-18",
+    "data_latest": "2026-05-15",
+    "live_snapshot": true,
+    "top_theme": "人形机器人",
+    "top_theme_score": "31",
+    "trade_ready": [
+      "SH.688017 绿的谐波：不追高，只等分歧回踩",
+      "SH.688012 中微公司：不追高，只等分歧回踩",
+      "SZ.002371 北方华创：可列入次日计划"
+    ],
+    "watch_only": [
+      "SH.688697 纽威数控：仅实时观察，需补K线后才可交易",
+      "SZ.300276 三丰智能：仅实时观察，需补K线后才可交易",
+      "SZ.300100 双林股份：仅实时观察，需补K线后才可交易",
+      "SH.688072 拓荆科技：仅实时观察，需补K线后才可交易",
+      "SH.688037 芯源微：仅实时观察，需补K线后才可交易"
+    ]
+  },
+  "review_present": true,
+  "inputs": {
+    "plan_md": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar下周一计划_LATEST.md",
+    "plan_json": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar下周一计划_LATEST.json",
+    "candidates_csv": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar候选_LATEST.csv",
+    "themes_csv": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar主线评分_LATEST.csv",
+    "review_md": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘_LATEST.md"
+  },
+  "email": {
+    "attempted": false,
+    "sent": false
+  }
+}
