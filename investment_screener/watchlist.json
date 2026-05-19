@@ -285,6 +285,25 @@
       "kelly_position_pct": 12.0,
       "notes": "HQ Compounder 20260519重估：Core HQ Compounder / Hold But Deweight。2026Q1收入+9%、non-IFRS股东净利+11%、FCF+20%；当前HK$460约14x年化non-IFRS EPS，价格不贵但非特别错杀。总暴露约31.8%过高，目标降至12%-15%，阶段上限18%-20%；当前不新增，HK$430-440以下重新复核，HK$380-400以下且thesis未破才进入错杀增配区。"
     },
+    "000333.SZ": {
+      "company": "美的集团股份有限公司",
+      "exchange": "SZ",
+      "currency": "CNY",
+      "v_base": 110,
+      "v_base_geo_adjusted": 110,
+      "floor": 72,
+      "ceiling": 145,
+      "alert_threshold": 0.7,
+      "last_price_at_analysis": 80.4,
+      "last_analysis_date": "2026-05-19",
+      "next_earnings": "2026-08",
+      "sector": "家电/智能制造/楼宇科技/机器人自动化",
+      "wacc": 0.09,
+      "tgr": 0.025,
+      "geo_discount_pct": 0,
+      "kelly_position_pct": 8.0,
+      "notes": "HQ Compounder 20260519重估：Core HQ Compounder / Position Capped。2026Q1收入+2.55%、归母+2.03%、扣非-14.02%、经营现金流+1.45%；质量合格但增长斜率不高。目标仓位8%-10%，阶段上限12%；当前约14.4%高于新上限，不新增。RMB78以下小额复核，75-76舒服补仓区，72以下且thesis未破才做较大补仓复核。"
+    },
     "ISRG": {
       "company": "Intuitive Surgical, Inc.",
       "exchange": "US",
