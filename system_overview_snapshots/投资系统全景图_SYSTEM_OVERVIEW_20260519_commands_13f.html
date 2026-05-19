@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人投资公司 — 系统全景图 & 迁移手册</title>
+<style>
+:root {
+  --primary: #0d47a1; --accent: #1565c0; --light-blue: #e3f2fd;
+  --green: #2e7d32; --green-bg: #e8f5e9;
+  --orange: #e65100; --orange-bg: #fff3e0;
+  --red: #c62828; --red-bg: #ffebee;
+  --purple: #4a148c; --purple-bg: #f3e5f5;
+  --teal: #00695c; --teal-bg: #e0f2f1;
+  --gray: #546e7a; --border: #cfd8dc;
+  --bg: #f4f6f9; --card: #ffffff; --text: #1a1a2e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.65;
+  padding: 24px; max-width: 1100px; margin: 0 auto;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+  background: #eceff1; padding: 2px 6px; border-radius: 4px;
+  font-size: 12.5px; color: #263238;
+}
+pre {
+  background: #1e2a3a; color: #cdd8e3; padding: 14px 18px;
+  border-radius: 10px; font-size: 12.5px; overflow-x: auto;
+  line-height: 1.6; margin: 8px 0;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+/* ── Layout ── */
+.header {
+  background: linear-gradient(135deg, #0a1628, #0d47a1, #1565c0);
+  color: white; padding: 36px 44px; border-radius: 20px; margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.header::after {
+  content: ''; position: absolute; bottom: -60px; right: -60px;
+  width: 240px; height: 240px; border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.header h1 { font-size: 28px; letter-spacing: -0.5px; margin-bottom: 4px; }
+.header .sub { opacity: 0.78; font-size: 13.5px; margin-top: 2px; }
+.header .version {
+  margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+.badge {
+  display: inline-block; padding: 3px 12px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600;
+}
+.badge-white { background: rgba(255,255,255,0.15); color: #fff; }
+.badge-green { background: #e8f5e9; color: #1b5e20; }
+.badge-orange { background: #fff3e0; color: #bf360c; }
+
+.toc {
+  background: white; border-radius: 14px; padding: 22px 28px;
+  margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  border: 1px solid var(--border);
+}
+.toc h2 { font-size: 13px; color: var(--gray); font-weight: 600;
+           text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.toc-item {
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+  border: 1px solid #eceff1; cursor: pointer;
+  transition: background .15s;
+}
+.toc-item:hover { background: var(--light-blue); }
+
+.section-divider {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--gray); margin: 28px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.card {
+  background: var(--card); border-radius: 14px; padding: 24px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  border: 1px solid rgba(0,0,0,.06);
+}
+.card-header {
+  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px;
+}
+.card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.card-title { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+.card-subtitle { font-size: 12.5px; color: var(--gray); }
+
+.section-title {
+  font-size: 13.5px; font-weight: 700; color: var(--accent);
+  border-bottom: 2px solid var(--light-blue);
+  padding-bottom: 7px; margin: 18px 0 12px;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+thead { background: var(--light-blue); }
+th { padding: 8px 12px; text-align: left; font-weight: 600; color: var(--primary); }
+td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8faff; }
+
+.kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.kv { background: #f8faff; border-radius: 8px; padding: 10px 14px; border: 1px solid #e3f2fd; }
+.kv .k { font-size: 11px; color: var(--gray); font-weight: 600; margin-bottom: 2px; }
+.kv .v { font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; margin: 1px;
+}
+.tag-blue { background: var(--light-blue); color: var(--primary); }
+.tag-green { background: var(--green-bg); color: var(--green); }
+.tag-orange { background: var(--orange-bg); color: var(--orange); }
+.tag-red { background: var(--red-bg); color: var(--red); }
+.tag-purple { background: var(--purple-bg); color: var(--purple); }
+.tag-gray { background: #eceff1; color: #455a64; }
+
+.step-list { list-style: none; counter-reset: steps; }
+.step-list li {
+  counter-increment: steps; padding: 10px 0 10px 44px; position: relative;
+  border-bottom: 1px solid #f0f0f0; font-size: 13.5px;
+}
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before {
+  content: counter(steps); position: absolute; left: 0; top: 9px;
+  width: 26px; height: 26px; background: var(--accent); color: white;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+
+.alert-box {
+  border-radius: 10px; padding: 14px 18px; margin: 12px 0; font-size: 13px;
+}
+.alert-green { background: var(--green-bg); border-left: 4px solid var(--green); }
+.alert-orange { background: var(--orange-bg); border-left: 4px solid var(--orange); }
+.alert-red { background: var(--red-bg); border-left: 4px solid var(--red); }
+.alert-blue { background: var(--light-blue); border-left: 4px solid var(--accent); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.portfolio-table td { font-size: 12.5px; }
+.portfolio-table td:first-child { font-weight: 700; }
+
+.macro-box {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0;
+}
+.macro-item {
+  border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #ddd;
+}
+.macro-item .score { font-size: 20px; font-weight: 700; }
+.macro-item .label { font-size: 11px; color: var(--gray); margin-top: 3px; }
+
+.footer {
+  text-align: center; padding: 24px 0 8px; color: #90a4ae; font-size: 11.5px;
+}
+
+.copy-btn {
+  display: inline-block; background: var(--accent); color: white;
+  border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px;
+  cursor: pointer; margin-left: 8px; vertical-align: middle;
+}
+
+@media (max-width: 700px) {
+  .kv-grid, .grid-2, .grid-3, .macro-box { grid-template-columns: 1fr; }
+  .header { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════ -->
+<div class="header" id="top">
+  <div class="sub">🏛️ 个人家族办公室</div>
+  <h1>投资系统全景图</h1>
+  <div class="sub">System Overview · Config Reference · Migration Manual</div>
+  <div class="version">
+    <span class="badge badge-white">Version 3.0</span>
+    <span class="badge badge-white">更新：2026-05-19</span>
+    <span class="badge badge-green">Daily Board邮件 + 指令速查 + 13F学习窗口 + A股短线Radar + V6 stale-data风控</span>
+    <span class="badge badge-orange">黄灯（宏观观望期）</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TOC
+════════════════════════════════════════════ -->
+<div class="toc">
+  <h2>目录 / Navigation</h2>
+  <div class="toc-grid">
+    <a class="toc-item" href="#recent_updates">🆕 最近更新（5月）</a>
+    <a class="toc-item" href="#arch">🗺️ 系统架构总览</a>
+    <a class="toc-item" href="#ic">⚙️ Cash Alpha V3 自动化</a>
+    <a class="toc-item" href="#v6">🚀 Cash Alpha V6 Attack</a>
+    <a class="toc-item" href="#governance">🧭 治理与报告层</a>
+    <a class="toc-item" href="#screener">🔍 股票筛选比对</a>
+    <a class="toc-item" href="#earnings">📅 季报追踪</a>
+    <a class="toc-item" href="#risk">🛡️ 持仓风险监控</a>
+    <a class="toc-item" href="#macro">🌐 宏观择时信号</a>
+    <a class="toc-item" href="#valuation">📊 初筛 v2 + SOP估值</a>
+    <a class="toc-item" href="#portfolio">💼 当前持仓快照</a>
+    <a class="toc-item" href="#automation">⏰ 自动化调度</a>
+    <a class="toc-item" href="#email">📧 邮件告警配置</a>
+    <a class="toc-item" href="#commands">⌨️ 常用命令速查</a>
+    <a class="toc-item" href="#migration">🚚 新电脑迁移指南</a>
+    <a class="toc-item" href="#ai_company">🏢 AI一人投资公司</a>
+    <a class="toc-item" href="#handover">🤖 AI继承指南</a>
+  </div>
+</div>
+
+
+
+<!-- ══════════════════════════════════════════
+     RECENT UPDATES — 2026-05-18
+════════════════════════════════════════════ -->
+<div class="section-divider" id="recent_updates">00 &nbsp; 最近几天的重要更新（截至 2026-05-19）</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#fff8e1">🆕</div>
+    <div>
+      <div class="card-title">一页结论：当前系统状态与仓位重点</div>
+      <div class="card-subtitle">Futu snapshot · V6-A/V6-B · Radar · 仓位纪律 · 新电脑迁移</div>
+    </div>
+  </div>
+
+  <div class="alert-box alert-red" style="margin-top:12px">
+    <strong>2026-05-18 最新一页结论：</strong><br>
+    系统入口已收敛为 <strong>Daily Board</strong>：<code>morning_brief.py</code> + <code>central_risk_board.py</code> + 唯一正式事件源 <code>/Users/zhangkun/WorkBuddy/程序化/量化程序/events_calendar.json</code>。Desktop 下重复 calendar 已删除，任何 X扫描 / Radar / 复盘事件都只写 WorkBuddy 路径。<br>
+    V6-A 已进入 <code>REAL_MANUAL_PILOT_ACTIVE</code> 的小额人工 pilot 口径，当前重点不是加速自动化，而是 <strong>stale-data 风控</strong>：当 K 线额度不足导致信号过期时，BUY / ADD / ROTATE_IN 必须阻断；SELL 只进入 <code>RISK_EXIT_PENDING</code> 人工复核，不允许因为数据旧而失去刹车。<br>
+    A股 Radar 已从“临时观察三只票”升级为 <strong>Phase 1A 短线训练系统</strong>：FutuAPI 拉行情与信号、长江证券手动下单、不接 PTrade/QMT 委托；<code>A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code> 定义主线识别、仓位纪律、止损纪律、情绪周期、复盘迭代和规则变更审计。纯概念炒作（巨力股份型）硬排除。
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-19 指令与 13F 学习更新：</strong><br>
+    常用 AI 工作流指令已统一汇总到 <a href="#commands">常用命令速查</a>，包括 <code>/初筛</code>、<code>/估值</code>、<code>X Radar 扫描</code>、<code>复盘 A股Radar</code>、<code>更新13F学习</code>、<code>复盘 V6-A</code>、<code>复盘 PDD / NVDA / ADBE</code> 等。<br>
+    <code>morning_brief.py</code> 已接入 13F 季度学习窗口：每年 <code>2/5/8/11月14-24日</code>，Daily Board 会提示 <code>更新13F学习</code>，用于学习 P0/P1 对冲基金与自营交易公司的 13F 思路，完善美股 Radar 的宏观、拥挤度、对冲和催化维度。<br>
+    <strong>重要：</strong><code>com.dingcle.morning-brief</code> 已改为正式发邮件，不再带 <code>--no-email</code>；以后“今天该做什么”应直接看 Daily Board 邮件。
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-18 运维与备份更新：</strong><br>
+    GitHub 备份仓库锁定为 <code>git@github.com:DanielKunZhang/--V6.git</code>，当前工作分支 <code>v6-governance-and-reporting</code>。<code>system_health_check.py</code> 已加入 Daily Board、A股 Radar tracking / SOP / roadmap / shortline spec、官方 calendar、X扫描路径、桌面数据根目录、邮件与 Futu 依赖检查；换新 Mac 时先跑该脚本。<br>
+    Cash Alpha V3 模拟盘日报 / 周报 LaunchAgent 已停用：<code>smalltrack.sim.daily_report</code>、<code>smalltrack.sim.weekly_report</code>、<code>largetrack.sim.daily-report...</code>、<code>largetrack.sim.weekly-report...</code> 均 disabled；未删除 plist，未动 <code>real.guard</code>。
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-14 主要持仓财报同步：</strong><br>
+    腾讯 <code>2026Q1</code> 收入 <code>+9%</code>、广告 <code>+20%</code>、FCF <code>+20%</code>，经营质量小幅上修，但因总暴露过大，结论仍是 <strong>低位不加、反弹减仓</strong>。<br>
+    泡泡玛特 <code>2026Q1</code> 经营更新显示总收入 <code>+75%~80%</code>，说明实际增长仍强于 4 月保守估值假设，当前判断升格为 <strong>依然偏便宜/至少不贵</strong>，但仍 <strong>先持有、不追高</strong>。<br>
+    NU <code>2026Q1</code> 客户、收入、效率和净利润继续增长，长期 thesis 未破；但 15-90 天 NPL 升至 <code>5.0%</code>、信用损失准备环比 <code>+33%</code>、risk-adjusted NIM 降至 <code>9.5%</code>，所以执行结论从“跌破 13 分段加”改为 <strong>现有观察仓持有、暂停加仓，等 Q2 信用质量验证</strong>。美的 / 招商银行最新季报继续支持“<strong>稳健但不是当前最高 Alpha</strong>”的身份；Adobe <code>FY26 Q1</code> 与 Gartner <code>2026Q1</code> 均未破坏原 thesis；PDD <code>2026-05-15</code> 财报前估值报告已下修 V_base 至约 <code>$148</code>，结论是 <strong>底仓持有、财报前不加仓、等待 2026-05-19 Q1 验证 Temu 利润率</strong>；NVDA 截至 <code>2026-05-14</code> 仍未出现比当前文件更新的下一份正式季报。
+  </div>
+
+  <table>
+    <thead><tr><th>系统</th><th>当前定位</th><th>最近几天完成的核心工作</th><th>当前状态</th><th>下一步</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>税务小软件<br><code>tax_calc_v1/</code></strong></td>
+        <td>中国税务居民境外投资个税申报辅助引擎</td>
+        <td>
+          已打通富途月结单 PDF → 已实现交易盈亏 / 股息 / 预扣税 / 个税 APP 参考汇总的全链路；
+          支持自动推导 2025 期初持仓 lot，输出 Excel / CSV / Markdown 审计底稿。
+        </td>
+        <td><span class="tag tag-green">可用</span></td>
+        <td>后续按你的真实年度对账单继续校验复杂场景（期权、公司行动、历史 lot 缺口）。</td>
+      </tr>
+      <tr>
+        <td><strong>自动化交易系统<br><code>cash_alpha_v3_repo/</code></strong></td>
+        <td>现金增强主系统：小资金线 + 大资金线分离</td>
+        <td>
+          完成 small / large 双轨架构、selector / scheduler / guarded runner / reporting；
+          小资金主候选锁定 <code>S00001</code>（ETF-only），大资金主候选锁定 <code>PORT_LCFF0001_PRIMARY</code>；
+          launchd 调度与模拟/纸面验证链路已装好；最新补齐 output isolation：<code>manual / SIMULATE / REAL / reviewed paper</code> 的 <code>latest_*</code> 文件已按 scope 分离。<br>
+          <strong>2026-05-18：</strong>因 V3 已不再作为当前主线，模拟盘 daily / weekly report 已 disabled，避免继续发 Cash Alpha V3 日报。
+        </td>
+        <td>
+          <span class="tag tag-gray">报告停发 / 历史保留</span><br>
+          <span class="tag tag-blue">真实 guard 未删除</span>
+        </td>
+        <td>
+          不作为近期主任务；仅在未来需要低波现金增强时，再从 release gate 与 reviewed bundle 重新评估。
+        </td>
+      </tr>
+
+      <tr>
+        <td><strong>Cash Alpha V6 Attack<br><code>attack_engine_*.py</code></strong></td>
+        <td>高进攻动量策略线：V6-A <code>ATTACK_EQUAL_REPLAY</code> + V6-B Radar 动态池 challenger</td>
+        <td>V6-A 完成 deterministic replay、release gate、final live preview 和 guarded real pilot executor，并已进入小额真实人工 pilot 监控；V6-B 仍是 research / SIM only。新增 stale-data policy：信号过期时 BUY 阻断，SELL 进入人工风险退出复核。</td>
+        <td>
+          <span class="tag tag-orange">V6-A：REAL_MANUAL_PILOT_ACTIVE</span><br>
+          <span class="tag tag-red">STALE_DATA_MODE 时只允许刹车</span><br>
+          <span class="tag tag-blue">V6-B：SIM only</span>
+        </td>
+        <td>每日看 Daily Board / V6 report；若 <code>RISK_EXIT_PENDING</code> 出现才人工判断卖出。K线额度恢复后再刷新信号与 V6-B point-in-time 回测。</td>
+      </tr>
+      <tr>
+        <td><strong>Daily Board / 任务中枢<br><code>morning_brief.py</code></strong></td>
+        <td>全投资体系每日正式入口</td>
+        <td>读取 <code>events_calendar.json</code>、review cadence、V6 stale-data、组合 HTML、A股 Radar 事件、X Radar 状态，输出今日 agenda；不直接触发交易。</td>
+        <td><span class="tag tag-green">正式任务中枢</span></td>
+        <td>每日邮件只提醒该做什么；周期复盘、V6异常、Radar复盘、财报重估都从这里汇聚。</td>
+      </tr>
+      <tr>
+        <td><strong>A股短线 Radar<br><code>investment_screener/radar_astock.json</code></strong></td>
+        <td>小资金短线训练系统：主线识别 + 角色复盘 + 手动交易纪律</td>
+        <td>当前 Phase 1A：FutuAPI 拉行情 / 信号 / 复盘，长江证券手动下单；PTrade 约 100 万信用账户净资产才考虑，且先只接行情/持仓。新增 <code>A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code>、<code>A_SHARE_RADAR_REVIEW_SOP.md</code>、<code>A_SHARE_RADAR_AUTOMATION_ROADMAP.md</code>。</td>
+        <td><span class="tag tag-orange">训练期 / 20日复盘中</span></td>
+        <td>每日复盘现有样本；每周五自动扫描新候选，但默认 <code>NoNewCandidate</code>，纯概念炒作硬排除，入池必须人工确认。</td>
+      </tr>
+      <tr>
+        <td><strong>期权 Wheels 系统<br><code>value_wheel_repo/</code></strong></td>
+        <td>估值驱动的半自动期权决策系统</td>
+        <td>
+          完成 Value Wheel V2 第一版：接入本地估值报告自动导入、Futu 持仓识别、缺估值阻断、日报 HTML 输出、邮件发送；
+          自动 provisional valuation 已保留但默认关闭，正式口径回到“你手动调我做 /估值”；
+          <strong>2026-04-26 起正式升级口径：Wheels / 期权脚本是全账户交易增强层，不是孤立主策略，也不是自动常开纪律。</strong>
+        </td>
+        <td><span class="tag tag-green">半自动可用</span></td>
+        <td>
+          日常流程固定为：<code>/估值 标的 当前价</code> → 生成本地 HTML 估值报告 →
+          只在准备动手时运行 Wheel 分析 → 人工决定是否在富途中手动执行。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>研究中台升级<br><code>/初筛 v2</code></strong></td>
+        <td>质量底座 + 超级复利雷达的双层研究入口</td>
+        <td>
+          原本单层的 <code>35分巴菲特初筛</code>，升级成
+          <strong>“35分质量底座 + 10-20x Radar 六条件 + 反证机制 + 仓位等级 + FCF真实性核查”</strong>；
+          明确区分 <code>Core Quality</code>、<code>10-20x Radar</code>、<code>Core Candidate</code>、<code>Top 2 Candidate</code>；
+          Magic Formula 正式降级为<strong>候选来源</strong>，不能替代最终质量判断和仓位升级路径。<br>
+          <strong>2026-05-03 起新增：</strong><code>生意模式分层 + 完整周期校正</code> 前置到质量评分之前，固定顺序改成
+          <strong>先看生意模式 → 再看竞争地位 → 再看管理层 → 最后看价格与仓位</strong>。
+        </td>
+        <td><span class="tag tag-green">已上线</span></td>
+        <td>
+          后续所有新候选统一先过 <code>/初筛 v2</code>；<br>
+          当前正式口径：<strong>泡泡玛特进入 10-20x Radar，但仅为 Validation Position；QLYS 不进正式 Radar。</strong>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-04-23 方法论升级重点：</strong>
+    初筛不再只是“值不值得估值”，而是先判断是不是高质量公司，再判断有没有未来 <code>7-10年</code> 的
+    <code>10-20x</code> 潜力，并最终落到仓位等级。<strong>10-20x Radar ≠ 可以直接大仓。</strong><br>
+    同时，估值阶段新增固定的 <strong>FCF真实性核查</strong>：
+    <code>不把 EBITDA 当真钱，不把 adjusted 指标当主锚，不把表面 FCF 直接当 Owner Earnings。</code>
+  </div>
+  <div class="alert-box alert-yellow" style="margin-top:12px">
+    <strong>2026-05-03 新增上位约束：</strong>
+    <strong>生意模式优先于管理层。</strong>
+    任何新标的都必须先被分到
+    <code>市场特许经营 / 弱势特许经营 / 强势一般事业 / 一般化商品</code>
+    或明确的中间地带，再进入质量评分、估值与仓位讨论。<br>
+    <strong>完整周期校正</strong> 同时变成硬纪律：不允许拿单年高 ROE、单季爆发利润或景气高点盈利，直接证明一门生意模式优秀。
+  </div>
+
+  <div class="section-title">税务小软件（tax_calc_v1）</div>
+  <div class="alert-box alert-blue">
+    <strong>这套工具现在能做什么：</strong>
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li>读取富途标准 PDF 月结单，按中国税务居民境外投资申报口径整理已实现盈亏、现金股息、境外预扣税。</li>
+      <li>自动产出 <code>cn_overseas_tax_report_2025.xlsx</code>、<code>tax_app_reference.csv</code>、<code>realized_capital_gains.csv</code>、<code>dividends.csv</code>、<code>warnings.csv</code> 等底稿。</li>
+      <li>支持 <code>--auto-derive-opening-lots</code>，利用 2025 之前历史月结单反推 2025 年初剩余持仓 lot，减少人工补表。</li>
+      <li>当前边界已写清：复杂期权、基金、债券、公司行动等仍需人工复核，不伪装成“全自动报税”。</li>
+    </ul>
+  </div>
+
+  <div class="section-title">自动化交易系统（Cash Alpha V3）</div>
+  <div class="alert-box alert-green">
+    <strong>最近几天的实质进展：</strong>
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li><strong>小资金线：</strong>采用 ETF-only 候选，当前主策略 <code>S00001 = A04665 70% + A05777 30%</code>，长期回测约 <code>9.85% / -4.00%</code>，目标是先在小资金与模拟盘上验证执行一致性。</li>
+      <li><strong>大资金线：</strong>当前主策略 <code>PORT_LCFF0001_PRIMARY = A01360 55% + N0670 30% + A01917 15%</code>，长期回测约 <code>11.94% / -5.45%</code>，当前状态为 <code>PAPER_VALIDATION_READY</code>；这代表 paper-validation wiring 打通，不代表实盘 formal gate 全绿。</li>
+      <li><strong>工程层：</strong>已经做出 selector / scheduler / dry-run executor / guarded runner / reporting / launchd，真正避免再走回“回测口径和实盘口径不一致”的老路。</li>
+      <li><strong>输出隔离：</strong>小资金 / 大资金的 <code>manual</code>、<code>SIMULATE</code>、<code>REAL</code>、reviewed paper 运行现在写入 <code>latest_cycle_sim.json</code>、<code>latest_run_futu_real.json</code>、<code>latest_daily_futu_real.html</code> 这类 scoped 文件，不再互相覆盖。</li>
+      <li><strong>当前原则：</strong>真实资金自动化仍然 <strong>PAUSED_BY_DESIGN</strong>；先跑模拟盘 / 纸面验证，再决定是否放行下一层。</li>
+      <li><strong>最新放行纪律：</strong>即使未来 <code>Cash Alpha V3</code> 通过完整 gate，也必须先走 <strong>small live pilot</strong>，用受控小额度验证真实成交、滑点、容量、风控与 broker 环境，再决定是否逐步放大。</li>
+    </ul>
+  </div>
+
+  <div class="section-title">期权 Wheels 系统（Value Wheel V2）</div>
+  <div class="alert-box alert-orange">
+    <strong>现在的正确使用方式：</strong>
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li>不走“自动猜估值”的路线，回到你的核心优势：<strong>正式估值由你手动调我完成</strong>。</li>
+      <li>我完成 <code>/估值 标的 当前价</code> 后，会把正式 HTML 报告写入 <code>/Users/zhangkun/Desktop/AI个人投资公司/公司估值/</code>。</li>
+      <li>Wheel 运行时会自动导入最新本地估值报告，识别已开期权仓位、现金约束、估值阻断和可执行合约，但默认不自动下单。</li>
+      <li>这让 Value Wheel 成为你的“半自动决策引擎”，而不是不受控的全自动交易程序。</li>
+      <li><strong>系统定位已固定：</strong><code>Wheels / 期权脚本 = 阶段性执行工具 / 全账户收益增强层</code>，永远服从主策略、仓位上限、验证状态与机会成本比较，不反客为主。</li>
+      <li><strong>使用范围已扩展到全组合：</strong>未来 <code>4+2+1+1</code> 的所有持仓，都可以在适合的阶段用 Wheels / 期权脚本辅助判断，但它只回答“当下最优动作”，不自动定义长期仓位。</li>
+      <li><strong>运行纪律：</strong>只在准备动手时才跑脚本，例如股价进入关键区间、准备卖 put、财报/新品/海外数据导致验证状态变化、或准备调仓；<strong>不是每日例行工具</strong>。</li>
+    </ul>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-04-26 统一交易增强层规则：</strong><br>
+    <code>Cash Alpha V3</code> 与 <code>Value Wheel V2</code> 都被正式定义为<strong>整体账户收益增强层</strong>，不是孤立系统。<br>
+    前者负责现金/近现金的自动化增强；后者负责在个股阶段性击球区、仓位可承受、验证状态未转弱时，辅助判断<strong>正股 / sell put / 不动</strong> 哪个更优。<br>
+    <span style="color:var(--gray)">执行顺序固定为：先主策略与席位框架，后增强工具；先算最坏情况仓位，再看价格，再看权利金。Cash Alpha V3 若未来进 live，也必须先经过“小额度 live pilot → 稳定后再放大”。</span>
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>2026-04-26 自动化边界正式版：</strong><br>
+    <strong>只有 <code>Cash Alpha V3</code> 在通过完整 gate 后，才有资格进入受控的自动化实盘。</strong><br>
+    其余系统如 <code>/估值</code>、机会成本比较、<code>Wheels / 个股期权</code>、主组合调仓与席位切换，继续保持
+    <strong>“手动触发 / 人工决策 / 半自动辅助”</strong> 的制度，不默认自动下真钱。
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-04-27 反复杂化决策纪律：</strong><br>
+    系统正式拆成 <strong>研究层 / 决策层 / 执行层</strong>：研究层可以宽，执行层可以工具化，但<strong>决策层必须窄</strong>。<br>
+    决策层只允许回答：<strong>买 / 不买、加 / 不加、减 / 不减、sell put / 不做</strong>。<br>
+    主变量上限固定为：<code>永久席位 ≤ 4</code>、<code>验证仓 ≤ 5（含验证状态）</code>、<code>灵活席位 / Wheels ≤ 3</code>。<br>
+    每次动作前必须强制写一句：<strong>“这笔钱主要靠哪 1-2 个变量赚钱？”</strong><br>
+    <span style="color:var(--gray)">默认动作永远是 <code>不动</code>；若需要太多前提同时成立，或说不清赚钱主变量，就只能降级为观察 / 小仓 / 不动作。每季度固定做一次“删规则复盘”，防止研究复杂度溢出到最终决策。</span>
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>2026-04-27 股票仓位状态带：</strong><br>
+    <strong><code>7+1</code> 定义的是长期结构，不等于任何时点都必须打到 <code>95%</code> 股票仓位。</strong><br>
+    当前股票仓位以后统一分三档理解：<strong>进攻态 <code>90-95%</code></strong>、<strong>常态 <code>80-90%</code></strong>、<strong>保守态 <code>70-80%</code></strong>。<br>
+    <span style="color:var(--gray)">当目标席位还没到舒服价格，或验证不足以支持加仓时，回流出来的现金统一视为 <strong>过渡期等待资本</strong>，不是系统偏离；不允许为了把仓位硬打到 95% 而高价硬买目标席位。状态带看的是<strong>有效股票仓位质量</strong>，不是只看股票比例本身；若 <code>90%+</code> 主要由历史超配或旧仓残留撑出来，也不算进攻态。</span>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-04-29 三层资金结构正式版：</strong><br>
+    <strong><code>7+1</code> 回答“长期由谁构成组合”，<code>95 / 90 / 80</code> 回答“任何时点股票仓位打到多少算合理”，三层资金结构回答“每一块资本到底负责什么收益任务”。</strong><br>
+    以后统一按总资产口径理解为：<strong>底盘层 <code>40-60%</code></strong>、<strong>高概率进攻层 <code>20-35%</code></strong>、<strong>Optionality层 <code>5-15%</code></strong>；未落位资金统一归入 <strong>过渡期等待资本</strong>，由状态带决定，不强行打满。<br>
+    <span style="color:var(--gray)">底盘层负责活下来和长期复利，进攻层负责把年化拉高，Optionality层负责提供上限。进攻层可以阶段性贡献部分已实现收益，但不允许被生活费需求反向绑架卖点，更不允许为了提款破坏底盘纪律。</span>
+  </div>
+
+  <div class="alert-box alert-green" style="margin-top:12px">
+    <strong>2026-05-16 最高目标函数：</strong><br>
+    投资是热爱的事业，但不能毁掉生活。长期目标是学习 <strong>巴菲特 / 芒格 / 段永平式复利</strong>；
+    小资金阶段允许通过 <strong>V6、Radar 和定义风险 Overlay</strong> 争取 <strong>45%-55%+</strong> 的右尾年份，
+    但这只能是受控进攻的奖励，不能成为常态预期，更不能反过来破坏主仓安全、生活质量和系统纪律。<br>
+    <span style="color:var(--gray)">收益目标分层：底线 <code>15%-25%</code>、进攻 <code>25%-40%</code>、右尾年份 <code>45%-55%+</code>。执行顺序永远是：先生存和长期复利，再提高资本效率，再争取右尾年份。</span>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-16 投资哲学总纲：</strong><br>
+    <strong>以价值投资为底层世界观，以系统化风控和量化工具提高资本配置效率，在不牺牲长期安全性的前提下追求更高复利。</strong><br>
+    <span style="color:var(--gray)">正式主从关系：<code>价值投资主仓</code> 是主哲学和大资金底盘；<code>V6</code> 是规则化收益增强工具；<code>Radar</code> 是研究供给链和主线发现工具；<code>Overlay / 期权</code> 只是定义风险的表达层；<code>Micro Futures</code> 永远是独立学费仓，不能进入主系统。动量、Radar、期权不是第二套人生哲学，必须被长期复利、风险优先、少数高质量决策和可关闭可复盘这套原则统治。</span>
+  </div>
+
+  <div class="section-title">2026-05-14 的实际结论</div>
+  <div class="alert-box alert-red">
+    <strong>当前全局状态一句话总结：</strong><br>
+    税务工具、估值/初筛、Value Wheel、AI Wiki 和迁移手册已经可用；当前投资主线是
+    <strong>价值投资主仓降超配 + V6-A 小额实盘 pilot + V6-B Radar 动态池模拟验证</strong>。
+    手动 Radar 只保留小观察仓例外，不再作为默认前台扩仓模块。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 1 — ARCHITECTURE
+════════════════════════════════════════════ -->
+<div class="section-divider" id="arch">01 &nbsp; 系统架构总览</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#e3f2fd">🗺️</div>
+    <div>
+      <div class="card-title">六层防护架构</div>
+      <div class="card-subtitle">宏观 → 风险 → 选股 → 估值 → 期权 → 持仓跟踪，全链条覆盖</div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>层级</th><th>系统</th><th>核心功能</th><th>运行频率</th><th>告警触发</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag tag-purple">Layer 0</span></td>
+        <td><strong>宏观择时信号</strong></td>
+        <td>判断"要不要在市场里"（绿/黄/红灯）</td>
+        <td>每月15日自动</td>
+        <td>红灯或黄灯时发邮件</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-red">Layer 1</span></td>
+        <td><strong>持仓风险监控</strong></td>
+        <td>检测因子集中度（中国地缘/AI周期/腾讯系等）</td>
+        <td>每月1日自动</td>
+        <td>任意因子超警戒线</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-blue">Layer 2</span></td>
+        <td><strong>全球股池扫描</strong></td>
+        <td>Magic Formula / 网络公开信息 / 全球股池 / Radar 研究共同提供候选，并先分为底仓、20X、Radar 三类</td>
+        <td>每季度第5日</td>
+        <td>发现可替代或优于现有持仓的机会</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-blue">Layer 3</span></td>
+        <td><strong>持仓价格监控</strong></td>
+        <td>追踪现有持仓MoS，到达击球区提醒</td>
+        <td>每周日自动</td>
+        <td>MoS ≥ 40% 时发邮件</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-orange">Layer 4</span></td>
+        <td><strong>初筛 v2 + SOP估值</strong></td>
+        <td>35分质量底座 → 10-20x Radar → 反证/仓位等级 → FCF真实性核查 → DCF绝对估值 → 凯利仓位</td>
+        <td>按需触发 /初筛 /估值</td>
+        <td>人工判断</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-green">Layer 5</span></td>
+        <td><strong>Daily Board / 中央任务中枢</strong></td>
+        <td><code>morning_brief.py</code> 汇总事件、复盘、V6异常、Radar待办、组合风险，输出今日 agenda</td>
+        <td>交易日早间 / 按需 no-email</td>
+        <td>今日复盘、财报、V6 stale、Radar事件、X扫描待办</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-green">Layer 5B</span></td>
+        <td><strong>Cash Alpha V3 自动化交易</strong></td>
+        <td>小资金线 <code>S00001</code> + 大资金线 <code>PORT_LCFF0001_PRIMARY</code>，当前报告停发，保留为低波现金增强备用线</td>
+        <td>默认暂停 / 仅按需复核</td>
+        <td>release gate / guard blocker / reviewed bundle</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-orange">Layer 6</span></td>
+        <td><strong>A股短线 Radar</strong></td>
+        <td>主线识别、龙头/中军/补涨复盘、计划内买点、止损退出、规则变更审计</td>
+        <td>交易日复盘；周五候选扫描</td>
+        <td>Daily Board 事件；<code>DIVERGE_WARNING</code> / <code>EXIT_WATCH</code> / <code>BUY_CANDIDATE</code></td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-gray">辅助</span></td>
+        <td><strong>季报追踪</strong></td>
+        <td>9只持仓财报日历，5天前预警</td>
+        <td>工作日08:37</td>
+        <td>财报≤5天时发邮件</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-blue" style="margin-top:14px">
+    <strong>投资哲学核心：</strong>以价值投资为底层世界观，核心方法是芒格反向排除法 + 巴菲特绝对估值 + Pabrai不对称赔率。
+    在确保本金安全和生活质量不被破坏的前提下，通过严谨排雷、预期差和数学概率寻找击球区；V6 / Radar / Overlay 只能作为资本配置效率增强器，不得反客为主。
+  </div>
+
+  <div class="alert-box alert-red" style="margin-top:12px">
+    <strong>2026-05-08 固定投资决策流程：</strong><br>
+    <code>定期市场筛选 → 候选分类 → /初筛 → /估值 → 机会成本比较 → 仓位建议 → 用户确认 → 执行 / 不执行</code><br>
+    候选来源包括：<code>Magic Formula Investing</code>、网络公开信息、全球股池扫描、行业学习、持仓复盘、Theme Diffusion / Radar、冷门预期差池。<br>
+    候选必须先归类为：<code>可做底仓</code>、<code>20X 候选</code>、<code>Radar / 预期差候选</code>、<code>只研究不动作</code>。<br>
+    <span style="color:var(--gray)">底仓和 20X 都必须先过 <code>good business / good people / good price</code>；Radar / 冷门预期差是通过长线热点研究找一类未充分定价机会，用观察仓和小仓位试错押注。</span><br>
+    <span style="color:var(--gray)">仓位上限：底仓单票常规 <code>10%-15%</code>、Top 2 最高 <code>20%-25%</code>；20X 单票初始 <code>3%-5%</code>、验证后 <code>5%-10%</code>；Radar 单票观察 <code>0.3%-0.5%</code>、验证 <code>1%-2%</code>；冷门伏击单票 <code>0.2%-0.3%</code>，全伏击合计最高 <code>2%</code>。</span><br>
+    <span style="color:var(--gray)">正式建议必须和现有持仓做机会成本比较：新标的是否明显优于当前持仓、是否值得替换/新增、仓位从哪里来。</span>
+  </div>
+
+  <div class="alert-box alert-red" style="margin-top:12px">
+    <strong>2026-05-09 仓位上限纪律升级：</strong><br>
+    <span style="color:var(--gray)">本次升级来自两个组合教训：腾讯加仓太早、PDD 高不确定性仓位过大。以后 <code>20%</code> 不再是普通目标仓位，而是极少数底盘级标的在价格极好、确定性极高、心态可承受时才允许触及的绝对上限。</span><br>
+    <table style="margin-top:10px">
+      <thead><tr><th>类型</th><th>例子</th><th>初始仓</th><th>常规目标</th><th>绝对上限</th><th>加仓条件</th></tr></thead>
+      <tbody>
+        <tr><td>永久底盘仓</td><td>腾讯 / 美的 / ADBE / GOOGL（长期监控）</td><td><code>3%-5%</code></td><td><code>8%-15%</code></td><td><code>20%</code></td><td>击球区 + thesis 未变 + 低单一风险；GOOGL 当前仅为长期监控，不自动进入主仓</td></tr>
+        <tr><td>高质量进攻仓</td><td>NVDA / NU</td><td><code>3%-5%</code></td><td><code>8%-14%</code></td><td><code>15%</code></td><td>增长验证 + 价格不透支；NU 额外要求信用质量稳定</td></tr>
+        <tr><td>高赔率高不确定性</td><td>PDD</td><td><code>3%-5%</code></td><td><code>8%-10%</code></td><td><code>12%</code></td><td>赔率极高但治理/地缘/透明度打折</td></tr>
+        <tr><td>高弹性验证仓</td><td>泡泡玛特</td><td><code>1%-3%</code></td><td><code>5%-6%</code></td><td><code>8%</code></td><td>多 IP + 海外 + 非单爆款继续验证</td></tr>
+        <tr><td>灵活舒服仓</td><td>IT / 现金替代</td><td><code>1%-2%</code></td><td><code>2%-4%</code></td><td><code>5%</code></td><td>价格极舒服，不强行塞满</td></tr>
+        <tr><td>Radar 研究输入层</td><td>MU / TSM / AMKR / HIMX / AMD / INTC 等动态候选</td><td>不默认买入</td><td>进入 V6-B universe</td><td>人工正股例外合计 <code>0%-3%</code></td><td>只负责候选、证据、反证、入池/出池日期；不再默认作为前台仓</td></tr>
+        <tr><td>右尾彩票期权</td><td>用户单独授权的手动例外</td><td><code>0%</code></td><td>默认取消</td><td>不作为系统常规模块</td><td>不推荐、不自动化、不进入例行筛选</td></tr>
+        <tr><td>冷门伏击仓</td><td>小中盘 ADR / 低位扩散</td><td><code>0.2%-0.3%</code></td><td><code>0.5%</code></td><td><code>1%</code></td><td>快速证伪，不能摊平</td></tr>
+        <tr><td>V6 策略仓</td><td>美股动量策略</td><td>试运行</td><td><code>5%-15%</code></td><td>后续再定</td><td>模拟/实盘跟踪稳定后扩容</td></tr>
+        <tr><td>V3 / 现金增强</td><td>低波备用</td><td><code>5%-10%</code></td><td><code>10%-20%</code></td><td>视现金需求</td><td>只当停泊仓，不当进攻仓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-16 GOOGL 长期监控口径：</strong><br>
+    <span style="color:var(--gray)">GOOGL 已纳入系统长期监控和机会成本比较池。当前身份是 <code>强平台现金牛 / AI 再定价观察</code>，不是立即加仓指令；后续若同时出现在 V6 与主仓讨论中，仍必须按主仓 thesis 完整跟踪搜索、云、AI capex、监管和资本配置变化。</span>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-09 Radar 输入纪律：</strong><br>
+    以后任何 AI、外部 agent、slockAI 或人工研究员只给标的名称，都不能进入仓位讨论。Radar 候选必须同时给出：
+    <code>标的 / 主题链条 / 为什么现在 / 市场已 price-in 什么 / 我们认为的预期差 / 真实瓶颈证据 / 催化 / 反证 / 建议仓位层级 / 退出条件</code>。<br>
+    <span style="color:var(--gray)">缺少 <code>真实瓶颈证据</code>、<code>反证</code>、<code>退出条件</code> 或 <code>建议仓位层级</code> 任一字段时，状态固定为 <code>Research Only</code>，不得进入买入或加仓讨论。</span><br>
+    <span style="color:var(--gray)">当前运营口径：主线由用户 + 主控 AI + 本地 AI Wiki 承接；slockAI 降级为出差或 iPad 远程时的小命令工具，不再作为默认多 agent 主系统。</span>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>2026-05-10 V6-B / Radar 新口径：</strong><br>
+    Radar 从前台正股仓降级为 <strong>V6-B 研究输入层</strong>：负责发现动态候选、漏网复盘、入池/出池记录和反证条件；
+    是否交易交给 V6-B 做 standalone 回测、V6-A 对比、组合测试和模拟验证。<br>
+    <span style="color:var(--gray)">右尾彩票期权默认取消，不作为系统常规模块；除非用户单独授权，否则不推荐、不自动化、不进入例行筛选。</span>
+  </div>
+
+  <div class="alert-box alert-green" style="margin-top:12px">
+    <strong>2026-05-18 A股短线 Radar 新口径：</strong><br>
+    A股 Radar 是独立短线训练系统，不是价值投资主仓，也不是 V6。当前阶段固定为 <code>Phase 1A</code>：
+    <code>FutuAPI 行情/信号/复盘 + 长江证券手动下单</code>，不接任何委托接口。<br>
+    当前观察池文件为 <code>investment_screener/radar_astock.json</code>，样本包括 <code>绿的谐波</code>、<code>三丰智能</code>、<code>纽威数控</code>；收盘复盘负责判断主线、角色、分化、买点和退出。<br>
+    <span style="color:var(--gray)">硬纪律：纯概念炒作、无业绩/订单/客户验证/产能瓶颈/政策落地/财报改善/真实供需变化支撑的“巨力股份型”标的，不得进入 <code>AddToRadarCandidate</code>；已入池后确认无支撑，直接 <code>role=退出</code>、<code>signal_state=DISABLED</code>。</span>
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>2026-04-26 架构补充：</strong>
+    <code>Wheel / 期权脚本</code> 与 <code>Cash Alpha V3</code> 都属于<strong>交易增强层</strong>，作用是增强整体账户收益与执行效率，
+    不是独立于主组合之外的“第二套信仰系统”。任何增强动作都必须先经过：
+    <strong>主策略席位判断 → 估值/验证判断 → 仓位上限判断 → 再决定是否调用脚本。</strong>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 2 — Cash Alpha V3
+════════════════════════════════════════════ -->
+<div class="section-divider" id="ic">02 &nbsp; Cash Alpha V3 自动化交易系统</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:var(--light-blue)">⚙️</div>
+    <div>
+      <div class="card-title" style="color:var(--accent)">Cash Alpha V3 — 现金增强自动化交易系统</div>
+      <div class="card-subtitle">低波现金增强备用线 · 小资金线 + 大资金线双轨架构 · 当前报告停发</div>
+    </div>
+  </div>
+
+  <div class="alert-box alert-red" style="margin-bottom:14px">
+    <strong>先写清楚：</strong>旧的铁鹰期权自动化已经因回测 / 实盘口径不一致、止损机制失真、真实成交约束不足而被证伪。
+    <strong>任何 AI 都不应再把旧铁鹰代码、参数或调度器当作当前生产系统。</strong>
+    它只保留为历史审计材料和失败案例，不允许建议重启。
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-bottom:14px">
+    <strong>2026-05-18 当前状态更新：</strong><br>
+    Cash Alpha V3 已不再作为当前主线系统运行；模拟盘日报 / 周报已停发，避免与 V6-A、Daily Board 和 Radar 任务中枢产生噪音。
+    已 disabled 的 LaunchAgent 包括 <code>com.cashalpha.v3.smalltrack.sim.daily_report</code>、<code>com.cashalpha.v3.smalltrack.sim.weekly_report</code>、<code>com.cashalpha.v3.largetrack.sim.daily-report...</code>、<code>com.cashalpha.v3.largetrack.sim.weekly-report...</code>。
+    <strong>未删除历史文件，未动 <code>real.guard</code>。</strong>
+  </div>
+
+  <div class="kv-grid">
+    <div class="kv"><div class="k">主目录</div><div class="v"><code>/Users/zhangkun/WorkBuddy/程序化/量化程序/cash_alpha_v3_repo</code></div></div>
+    <div class="kv"><div class="k">小资金主候选</div><div class="v"><code>S00001 = A04665 70% + A05777 30%</code></div></div>
+    <div class="kv"><div class="k">大资金主候选</div><div class="v"><code>PORT_LCFF0001_PRIMARY = A01360 55% + N0670 30% + A01917 15%</code></div></div>
+    <div class="kv"><div class="k">当前资金分层</div><div class="v">程序可投资现金约 <code>$20k~$25k</code> 跑小资金线；<code>$150k~$225k</code> 才切换到大资金线</div></div>
+    <div class="kv"><div class="k">当前状态</div><div class="v"><code>PAUSED_BY_DESIGN</code> / 报告停发；小资金线与大资金线保留为历史证据和未来低波现金增强候选，不作为近期 Daily Board 主任务</div></div>
+    <div class="kv"><div class="k">目标定位</div><div class="v">用于现金增强，优先守组合级回撤；当前现实目标约为 <code>10% 年化 / 5%~6% MaxDD</code></div></div>
+  </div>
+
+  <div class="section-title">官方候选与表现口径（截至 2026-04-19）</div>
+  <table>
+    <thead><tr><th>路线</th><th>核心构成</th><th>Full</th><th>OOS</th><th>Recent</th><th>适用资金 / 状态</th></tr></thead>
+    <tbody>
+      <tr style="background:#e8f5e9">
+        <td><strong>小资金线 <code>S00001</code></strong></td>
+        <td><code>A04665</code> + <code>A05777</code>，风险开时持有科技动量，风险关时退回现金/防守池</td>
+        <td><strong>9.85% / -4.00%</strong></td>
+        <td><strong>10.12% / -4.00%</strong></td>
+        <td><strong>10.62% / -4.00%</strong></td>
+        <td><code>$20k~$25k</code> 主路线；当前最接近可上线的小资金候选</td>
+      </tr>
+      <tr>
+        <td><strong>大资金线 <code>PORT_LCFF0001_PRIMARY</code></strong></td>
+        <td><code>A01360 55%</code> + <code>N0670 30%</code> + <code>A01917 15%</code>，核心底仓 + 少量 <code>QQQ</code> diagonal alpha</td>
+        <td><strong>11.94% / -5.45%</strong></td>
+        <td><strong>12.11% / -5.45%</strong></td>
+        <td><strong>15.61% / -5.45%</strong></td>
+        <td><code>$150k~$225k</code> reviewed 主路线；当前仅允许 paper validation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">设计原则（和旧铁鹰最大的不同）</div>
+  <table>
+    <thead><tr><th>原则</th><th>当前做法</th><th>为什么重要</th></tr></thead>
+    <tbody>
+      <tr><td>目标从单策略切到组合级</td><td>不再迷信单一卖方期权策略；改为多模块组合 + 防守机制</td><td>避免单一结构在单边行情下系统性失真</td></tr>
+      <tr><td>只按可投资现金 sizing</td><td>程序只读取现金 / 近现金，不用账户总资产做仓位基数</td><td>避免把长线股票仓位误算进量化额度，导致仓位虚高</td></tr>
+      <tr><td>release gate 先于 live</td><td><code>readiness</code>、<code>realism</code>、<code>stress retest</code>、<code>dry-run</code>、<code>guard</code> 必须全绿</td><td>防止再次出现回测好看、实盘口径不一致的假象</td></tr>
+      <tr><td>live 先 pilot 再放大</td><td>任何真实自动化资金都先从 <code>small live pilot</code> 起步，验证真实成交、滑点、容量与 kill switch，再逐步提额度</td><td>防止“测试通过 = 可以大额度自动跑”的误判</td></tr>
+      <tr><td>输出按环境隔离</td><td>所有新运行必须写 scoped <code>latest_*</code>；旧无 scope 文件只作为历史读取 fallback</td><td>防止模拟盘、实盘、手动测试互相覆盖证据链</td></tr>
+      <tr><td>真实成本优先</td><td>容量、点差、最小成交单位、攻击腿限制都按 reviewed 口径约束</td><td>防止收益被乐观假设“掺水”</td></tr>
+      <tr><td>状态机切换</td><td>小资金线 / 大资金线按可投资金额自动分层，后续可做自动切换</td><td>让系统随着资金规模升级，而不是一套模型硬打到底</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">当前主入口</div>
+  <pre><code>cd /Users/zhangkun/WorkBuddy/程序化/量化程序/cash_alpha_v3_repo
+
+# 小资金线：若未来重新启用，先看 gate，再 guarded simulate / live
+python3 small_track_release_gate.py
+python3 small_track_guarded_live_runner.py
+python3 small_track_reporting.py --period daily --futu-trd-env SIMULATE
+
+# 大资金线：若未来重新启用，只做 reviewed gate + paper validation
+python3 large_track_release_gate.py --account-source futu --futu-trd-env REAL
+python3 large_track_guarded_paper_runner.py --account-source futu --futu-trd-env REAL
+python3 large_track_reporting.py --period daily --futu-trd-env REAL</code></pre>
+
+  <div class="alert-box alert-blue">
+    <strong>当前结论：</strong>这套系统的重点不是追求“梦幻回测”，而是作为低波现金增强备用线保留。当前不发日报、不作为主线任务、不自动交易；未来若重启，必须从 gate、fresh snapshot、reviewed bundle 和小额 pilot 重新验证。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 2B — Cash Alpha V6 Attack
+════════════════════════════════════════════ -->
+<div class="section-divider" id="v6">02B &nbsp; Cash Alpha V6 Attack 高进攻动量策略</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#fff3e0">🚀</div>
+    <div>
+      <div class="card-title" style="color:var(--accent)">Cash Alpha V6 — 高进攻动量策略线</div>
+      <div class="card-subtitle">Engine 慢变 · Universe 动态更新 · Allocator 风控分配 · 实盘只允许小额人工确认 pilot</div>
+    </div>
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-bottom:14px">
+    <strong>当前边界：</strong>V6 不是 V3 的小修改，而是一条独立的高进攻动量策略线。
+    V6-A 当前是 <code>$5,000</code> 小额真实人工 pilot，执行链条必须继续受 release gate、Daily Board、reconciliation 和人工确认约束；
+    V6-B 不是“买 Radar 票”的策略，而是 <strong>Dynamic Universe / Universe Refresh Engine</strong>，当前仍是 <code>SIMULATE / research only</code>。
+  </div>
+
+  <div class="kv-grid">
+    <div class="kv"><div class="k">主目录</div><div class="v"><code>/Users/zhangkun/WorkBuddy/程序化/量化程序</code></div></div>
+    <div class="kv"><div class="k">主策略</div><div class="v"><code>V6-A ATTACK_EQUAL_REPLAY</code>，6 个 robust ATK 子策略等权组合；<code>V6-B</code> 为 Dynamic Universe 生成与验证机制</div></div>
+    <div class="kv"><div class="k">当前状态</div><div class="v"><code>V6-A_REAL_MANUAL_PILOT_ACTIVE</code>；当前以人工 pilot 和只读报告为准，不允许无人值守实盘。<code>V6-B_SIM_ONLY</code> 继续独立验证，等待 K线额度恢复后做 point-in-time 回测。</div></div>
+    <div class="kv"><div class="k">初始规模</div><div class="v"><code>$5,000</code> 策略资本；单笔订单上限 <code>$5,000</code>；整股；无 margin</div></div>
+    <div class="kv"><div class="k">最新风险状态</div><div class="v"><code>STALE_DATA_MODE</code>：当 signal freshness 失败时，BUY / ADD 已阻断；SELL 只进入人工风险退出复核</div></div>
+    <div class="kv"><div class="k">当前目标</div><div class="v">V6-A 先守住执行质量、数据新鲜度和风险退出；V6-B 先验证 Radar 池是否有真实增量收益，不进入实盘。</div></div>
+  </div>
+
+  <div class="section-title">V6 治理结构：Engine / Universe / Allocator</div>
+  <table>
+    <thead><tr><th>组件</th><th>定位</th><th>调整机制</th><th>当前状态</th></tr></thead>
+    <tbody>
+      <tr><td><code>V6 Engine Core</code></td><td>固定底层规则：动量、趋势、risk-on/off、波动率控制、回撤刹车</td><td>半年或重大 regime 变化才考虑；不自动调整</td><td>保持稳定</td></tr>
+      <tr><td><code>V6 Engine Parameters</code></td><td>动量窗口、趋势窗口、再平衡频率、回撤阈值、top N</td><td>季度 challenger 复核；人工确认后才晋级</td><td>研究层</td></tr>
+      <tr><td><code>V6 Universe</code></td><td>总候选池：Core Pool + Dynamic Pool + Defensive Pool</td><td>由 Core 低频复核、Dynamic 月度更新、防守池稳定维护组成</td><td>结构已固定</td></tr>
+      <tr><td><code>V6-A Core Pool</code></td><td>AI mega / mega tech 核心池，当前 baseline</td><td>季度/半年低频复核，类似指数成分股维护</td><td>生产 baseline</td></tr>
+      <tr><td><code>V6-B Dynamic Pool</code></td><td>动态候选池生成与验证机制，Radar 是研究输入之一</td><td>周度观察、月度正式更新；必须 point-in-time</td><td>SIM / research only</td></tr>
+      <tr><td><code>Allocator</code></td><td>风控与资金分配器，决定 Core / Dynamic / Defensive 权重</td><td>周/月复核；先规则化，后续再半自动</td><td>初始 V6-A 100%，V6-B 0%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>定期提醒机制：</strong>
+    未来不是让系统自行频繁改 engine，而是由 V6 邮件周报/月报提醒用户是否需要发起扫描、复盘或 revalidation。
+    每周看运行状态；每月看 Dynamic Pool 是否更新；每季度看 Engine / Core Pool / Allocator 是否需要 challenger。
+  </div>
+
+  <div class="alert-box alert-red" style="margin-top:12px">
+    <strong>2026-05-18 stale-data 风控原则：</strong><br>
+    有 K线额度时，V6 以完整 K线信号为准；没有 K线额度时，系统只允许“刹车”，不允许“踩油门”。<br>
+    <code>BUY / ADD / ROTATE_IN</code> 在 <code>STALE_DATA_MODE</code> 下必须被 release gate 阻断；<code>SELL</code> 不因 signal freshness 失败自动阻断，而是生成 <code>RISK_EXIT_PENDING</code> 高优先级人工复核。<br>
+    相关文件：<code>attack_engine_release_gate.py</code>、<code>v6_reporting.py</code>、<code>morning_brief.py</code>、<code>v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md</code>。
+  </div>
+
+  <div class="section-title">V6 复盘机制：四层节奏</div>
+  <table>
+    <thead><tr><th>层级</th><th>频率</th><th>核心问题</th><th>当前定位</th></tr></thead>
+    <tbody>
+      <tr><td><code>Daily Ops Review</code></td><td>每个交易日</td><td>系统有没有坏，执行链条有没有异常</td><td>偏运维检查，不做策略结论</td></tr>
+      <tr><td><code>Weekly System Review</code></td><td>每周一次</td><td>这一周的收益、回撤、暴露和执行是否来自预期逻辑</td><td>当前最重要的正式复盘单元</td></tr>
+      <tr><td><code>Monthly Research Review</code></td><td>每月一次</td><td>哪些现象值得变成 challenger / universe / allocator 研究</td><td>把现象变成研究优先级</td></tr>
+      <tr><td><code>Quarterly Governance Review</code></td><td>每季度一次</td><td>主系统是否维持、降权、暂停或升级</td><td>治理层人工决策，不自动触发</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>当前主复盘单元：</strong><code>Weekly V6 Review Board</code>。
+    它会把 <code>v6_reporting</code>、<code>v6a_pilot_review</code>、<code>v6_automation_preflight</code>、
+    <code>v6a_parameter_challenger</code>、<code>v6a_parameter_robustness</code>、
+    <code>v6a_challenger_turnover_cost_reaudit</code> 和 <code>v6b_profile_search</code>
+    汇总成一张周度判断板，并自动生成 <code>V6 Research Backlog</code>。
+    这一步的意义是给研究排优先级，不是自动改生产系统。
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>自动化边界：</strong>系统可以自动生成日报/周报、pilot review、preflight、weekly board 与 research backlog；
+    但<strong>不会</strong>自动改 baseline、自动给 V6-B allocator 权重、自动切真金白银实盘。
+    你主要做三件事：每周读 verdict、在月度/季度节点决定是否升级研究、任何真实账户动作继续人工确认。
+  </div>
+
+  <div class="section-title">核心表现口径（2026-05-06 replay）</div>
+  <table>
+    <thead><tr><th>指标</th><th>结果</th><th>解释</th></tr></thead>
+    <tbody>
+      <tr><td>Full ann</td><td><strong>29.80%</strong></td><td>全周期高收益口径</td></tr>
+      <tr><td>OOS ann</td><td><strong>36.43%</strong></td><td>样本外表现较强，但仍需持续监控失效风险</td></tr>
+      <tr><td>Full max DD</td><td><strong>-21.13%</strong></td><td>不是低波策略，必须接受两位数回撤</td></tr>
+      <tr><td>OOS Sharpe</td><td><strong>1.18</strong></td><td>高进攻策略中可接受，但不是极致平滑</td></tr>
+      <tr><td>rolling 3y worst ann</td><td><strong>7.20%</strong></td><td>滚动弱周期仍为正，但低于长期目标</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">黑天鹅压力表现</div>
+  <table>
+    <thead><tr><th>窗口</th><th>区间收益</th><th>最大回撤</th><th>恢复新高</th></tr></thead>
+    <tbody>
+      <tr><td>2018 Q4</td><td>-11.47%</td><td>-14.61%</td><td>2019-04-25</td></tr>
+      <tr><td>2020 Covid</td><td>-7.12%</td><td>-16.37%</td><td>2020-07-09</td></tr>
+      <tr><td>2022 加息熊市</td><td>-9.78%</td><td>-13.81%</td><td>2023-04-03</td></tr>
+      <tr><td>2026 YTD</td><td>-6.41%</td><td>-14.12%</td><td>尚未恢复</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">V6-A 5k Pilot 当前持仓 / 计划边界</div>
+  <pre><code>BUY AMZN  4
+BUY AVGO  2
+BUY BIL   6
+BUY GLD   1
+BUY GOOGL 2
+
+当前口径：这些是 V6-A 小额真实人工 pilot 的目标/持仓口径；后续 BUY/ADD 必须有 fresh K线和 release gate。
+若进入 STALE_DATA_MODE，BUY/ADD 阻断；SELL 只进入 RISK_EXIT_PENDING 人工复核。</code></pre>
+
+  <div class="section-title">关键命令</div>
+  <pre><code>cd /Users/zhangkun/WorkBuddy/程序化/量化程序
+
+# replay + release gate
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 attack_engine_deterministic_replay.py --tag 20260506_live_refreshed --end 2026-05-06 --refresh-data
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 attack_engine_release_gate.py --tag 20260506_live_refreshed
+
+# V6-A real pilot guarded executor：默认 plan-only，实盘需 --armed + confirm phrase
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 attack_engine_real_pilot_executor.py --orders-csv <orders.csv> --gate-json <gate.json> --acc-id 281756481449956811
+
+# V6-B live-forward SIM
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 v6b_live_forward_sim_executor.py --tag <tag></code></pre>
+
+  <div class="alert-box alert-blue">
+    <strong>长期组合设想：</strong>规模更大后，可以考虑 <code>价值投资主账户 + V6-A/V6-B 进攻主仓 + V3 现金增强/备用线</code>。
+    V6 的研发方向是 <code>V6 Engine + V6 Universe + V6-A Core Pool + V6-B Dynamic Pool + Allocator</code>：
+    经典动量/风控底层保持稳定，Alpha 主要来自经过验证的 universe 更新；Allocator 是风控组件，不是短期收益追逐器。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 2C — 治理与报告层
+════════════════════════════════════════════ -->
+<div class="section-divider" id="governance">02C &nbsp; 治理与报告层</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#e8f5e9">🧭</div>
+    <div>
+      <div class="card-title" style="color:var(--accent)">Central Risk / Attribution / Review / Overlay Journal / 5月26日与6月1日执行卡</div>
+      <div class="card-subtitle">6 月 1 日前的主建设线：先把治理证据链固化，再继续扩展 V6-B</div>
+    </div>
+  </div>
+
+  <div class="alert-box alert-green">
+    <strong>当前正式口径：</strong>在 <code>2026-06-01</code> 历史 K 线额度刷新前，最重要的工作不是继续主观加新信号，而是把
+    <code>中央风控</code>、<code>绩效归因</code>、<code>月度研究复盘</code>、<code>Overlay 样本登记</code>、<code>V6-A cutover 执行卡</code> 和 <code>V6-B 执行卡</code>
+    固化成稳定的决策输入层。
+  </div>
+
+  <div class="section-title">当前已落地模块</div>
+  <table>
+    <thead><tr><th>模块</th><th>负责什么</th><th>节奏 / 自动化</th><th>2026-05-14 最新读数</th><th>入口</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Central Risk Board v1.2</strong></td>
+        <td>统一主仓 / V6 / Overlay / 现金缓冲的总账户风险视角</td>
+        <td><code>09:05</code> 自动运行；周一正式周报，其余交易日轻量检查；支持 HTML 邮件</td>
+        <td><code>RED</code>：单一持仓 <code>31.8%</code>、前二合计 <code>52.1%</code>、第一主题 <code>52.1%</code></td>
+        <td><a href="中央风控看板_CENTRAL_RISK_BOARD_LATEST.html">中央风控看板</a></td>
+      </tr>
+      <tr>
+        <td><strong>Performance Attribution v1</strong></td>
+        <td>把“赚/亏了”拆成账户层、sleeve 层、主题层、执行层</td>
+        <td>脚本已可稳定生成；当前按需更新，尚未挂自动调度</td>
+        <td>Futu 覆盖 <code>55.9%</code>；最大正贡献 <code>NVDA</code>；最大拖累 <code>PDD</code>；V6 目前不是盈亏主因</td>
+        <td><a href="绩效归因看板_PERFORMANCE_ATTRIBUTION_LATEST.html">绩效归因看板</a></td>
+      </tr>
+      <tr>
+        <td><strong>Overlay Trade Journal</strong></td>
+        <td>把 Radar / Overlay 右尾实验独立记账，不让它污染主仓和 V6 绩效</td>
+        <td>脚本已可稳定生成；当前按需更新，真实样本只认 <code>status=closed</code></td>
+        <td>关闭样本 <code>0</code>；当前仅有 <code>CRDO Lane A</code> 观察项，未进入真实样本统计</td>
+        <td><a href="Radar_Overlay_Journal_LATEST.html">Overlay Journal</a></td>
+      </tr>
+      <tr>
+        <td><strong>Monthly Research Review v1</strong></td>
+        <td>把当月现象转成研究 backlog，避免研究靠记忆推动</td>
+        <td>脚本已可稳定生成；当前月度运行，尚未挂自动调度</td>
+        <td>主线仍是 <code>V6-A 治理 + 集中度收敛 + V6-B 供给链准备</code>；coverage gap <code>8</code></td>
+        <td><a href="Monthly_Research_Review_LATEST.html">Monthly Research Review</a></td>
+      </tr>
+      <tr>
+        <td><strong>5月26日 V6-A 执行卡</strong></td>
+        <td>把 balanced challenger cutover 当天的 evidence pack、命令顺序、三种 verdict 和真实下单确认边界写死</td>
+        <td>手动执行；只做 cutover verdict，不自动下单</td>
+        <td>当前状态：<code>待 2026-05-26 执行</code></td>
+        <td><a href="2026-05-26_V6A_balanced_cutover_执行检查卡_v1.md">执行卡</a></td>
+      </tr>
+      <tr>
+        <td><strong>6月1日 V6-B 执行卡</strong></td>
+        <td>把 6 月 1 日该跑的 universe / audit / challenger / allocator 顺序写死</td>
+        <td>手动执行；等历史额度刷新后按卡片逐条推进</td>
+        <td>当前状态：<code>待 2026-06-01 数据窗口开启后执行</code></td>
+        <td><a href="6月1日_V6B_执行卡.md">执行卡</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">这层已经自动化了什么，仍需要你做什么</div>
+  <table>
+    <thead><tr><th>层</th><th>已自动化</th><th>仍需人工确认</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Central Risk Board</strong></td><td>每日定时生成、HTML 邮件发送、按 cadence 切换日报/周报口径</td><td>看红灯原因后决定是否调整仓位纪律或更新主账本</td></tr>
+      <tr><td><strong>Attribution / Overlay / Monthly Review</strong></td><td>脚本与产物格式已固化，可随时重跑</td><td>是否加载定时任务、是否把结论升级成新 challenger 或新治理动作</td></tr>
+      <tr><td><strong>V6 / V6-B</strong></td><td>review board、research backlog、June 1 执行顺序已结构化</td><td>cutover、扩容、参数替换、真实下单仍然必须人工授权</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-orange">
+    <strong>最重要的理解：</strong>这层不是“再多几个报告”，而是让你以后离开电脑时也知道
+    <strong>风险在哪里、钱是谁赚的、漏掉了什么、6 月 1 日该按什么顺序执行</strong>。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 3 — 股票筛选
+════════════════════════════════════════════ -->
+<div class="section-divider" id="screener">03 &nbsp; 股票筛选 & 初筛 v2 研究入口</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:var(--light-blue)">🔍</div>
+    <div>
+      <div class="card-title" style="color:var(--accent)">三层筛选漏斗（已升级到初筛 v2）</div>
+      <div class="card-subtitle">目录：<code>/Users/zhangkun/Desktop/AI个人投资公司/screener/</code></div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>层</th><th>筛选内容</th><th>通过标准</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag tag-blue">Layer 1</span></td>
+        <td>量化代理指标（9项）</td>
+        <td>≥6/9 通过：ROE>15%、净利润率>10%、流动比率>1、负债权益比&lt;1、
+          FCF为正、SBC&lt;5%、营收/利润2年增长、EV/FCF&lt;25</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-orange">Layer 2</span></td>
+        <td>Claude 初筛 v2（/初筛）</td>
+        <td>
+          <strong>先过 35分质量底座：</strong>≥21 分（Watchlist 及以上）；
+          再判断是否进入 <strong>10-20x Radar</strong>；
+          必须附带 <strong>反证机制</strong> 与 <strong>仓位等级</strong>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-green">Layer 3</span></td>
+        <td>价格监控 + 机会成本比对</td>
+        <td>MoS ≥ 40%，且EV/FCF比持仓最低值再低25%以上</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">扫描范围</div>
+  <div class="grid-3">
+    <div class="kv"><div class="k">美股</div><div class="v">S&P 500 (~503只)</div></div>
+    <div class="kv"><div class="k">港股</div><div class="v">HSI + HSCEI + 恒生科技 (~80只)</div></div>
+    <div class="kv"><div class="k">A股</div><div class="v">沪深300 (~60只)</div></div>
+  </div>
+
+  <div class="section-title">核心文件</div>
+  <table>
+    <thead><tr><th>文件</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>screener.py</code></td><td>主程序：持仓监控 + 全球股池扫描</td></tr>
+      <tr><td><code>holdings.json</code></td><td>实际持仓（手动维护，每次交易后更新）</td></tr>
+      <tr><td><code>config.json</code></td><td>邮件配置 + 筛选参数</td></tr>
+      <tr><td><code>watchlist.json</code></td><td>重点观察标的（含V_base估值）</td></tr>
+      <tr><td><code>universe.json</code></td><td>股池缓存（季度扫描结果）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">运行命令</div>
+  <pre><code>cd /Users/zhangkun/Desktop/AI个人投资公司/screener
+
+bash run.sh watchlist          # 持仓价格监控（自动：每周日09:05）
+bash run.sh universe           # 全球股池扫描（自动：每季度第5日09:09）
+bash run.sh all                # 两者都运行
+bash run.sh test-email         # 测试邮件配置</code></pre>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>注意：</strong>
+    量化扫描与 Magic Formula 现在都只负责“提供候选”，
+    真正的结论必须经过 <code>/初筛 v2</code>：
+    <strong>质量底座 → 10-20x Radar 判断 → 反证 → 仓位等级 → 再决定是否进入 /估值。</strong>
+  </div>
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>Magic Formula 的正式系统定位：</strong><br>
+    <strong>机会池补充层 / 低估值想法发生器</strong>，不是每日必查项，也不是主策略驱动器。<br>
+    <strong>默认人工发起，自动化只到提醒层，不进自动研究链路。</strong><br>
+    默认使用场景：<br>
+    1) <strong>每月 1 次</strong> 低频刷新候选池；<br>
+    2) 有 <strong>等待资本</strong> 时补新候选；<br>
+    3) 需要给 <strong>weakest seat</strong> 找挑战者时；<br>
+    4) 市场出现 <strong>明显回撤 / 风格切换</strong> 时。<br>
+    <span style="color:var(--gray)">允许自动提醒，允许以后做一键抓候选；但不自动进入 <code>/初筛</code>，不自动生成研究结论，也不自动触发调仓。</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 4 — 季报追踪
+════════════════════════════════════════════ -->
+<div class="section-divider" id="earnings">04 &nbsp; 季报追踪系统</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#fff3e0">📅</div>
+    <div>
+      <div class="card-title" style="color:var(--orange)">Earnings Tracker</div>
+      <div class="card-subtitle">9只持仓财报日历，财报前5天自动邮件预警</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="section-title">核心文件</div>
+      <table>
+        <thead><tr><th>文件</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><code>earnings_tracker.py</code></td><td>主程序</td></tr>
+          <tr><td><code>earnings_calendar.json</code></td><td>财报日历（手动维护）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="section-title">运行命令</div>
+      <pre><code>bash run.sh earnings           # 检查（自动：工作日08:37）
+bash run.sh earnings-summary   # 强制发送完整日历
+
+# 直接运行
+python3 earnings_tracker.py --summary   # 30天完整日历
+python3 earnings_tracker.py --update    # yfinance自动更新日期
+python3 earnings_tracker.py --no-email  # 仅控制台输出</code></pre>
+    </div>
+  </div>
+
+  <div class="section-title">2026财报日历（按日期排序）</div>
+  <table>
+    <thead><tr><th>日期</th><th>代码</th><th>公司</th><th>时间</th><th>确认</th><th>特殊备注</th></tr></thead>
+    <tbody>
+      <tr><td>2026-04-29</td><td>600036.SS</td><td>招商银行</td><td>收市后</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-04-30</td><td>000333.SZ</td><td>美的集团 Q1一季报</td><td>收市后</td><td>✅已确认</td><td>—</td></tr>
+      <tr><td>2026-04-30</td><td>QCOM</td><td>Qualcomm</td><td>AMC（盘后）</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-05-13</td><td>TME</td><td>腾讯音乐</td><td>BMO（盘前）</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-05-14</td><td>0700.HK</td><td>腾讯控股</td><td>收市后</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-05-20</td><td>9999.HK</td><td>网易-S</td><td>收市后</td><td>预估</td><td>⚙️ Short Put 160到期06-29，财报前评估</td></tr>
+      <tr><td>2026-05-27</td><td>PDD</td><td>PDD Holdings</td><td>BMO（盘前）</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-05-28</td><td>NVDA</td><td>NVIDIA</td><td>AMC（盘后）</td><td>预估</td><td>—</td></tr>
+      <tr><td>2026-08-25</td><td>9992.HK</td><td>泡泡玛特（中期）</td><td>收市后</td><td>预估</td><td>港股半年报制度</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-orange" style="margin-top:10px">
+    <strong>⚠️ 网易期权注意（2026-05-20财报前）：</strong>Short Put 260629/行权价160/权利金7.15HKD已收。
+    正股已平仓。若财报差股价跌破160HKD，需评估是否提前平仓期权。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 5 — 风险监控
+════════════════════════════════════════════ -->
+<div class="section-divider" id="risk">05 &nbsp; 持仓风险集中度监控</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:var(--purple-bg)">🛡️</div>
+    <div>
+      <div class="card-title" style="color:var(--purple)">Risk Monitor</div>
+      <div class="card-subtitle">因子加权暴露分析，借鉴Bridgewater风险因子归因框架</div>
+    </div>
+  </div>
+
+  <div class="section-title">6大风险因子（当前读数）</div>
+  <table>
+    <thead><tr><th>风险因子</th><th>当前暴露</th><th>警戒线</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr style="background:#ffebee">
+        <td><strong>中国地缘政治风险</strong></td>
+        <td><strong>51.0%</strong></td><td>40%</td>
+        <td><span class="tag tag-red">🔴 高警戒</span></td>
+      </tr>
+      <tr style="background:#fff8e1">
+        <td><strong>港元/美元汇率风险</strong></td>
+        <td>43.4%</td><td>45%</td>
+        <td><span class="tag tag-orange">🟡 关注</span></td>
+      </tr>
+      <tr style="background:#fff8e1">
+        <td><strong>腾讯生态系集中度</strong></td>
+        <td>27.3%</td><td>30%</td>
+        <td><span class="tag tag-orange">🟡 关注</span></td>
+      </tr>
+      <tr style="background:#fff8e1">
+        <td><strong>消费者可选消费</strong></td>
+        <td>25.3%</td><td>30%</td>
+        <td><span class="tag tag-orange">🟡 关注</span></td>
+      </tr>
+      <tr><td><strong>人民币汇率风险</strong></td><td>19.5%</td><td>30%</td><td><span class="tag tag-green">🟢 正常</span></td></tr>
+      <tr><td><strong>AI/半导体周期</strong></td><td>16.8%</td><td>35%</td><td><span class="tag tag-green">🟢 正常</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-red">
+    <strong>行动建议：</strong>中国地缘集中度51%超警戒。<strong>待腾讯股价上涨后逐步减持部分，将中国地缘暴露
+    压回40%以下</strong>（腾讯RSU成本为零，减持没有心理负担）。新增仓位优先考虑地缘中性标的（美股）。
+  </div>
+
+  <div class="section-title">运行命令</div>
+  <pre><code>bash run.sh risk               # 运行风险监控（自动：每月1日09:13）
+python3 risk_monitor.py --no-email   # 仅控制台输出</code></pre>
+
+  <p style="font-size:12px;color:var(--gray);margin-top:10px">
+    ⚙️ 维护：当持仓变动较大时，手动更新 <code>risk_monitor.py</code> 中的 <code>APPROX_PRICES_USD</code> 字典（近似股价）。
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 6 — 宏观择时
+════════════════════════════════════════════ -->
+<div class="section-divider" id="macro">06 &nbsp; 宏观择时信号层</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#e0f2f1">🌐</div>
+    <div>
+      <div class="card-title" style="color:var(--teal)">Macro Signal — 🟡 黄灯（观望期）</div>
+      <div class="card-subtitle">借鉴 GMO（CAPE择时）· Bridgewater（债务周期）· Goldman（Bull/Bear指标）</div>
+    </div>
+  </div>
+
+  <div class="section-title">6大指标（当前读数）</div>
+  <div class="macro-box">
+    <div class="macro-item" style="background:#ffebee;border-color:#ef9a9a">
+      <div class="score" style="color:#c62828">−2</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">CAPE 36.5x</div>
+      <div class="label">Shiller市盈率（历史高位警戒）</div>
+    </div>
+    <div class="macro-item" style="background:#e8f5e9;border-color:#a5d6a7">
+      <div class="score" style="color:#2e7d32">+1</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">HY OAS 420bps</div>
+      <div class="label">高收益债利差（正常区间）</div>
+    </div>
+    <div class="macro-item" style="background:#e8f5e9;border-color:#a5d6a7">
+      <div class="score" style="color:#2e7d32">+1</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">利差 +20bps</div>
+      <div class="label">10Y-2Y期限利差（正常）</div>
+    </div>
+    <div class="macro-item" style="background:#e8f5e9;border-color:#a5d6a7">
+      <div class="score" style="color:#2e7d32">+1</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">VIX 20</div>
+      <div class="label">恐慌指数（正常区间）</div>
+    </div>
+    <div class="macro-item" style="background:#f5f5f5;border-color:#ccc">
+      <div class="score" style="color:#546e7a">0</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">DXY 103</div>
+      <div class="label">美元指数（偏强中性）</div>
+    </div>
+    <div class="macro-item" style="background:#f5f5f5;border-color:#ccc">
+      <div class="score" style="color:#546e7a">0</div>
+      <div style="font-size:14px;font-weight:600;margin-top:4px">铜金比 0.22</div>
+      <div class="label">Dr. Copper（中性）</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:12px;background:#fff8e1;border-radius:10px;margin:12px 0;border:1px solid #f9a825">
+    <strong style="font-size:16px">综合评分 +1 / 12 → 🟡 黄灯</strong>
+    <div style="font-size:13px;color:#5d4037;margin-top:4px">
+      含义：维持现有持仓（NVDA/PDD/腾讯均已有大MoS），新仓MoS门槛提至≥40%，不急于建新仓
+    </div>
+  </div>
+
+  <div class="section-title">信号含义对照</div>
+  <table>
+    <thead><tr><th>信号</th><th>总分</th><th>对NVDA/PDD等存量持仓</th><th>对新建仓</th></tr></thead>
+    <tbody>
+      <tr style="background:#e8f5e9"><td>🟢 绿灯</td><td>≥+4</td><td>持有，可考虑加仓</td><td>MoS≥30%可出手</td></tr>
+      <tr style="background:#fff8e1"><td>🟡 黄灯（当前）</td><td>+1~+3</td><td>持有不动，不主动加仓</td><td>MoS≥40%才出手</td></tr>
+      <tr style="background:#ffebee"><td>🔴 红灯</td><td>≤0</td><td>持有（MoS大的持仓不受影响）</td><td>MoS≥50%，考虑对冲</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">手动数据更新（每月约5分钟）</div>
+  <table>
+    <thead><tr><th>指标</th><th>数据源</th><th>更新字段</th></tr></thead>
+    <tbody>
+      <tr><td>CAPE</td><td><a href="https://www.multpl.com/shiller-pe" target="_blank">multpl.com/shiller-pe</a></td><td><code>macro_cache.json → "cape"</code></td></tr>
+      <tr><td>HY OAS</td><td><a href="https://fred.stlouisfed.org/series/BAMLH0A0HYM2" target="_blank">FRED BAMLH0A0HYM2</a></td><td><code>macro_cache.json → "hy_oas"</code>（单位bps）</td></tr>
+      <tr><td>2Y国债收益率</td><td><a href="https://fred.stlouisfed.org/series/DGS2" target="_blank">FRED DGS2</a></td><td><code>macro_cache.json → "t2y_yield"</code>（单位%）</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code>bash run.sh macro              # 运行（自动：每月15日09:17）
+bash run.sh macro-offline      # 离线模式（使用缓存数据）
+python3 macro_signal.py --summary    # 强制发邮件</code></pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 7 — 估值系统
+════════════════════════════════════════════ -->
+<div class="section-divider" id="valuation">07 &nbsp; 初筛 v2 + SOP完整估值系统</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#fff3e0">📊</div>
+    <div>
+      <div class="card-title" style="color:var(--orange)">双层初筛 + 完整估值工作流</div>
+      <div class="card-subtitle">通过 Claude Code 的 /初筛 和 /估值 斜杠命令触发</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="section-title">Stage 1 — 初筛 v2（/初筛）</div>
+      <p style="font-size:13px;margin-bottom:10px">
+        先做 <strong>生意模式分层 + 完整周期校正</strong>，
+        再用 <strong>7维质量底座（35分）</strong> 判断是不是高质量公司，
+        再用 <strong>10-20x Radar 六条件</strong> 判断是否具备未来 7-10 年超级复利潜力。
+      </p>
+      <div class="alert-box alert-blue" style="margin-bottom:10px">
+        <strong>研究顺序固定为：</strong>
+        <code>先看生意模式 → 再看竞争地位与护城河 → 再看管理层 → 最后才看价格与仓位</code><br>
+        <span style="color:var(--gray)">分类是约束器，不是二元开关；尤其对 <code>弱势特许经营 / 强势一般事业</code>，允许明确写“中间地带偏哪边”，但不允许跳过分类。</span>
+      </div>
+      <table>
+        <thead><tr><th>前置步骤</th><th>硬要求</th></tr></thead>
+        <tbody>
+          <tr><td>生意模式分层</td><td>必须先归到 <code>市场特许经营 / 弱势特许经营 / 强势一般事业 / 一般化商品</code> 或明确中间地带</td></tr>
+          <tr><td>完整周期校正</td><td>必须明确写一句：当前盈利/ROE更接近周期高位、低位还是中枢，为什么，防单年数据误导</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>维度</th><th>权重</th></tr></thead>
+        <tbody>
+          <tr><td>可理解性</td><td>0-5分</td></tr>
+          <tr><td>护城河耐久性</td><td>0-5分</td></tr>
+          <tr><td>管理层与文化</td><td>0-5分</td></tr>
+          <tr><td>资本配置</td><td>0-5分</td></tr>
+          <tr><td>财务韧性</td><td>0-5分</td></tr>
+          <tr><td>再投资跑道</td><td>0-5分</td></tr>
+          <tr><td>估值安全边际</td><td>0-5分</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;margin-top:8px;color:var(--gray)">
+        ≥28 Strong fit → 进Stage2 | 21-27 Watchlist → 进Stage2 | 14-20 Weak fit | &lt;14 Reject
+      </div>
+      <div class="section-title">新增：10-20x Radar 判断</div>
+      <table>
+        <thead><tr><th>雷达条件</th><th>判断重点</th></tr></thead>
+        <tbody>
+          <tr><td>行业天花板足够大</td><td>未来 7-10 年仍有显著扩容空间，而非成熟小众赛道</td></tr>
+          <tr><td>龙头或准龙头</td><td>有机会吃掉利润池，而不是普通参与者</td></tr>
+          <tr><td>护城河会变深</td><td>网络效应、品牌、平台锁定、规模优势等随时间增强</td></tr>
+          <tr><td>管理层与资本配置极强</td><td>不只会经营，还能长期把行业红利转成股东价值</td></tr>
+          <tr><td>利润池扩张能力</td><td>不只收入涨，利润率/回报率也能维持或抬升</td></tr>
+          <tr><td>估值/市值起点不过分</td><td>不能被过高起点压死长期回报</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;margin-top:8px;color:var(--gray)">
+        <strong>正式判定门槛：</strong>
+        <code>10-20x Radar = 六项中至少 5 项 Pass / 强 Partial，且质量底座不低于 24/35</code>；
+        <code>Core Candidate = 满足 Radar，且已被多个季度 / 关键节点验证</code>。
+      </div>
+      <div class="alert-box alert-blue" style="margin-top:10px">
+        <strong>初筛 v2 强制新增三项输出：</strong><br>
+        1) <strong>反证机制</strong>：必须写“为什么它可能不是 10-20 倍”；<br>
+        2) <strong>仓位等级</strong>：Research Only → Watchlist → Observation → Validation Position → Core Candidate → Top 2 Candidate；<br>
+        3) <strong>方法纪律</strong>：<code>10-20x Radar ≠ 立即大仓</code>，第一/第二大仓必须经过时间验证。
+      </div>
+      <div class="alert-box alert-orange" style="margin-top:10px">
+        <strong>2026-04-26 升级：所有标的都必须做“非财报现实验证”</strong><br>
+        任何 <code>/初筛</code> 都不能只依赖财报与管理层口径；必须发动搜索能力，补充最新外部真实数据并做多方对比，至少回答：<br>
+        1) 当下最关键的外部验证信号是什么；<br>
+        2) 这些信号是增强、持平还是转弱；<br>
+        3) 财报与现实世界是否互相印证，还是出现背离。<br>
+        <span style="color:var(--gray)">最低数据包：优先用最近 30-60 天的数据，且至少覆盖 官方披露 + 渠道/平台/行业客观数据 或 第三方旁证；能覆盖三类更好，并标注日期。</span><br>
+        <span style="color:var(--gray)">硬纪律：单一数据只能做线索，不能直接形成评级、估值上修或仓位升级结论。</span><br>
+        <span style="color:var(--gray)">行业重点因公司而异：消费看渠道/复购/热度，平台看用户/变现/生态，软件看留存/采用/定价，金融看坏账/获客/监管，周期看价格/订单/库存/产能。</span><br>
+        <span style="color:var(--gray)">加强版要求：泡泡玛特等多IP验证型公司，仍要额外回答新 IP、老 IP、单 IP 依赖、海外增长质量四问。</span>
+      </div>
+      <div class="alert-box alert-yellow" style="margin-top:10px">
+        <strong>2026-04-27 新增：反复杂化决策纪律</strong><br>
+        研究层允许复杂，但最终评级和仓位建议必须压缩：<br>
+        1) 最终结论只允许依赖 <strong>3-5 个关键变量</strong>；<br>
+        2) 每次动作必须明确写一句：<code>这笔钱如果赚到，最主要靠哪 1-2 个变量成立？</code><br>
+        3) 默认动作永远是 <code>不动</code>，只有当主变量清晰、价格到位、仓位允许、机会成本通过时，才升级成行动。
+      </div>
+      <div class="alert-box alert-red" style="margin-top:10px">
+        <strong>2026-05-08 新增：价格-预期-现金流锚</strong><br>
+        每次 <code>/初筛</code> 必须写清：<br>
+        1) <strong>市场已反映的预期</strong>：当前价格大致 price-in 了什么未来现金流、增长、利润率或周期位置；<br>
+        2) <strong>我们认为的预期差</strong>：市场可能低估或高估了什么；<br>
+        3) <strong>最关键证伪事实</strong>：哪个经营事实会证明我们看错。<br>
+        <span style="color:var(--gray)">若进入仓位讨论，还必须写 <code>若市场预期被证实过高，仓位如何降级</code>。缺字段则固定为 <code>BLOCKED：研究可继续，交易讨论暂停</code>。</span>
+      </div>
+      <div class="alert-box alert-orange" style="margin-top:10px">
+        <strong>2026-05-03 新增：生意模式与周期的硬边界</strong><br>
+        1) <code>一般化商品</code> 默认不能直接进入 <code>Core Holding / Top 2 Candidate</code> 讨论；<br>
+        2) 若要突破，必须额外说明 <strong>持久成本优势 / 特殊供给约束 / 极低估值</strong> 中至少两项；<br>
+        3) 银行、家电、消费、周期资源等领域，必须写出 <strong>完整周期校正</strong>，不允许拿单年高 ROE 直接证明模式优秀；<br>
+        4) 对 <code>美的 / NVDA</code> 这类标的，鼓励明确写成 <strong>中间地带偏哪边</strong>，而不是硬压成单侧标签。
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Stage 2 — SOP完整估值（/估值）</div>
+      <ol style="font-size:13px;padding-left:18px;line-height:2">
+        <li>🟢 定性尽调 + 一票否决（5维，50分制）</li>
+        <li>🔵 历史排雷 + FCF真实性核查 + DCF绝对估值（Bear/Base/Bull）</li>
+        <li>🟠 不对称赔率 + 击球区（MoS计算）</li>
+        <li>🔴 凯利仓位（f* = (b×p-q)/b × 波动折减）</li>
+        <li>🟣 持仓管理 + 再评级触发器</li>
+      </ol>
+      <div class="alert-box alert-blue" style="margin-top:10px">
+        <strong>Floor计算：</strong><br>
+        印钞机 = 1.5年FCF回本<br>
+        稳健蓝筹 = 2年FCF<br>
+        成长股 = 3年FCF
+      </div>
+      <div class="alert-box alert-yellow" style="margin-top:10px">
+        <strong>2026-04-23 新增：FCF真实性核查（巴菲特式防呆）</strong><br>
+        每份正式 <code>/估值</code> 报告，在进入 DCF 前必须固定回答四问：<br>
+        1) <strong>SBC</strong> 有没有被变相加回，或被 non-GAAP 口径美化？<br>
+        2) <strong>CapEx</strong> 是否低估了维护性资本开支，只看见账面轻资产而忽略真实再投资？<br>
+        3) <strong>营销 / 补贴 / 渠道返利</strong> 中，是否存在“伪轻资产”投入，被会计处理掩盖？<br>
+        4) 当前 <strong>FCF</strong> 是否处在周期高点，不能当作常态 Owner Earnings？<br>
+        <span style="color:var(--gray)">执行纪律：所有 <code>Adjusted EBITDA</code> / <code>Adjusted EPS</code> / 其他 adjusted 指标只能辅助披露，不能主导内在价值判断；主锚固定为 <code>GAAP EBIT → FCFF / Owner Earnings → DCF / EV/FCF</code>。</span>
+      </div>
+      <div class="alert-box alert-blue" style="margin-top:10px">
+        <strong>2026-04-26 升级：正式 <code>/估值</code> 必须包含“非财报现实验证输出”</strong><br>
+        所有标的的正式 <code>/估值</code> 结论必须额外输出：<br>
+        1) 最新外部真实数据搜索结果；<br>
+        2) 该公司最关键的 2-4 个现实验证信号；<br>
+        3) 验证状态：<code>增强 / 持平 / 转弱</code>；<br>
+        4) 财报与外部现实是否互相印证；<br>
+        5) 核心来源与日期清单。<br>
+        <span style="color:var(--gray)">若缺乏足够外部数据，只能给保守仓位结论，不得直接因财报好看而升级仓位。</span><br>
+        <span style="color:var(--gray)">最终判断采用“综合毛估估”：把财报、外部现实、行业位置、管理层、赔率与风险合在一起做区间判断，而不是迷信单一模型或单一数据。</span><br>
+        <span style="color:var(--gray)">对泡泡玛特等多IP验证型公司，再追加：新旧 IP 增速对比、多 IP 协同是否成立、海外增长质量判断。</span>
+      </div>
+      <div class="alert-box alert-orange" style="margin-top:10px">
+        <strong>动作层压缩要求</strong><br>
+        研究层、决策层、执行层必须拆开：<br>
+        1) <strong>研究层</strong> 可以厚；<br>
+        2) <strong>决策层</strong> 只回答 <code>买 / 加 / 减 / 不动</code>；<br>
+        3) <strong>执行层</strong> 再决定挂单、wheels、V3 等工具。<br>
+        <span style="color:var(--gray)">若一个结论需要 5-6 个以上条件同时成立，默认降级，不直接给积极仓位建议。</span>
+      </div>
+      <div class="alert-box alert-red" style="margin-top:10px">
+        <strong>2026-05-08 新增：价格-预期-现金流锚是 /估值 必填项</strong><br>
+        每份正式 <code>/估值</code> 报告必须单独输出：<br>
+        1) <strong>市场已 price-in 的预期</strong>；<br>
+        2) <strong>我们认为的预期差</strong>；<br>
+        3) <strong>验证事实</strong>；<br>
+        4) <strong>反证事实</strong>；<br>
+        5) <strong>仓位降级 / 退出规则</strong>。<br>
+        <span style="color:var(--gray)">缺少上述字段时，不能给买入、加仓、卖 Put、Covered Call 或仓位升级建议，只能继续研究。</span>
+      </div>
+      <div class="alert-box alert-red" style="margin-top:10px">
+        <strong>系统升级纪律：禁止只做表面更新</strong><br>
+        凡用户要求优化 <code>【估值】系统</code> / <code>【初筛】系统</code> / 策略系统，必须按四层同步检查后才能宣布完成：<br>
+        1) <strong>展示层</strong>：<code>SYSTEM_OVERVIEW.html</code> / 策略 HTML；<br>
+        2) <strong>命令层</strong>：<code>~/.claude/commands/估值.md</code>、<code>初筛.md</code> 等实际入口；<br>
+        3) <strong>规则层</strong>：<code>AI投资助手SOP_优化版.md</code> 等核心 SOP；<br>
+        4) <strong>执行层</strong>：<code>fetch_financials.py</code> / watchlist / 报告生成要求等实际执行逻辑。<br>
+        <span style="color:var(--gray)">公司级原则还必须同步到知识库、真实命令入口、SOP/模板、全景图。若四层未全部核查，不得声称“系统已完成升级”。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">触发方式</div>
+  <pre><code># 初筛（需在Claude Code中使用）
+/初筛 NVDA
+/初筛 腾讯（0700.HK）
+
+# 完整估值
+/估值 PDD 98.50
+分析标的：QCOM，当前股价：142
+
+# 数据获取脚本（初筛/估值前自动调用）
+python3 /Users/zhangkun/Desktop/AI个人投资公司/fetch_financials.py NVDA
+python3 /Users/zhangkun/Desktop/AI个人投资公司/fetch_financials.py 0700.HK --peers TME 9999.HK</code></pre>
+
+  <div class="kv-grid" style="margin-top:12px">
+    <div class="kv"><div class="k">SOP配置文件</div><div class="v"><code>/Users/zhangkun/Desktop/AI个人投资公司/config文件/AI投资助手SOP_优化版.md</code></div></div>
+    <div class="kv"><div class="k">估值报告存放</div><div class="v"><code>/Users/zhangkun/Desktop/AI个人投资公司/公司估值/</code></div></div>
+    <div class="kv"><div class="k">地缘折价参考</div><div class="v">中国VIE/ADR：20-40% | 台湾ADR：10-20%</div></div>
+    <div class="kv"><div class="k">凯利波动折减</div><div class="v">中概ADR: ×0.25 | 稳定蓝筹: ×0.5</div></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 8 — PORTFOLIO
+════════════════════════════════════════════ -->
+<div class="section-divider" id="portfolio">08 &nbsp; 当前持仓快照（Futu API / OpenD + 手动补充 · 2026-04-22 18:48）</div>
+
+<div class="card">
+  <div class="alert-box alert-blue">
+    <strong>数据来源：</strong>本节当前采用 <code>Futu API / OpenD</code> + <strong>用户手动补充（截图）</strong> 的混合汇总口径。
+    其中富途境外资金池来自实时 API；A股 / 港股通 / 腾讯 RSU 来自你在 <code>2026-04-22 18:48</code> 左右提供的截图补录。
+    本页上方资产卡片现已改为<strong>全组合口径（统一折算为 RMB）</strong>：
+    <code>总资产 = Futu总资产(HKD) × HKD/CNY + 长江证券总资产(RMB) + 腾讯RSU参考市值(HKD) × HKD/CNY</code>。
+    按我们当前规则，<strong>RMB资产 = 长江证券总资产 + 腾讯RSU折RMB</strong>，<strong>境外资产 = Futu总资产折RMB</strong>。
+    <strong>注：</strong>这里的汇率只用于内部统一汇总，不等于实际交易换汇价，因此与券商 App 内部折算可能存在小幅差异。
+  </div>
+
+  <div class="kv-grid" style="margin-top:12px">
+    <div class="kv"><div class="k">总资产（RMB统一口径）</div><div class="v">2,739,778.20 RMB</div></div>
+    <div class="kv"><div class="k">RMB资产</div><div class="v">1,266,588.47 RMB</div></div>
+    <div class="kv"><div class="k">境外资产</div><div class="v">1,473,189.73 RMB</div></div>
+    <div class="kv"><div class="k">RMB / 境外占比</div><div class="v">46.2% / 53.8%</div></div>
+    <div class="kv"><div class="k">汇率口径</div><div class="v">HKD/CNY = 0.8704（ECB 2026-04-21 参考汇率推导）</div></div>
+    <div class="kv"><div class="k">快照时间</div><div class="v">Futu 2026-04-22 17:06 · 手动补充 2026-04-22 18:48</div></div>
+  </div>
+
+  <div class="section-title">账户原始口径（便于核对）</div>
+  <div class="kv-grid" style="margin-top:12px">
+    <div class="kv"><div class="k">Futu账户总资产</div><div class="v">1,692,472.78 HKD</div></div>
+    <div class="kv"><div class="k">Futu证券市值</div><div class="v">1,535,142.96 HKD</div></div>
+    <div class="kv"><div class="k">Futu基金资产</div><div class="v">157,329.82 HKD</div></div>
+    <div class="kv"><div class="k">长江证券总资产</div><div class="v">740,148.60 RMB</div></div>
+    <div class="kv"><div class="k">腾讯 RSU 参考市值</div><div class="v">604,800.00 HKD</div></div>
+    <div class="kv"><div class="k">现金细项（Futu）</div><div class="v">HK Cash 0.00 HKD · US Cash -0.01 USD</div></div>
+  </div>
+
+  <div class="section-title">Futu 境外资金池 — 股票 / 港股现货</div>
+  <table class="portfolio-table">
+    <thead>
+      <tr><th>代码/标的</th><th>公司</th><th>账户</th><th>持仓</th><th>成本</th><th>现价</th><th>币种</th><th>市值</th><th>备注</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>HK.00700</code></td><td>腾讯控股</td><td>富途港股</td><td>500</td><td>549.90</td><td>471.00</td><td>HKD</td><td>235,500.00</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>US.PDD</code></td><td>拼多多</td><td>富途美股</td><td>825</td><td>110.61</td><td>99.60</td><td>USD</td><td>82,170.00</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>HK.09992</code></td><td>泡泡玛特</td><td>富途港股</td><td>400</td><td>150.30</td><td>156.90</td><td>HKD</td><td>62,760.00</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>US.NVDA</code></td><td>英伟达</td><td>富途美股</td><td>225</td><td>34.61</td><td>225.83</td><td>USD</td><td>50,811.75</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>US.QCOM</code></td><td>高通</td><td>富途美股</td><td>150</td><td>144.39</td><td>135.56</td><td>USD</td><td>20,334.00</td><td>Futu API / OpenD 实时快照</td></tr>
+      <tr><td><code>US.ADBE</code></td><td>Adobe</td><td>富途美股</td><td>30</td><td>246.29</td><td>236.07</td><td>USD</td><td>7,082.10</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>US.NU</code></td><td>Nu Holdings</td><td>富途美股</td><td>600</td><td>12.92</td><td>12.82</td><td>USD</td><td>7,692.00</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>US.IT</code></td><td>加特纳</td><td>富途美股</td><td>50</td><td>152.57</td><td>144.46</td><td>USD</td><td>7,223.00</td><td>Futu API / OpenD 实时快照（2026-05-14 10:07）</td></tr>
+      <tr><td><code>HK.00181</code></td><td>闽港控股</td><td>富途港股</td><td>20000</td><td>0.13</td><td>0.12</td><td>HKD</td><td>2,380.00</td><td>Futu API / OpenD 实时快照</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">境内 RMB 资金池 + RSU — 用户手动补充（截图）</div>
+  <table class="portfolio-table">
+    <thead>
+      <tr><th>代码/标的</th><th>公司</th><th>账户</th><th>持仓</th><th>成本</th><th>现价</th><th>币种</th><th>市值</th><th>备注</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>HK.09992</code></td><td>泡泡玛特</td><td>港股通</td><td>400</td><td>152.935</td><td>156.900</td><td>HKD</td><td>62,760.00</td><td>用户手动成交补充：2026-05-14 新增 200 股 @ 156.6HKD</td></tr>
+      <tr><td><code>600036.SS</code></td><td>招商银行</td><td>A股</td><td>2700</td><td>38.786</td><td>39.740</td><td>CNY</td><td>107,298.00</td><td>用户手动成交补充：2026-05-14 卖出 800 股</td></tr>
+      <tr><td><code>000333.SZ</code></td><td>美的集团</td><td>A股</td><td>5000</td><td>78.825</td><td>79.300</td><td>CNY</td><td>396,500.00</td><td>用户截图补充（长江证券，约18:48）</td></tr>
+      <tr><td><code>HK.00700</code></td><td>腾讯控股</td><td>港股通</td><td>400</td><td>613.822</td><td>471.000</td><td>HKD</td><td>188,400.00</td><td>按 2026-05-14 富途实时价近似更新</td></tr>
+      <tr><td><code>HK.00700</code></td><td>腾讯控股</td><td>腾讯 RSU</td><td>1200</td><td>0（已完税）</td><td>471.000</td><td>HKD</td><td>565,200.00</td><td>按 2026-05-14 富途实时价近似更新</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Futu 境外资金池 — 期权 / 事件仓</div>
+  <table class="portfolio-table">
+    <thead>
+      <tr><th>合约</th><th>标的</th><th>方向/数量</th><th>成本</th><th>现价</th><th>币种</th><th>市值</th><th>备注</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>HK.NTE260629P160000</code></td><td>网易 260629 160.00 沽</td><td>SHORT 1张</td><td>7.15</td><td>4.02</td><td>HKD</td><td>-2,010.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.NVDA270115C240000</code></td><td>NVDA 270115 240.00C</td><td>SHORT 1张</td><td>16.07</td><td>16.00</td><td>USD</td><td>-1,600.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>HK.POP260528P145000</code></td><td>泡泡玛特 260528 145.00 沽</td><td>SHORT 1张</td><td>7.46</td><td>3.32</td><td>HKD</td><td>-664.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.QCOM261218P110000</code></td><td>QCOM 261218 110.00P</td><td>SHORT 1张</td><td>8.00</td><td>5.72</td><td>USD</td><td>-572.52</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>HK.POP260528P140000</code></td><td>泡泡玛特 260528 140.00 沽</td><td>SHORT 1张</td><td>5.96</td><td>2.20</td><td>HKD</td><td>-440.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>HK.TCH260629C600000</code></td><td>腾讯 260629 600.00 购</td><td>SHORT 1张</td><td>7.25</td><td>4.30</td><td>HKD</td><td>-430.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>HK.TCH260528P450000</code></td><td>腾讯 260528 450.00 沽</td><td>SHORT 1张</td><td>8.80</td><td>4.22</td><td>HKD</td><td>-422.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>HK.TCH260629C610000</code></td><td>腾讯 260629 610.00 购</td><td>SHORT 1张</td><td>6.20</td><td>3.86</td><td>HKD</td><td>-386.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.QCOM261218P100000</code></td><td>QCOM 261218 100.00P</td><td>SHORT 1张</td><td>5.65</td><td>3.77</td><td>USD</td><td>-376.87</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.MSFT260918P285000</code></td><td>MSFT 260918 285.00P</td><td>SHORT 2张</td><td>5.75</td><td>1.79</td><td>USD</td><td>-357.72</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.QCOM260515C145000</code></td><td>QCOM 260515 145.00C</td><td>SHORT 1张</td><td>4.00</td><td>3.12</td><td>USD</td><td>-312.35</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.ADBE260522P220000</code></td><td>ADBE 260522 220.00P</td><td>SHORT 1张</td><td>2.92</td><td>2.97</td><td>USD</td><td>-296.73</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.PDD260515P95000</code></td><td>PDD 260515 95.00P</td><td>SHORT 1张</td><td>2.51</td><td>1.93</td><td>USD</td><td>-192.72</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.TME260618P8000</code></td><td>TME 260618 8.00P</td><td>SHORT 5张</td><td>0.35</td><td>0.15</td><td>USD</td><td>-75.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+      <tr><td><code>US.AAPL260618P195000</code></td><td>AAPL 260618 195.00P</td><td>SHORT 1张</td><td>1.45</td><td>0.43</td><td>USD</td><td>-43.00</td><td>事件/期权仓，来自 Futu API 实时快照</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>范围说明：</strong>
+    A股、港股通、腾讯 RSU 等 <strong>境内 RMB 资金池</strong> 持仓，不在当前 Futu OpenD 快照范围内，因此本次通过截图手动补录。
+    <code>holdings.json</code> 仍可供离线监控和历史维护使用，但本节展示口径已升级成 <strong>Futu API 实时快照 + 用户手动补充</strong>。
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-top:12px">
+    <strong>后续更新流程（正式口径）：</strong>
+    这一节以后采用 <strong>“Futu API + 手动补充”</strong> 的混合汇总方式：
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li><strong>步骤1：</strong>你下达更新指令后，我先通过 <code>Futu API / OpenD</code> 刷新富途境外资金池（美股 / 港股 / 现金 / 期权）。</li>
+      <li><strong>步骤2：</strong>你再补充 A股、港股通、腾讯 RSU 的最新截图或文字数据。</li>
+      <li><strong>步骤3：</strong>我把境外快照与境内/RSU补充信息合并成一张完整的“当前持仓快照”总表。</li>
+      <li><strong>步骤4：</strong>若某只股票同时存在于 <code>主仓</code> 与 <code>V6</code>，财报 / 经营更新仍按<strong>主仓 thesis</strong>完整同步，不允许因为 V6 自动仓身份而忽略主仓更新。</li>
+      <li><strong>说明：</strong>因此本节今后不再假设“全自动覆盖全部账户”，而是明确采用<strong>半自动汇总</strong>口径。</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 9 — AUTOMATION
+════════════════════════════════════════════ -->
+<div class="section-divider" id="automation">09 &nbsp; 自动化调度（macOS LaunchAgent）</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th>LaunchAgent文件</th><th>触发时间</th><th>执行内容</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>com.investment.earnings.plist</code></td>
+        <td>工作日(周一~五) 08:37</td>
+        <td>季报追踪，有财报≤5天时发邮件</td>
+      </tr>
+      <tr>
+        <td><code>com.investment.screener.plist</code></td>
+        <td>每周日 09:05</td>
+        <td>持仓价格监控（watchlist）</td>
+      </tr>
+      <tr>
+        <td><code>com.investment.screener.quarterly.plist</code></td>
+        <td>每年1/4/7/10月5日 09:09</td>
+        <td>全球股池扫描（universe）</td>
+      </tr>
+      <tr>
+        <td><code>com.investment.risk.plist</code></td>
+        <td>每月1日 09:13</td>
+        <td>组合风险集中度监控</td>
+      </tr>
+      <tr>
+        <td><code>com.investment.macro.plist</code></td>
+        <td>每月15日 09:17</td>
+        <td>宏观择时信号更新</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">LaunchAgent 管理命令</div>
+  <pre><code># 安装（新电脑迁移后执行一次）
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.earnings.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.screener.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.screener.quarterly.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.risk.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.macro.plist
+
+# 验证注册状态
+launchctl list | grep investment
+
+# 卸载（需要时）
+launchctl bootout gui/$(id -u) com.investment.earnings
+launchctl bootout gui/$(id -u) com.investment.screener
+
+# 手动触发测试
+launchctl start com.investment.earnings</code></pre>
+
+  <p style="font-size:12px;color:var(--gray);margin-top:8px">
+    📁 LaunchAgent文件位置：<code>~/Library/LaunchAgents/</code><br>
+    📄 日志位置：<code>/Users/zhangkun/Desktop/AI个人投资公司/screener/launchd_*.log</code>
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 10 — EMAIL
+════════════════════════════════════════════ -->
+<div class="section-divider" id="email">10 &nbsp; 邮件告警配置</div>
+
+<div class="card">
+  <div class="kv-grid">
+    <div class="kv"><div class="k">SMTP服务器</div><div class="v">smtp.163.com</div></div>
+    <div class="kv"><div class="k">端口</div><div class="v">465（SSL直连，非STARTTLS）</div></div>
+    <div class="kv"><div class="k">发件人</div><div class="v">quanyi_zk@163.com</div></div>
+    <div class="kv"><div class="k">收件人</div><div class="v">quanyi_zk@163.com</div></div>
+    <div class="kv"><div class="k">SMTP授权码</div><div class="v"><code>MFZEjtktdB74RiBg</code></div></div>
+    <div class="kv"><div class="k">主题前缀</div><div class="v">[投资预警]</div></div>
+  </div>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>⚠️ 注意：</strong>这是SMTP授权码，不是163邮箱登录密码。若失效，前往163邮箱→设置→POP3/SMTP→重新获取授权码，
+    更新 <code>screener/config.json</code> 中的 <code>"password"</code> 字段。
+  </div>
+
+  <div class="section-title">config.json 配置结构</div>
+  <pre><code>{
+  "email": {
+    "enabled": true,
+    "smtp_host": "smtp.163.com",
+    "smtp_port": 465,
+    "use_ssl_direct": true,
+    "sender": "quanyi_zk@163.com",
+    "password": "MFZEjtktdB74RiBg",
+    "recipients": ["quanyi_zk@163.com"],
+    "subject_prefix": "[投资预警]"
+  },
+  "screener": {
+    "watchlist_alert_mos_threshold": 0.40,
+    "universe_min_score": 6,
+    "request_delay_seconds": 3,
+    "opportunity_cost_ev_fcf_discount": 0.25
+  }
+}</code></pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 11 — COMMANDS
+════════════════════════════════════════════ -->
+<div class="section-divider" id="commands">11 &nbsp; 常用命令速查</div>
+
+<div class="card">
+  <div class="grid-2">
+    <div>
+      <div class="section-title">screener系统命令</div>
+      <pre><code>cd /Users/zhangkun/Desktop/AI个人投资公司/screener
+
+bash run.sh watchlist          # 持仓监控
+bash run.sh universe           # 全球股池扫描
+bash run.sh earnings           # 季报追踪
+bash run.sh earnings-summary   # 强制发季报日历
+bash run.sh risk               # 风险集中度监控
+bash run.sh macro              # 宏观择时信号
+bash run.sh macro-offline      # 宏观（离线）
+bash run.sh test-email         # 测试邮件</code></pre>
+    </div>
+    <div>
+      <div class="section-title">Cash Alpha V3 / Value Wheel 命令</div>
+      <pre><code>cd /Users/zhangkun/WorkBuddy/程序化/量化程序/cash_alpha_v3_repo
+
+# 小资金线 release gate / guarded runner / 日报
+python3 small_track_release_gate.py
+python3 small_track_guarded_live_runner.py
+python3 small_track_reporting.py --period daily --futu-trd-env SIMULATE
+
+# 大资金线 reviewed gate / paper validation / 日报
+python3 large_track_release_gate.py --account-source futu --futu-trd-env REAL
+python3 large_track_guarded_paper_runner.py --account-source futu --futu-trd-env REAL
+python3 large_track_reporting.py --period daily --futu-trd-env REAL
+
+cd /Users/zhangkun/WorkBuddy/程序化/量化程序/value_wheel_repo
+
+# Value Wheel 只生成建议，不自动下单
+PYTHONPATH=src python3 src/value_wheel/run_wheel_cli.py --mode analyze-only --report-tag latest</code></pre>
+    </div>
+  </div>
+
+  <div class="section-title">Claude Code 斜杠命令</div>
+  <pre><code>/初筛 [公司名或代码]          # 例：/初筛 HIMX
+/估值 [代码] [股价]            # 例：/估值 PDD 98.50
+分析标的：[代码]，当前股价：[XXX]   # 触发SOP估值</code></pre>
+
+  <div class="section-title">AI 工作流指令入口（对 AI 直接说）</div>
+  <table>
+    <thead><tr><th>指令</th><th>用途</th><th>输出 / 落点</th><th>纪律</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>/初筛 [公司/代码]</code></td>
+        <td>新公司进入研究漏斗：质量底座、10-20x Radar、反证、仓位等级。</td>
+        <td>初筛报告；决定是否进入正式估值。</td>
+        <td>不是买入建议；必须先识别生意模式和反证。</td>
+      </tr>
+      <tr>
+        <td><code>/估值 [代码] [股价]</code><br><code>分析标的：X，当前股价：Y</code></td>
+        <td>正式 SOP 估值：FCF真实性、DCF、赔率、击球区、仓位建议。</td>
+        <td><code>公司估值/</code> 下正式报告；必要时同步 26 策略文件价格带。</td>
+        <td>估值是约束器，不是自我说服工具；必须写反证事实。</td>
+      </tr>
+      <tr>
+        <td><code>X Radar 扫描</code><br><code>Xradar整理</code></td>
+        <td>整理 X / 信息源中的高价值公开线索，转成 Radar 输入。</td>
+        <td><code>信息源扫描/X_Radar/</code>；必要事件写入 WorkBuddy <code>events_calendar.json</code>。</td>
+        <td>只做输入整理，不因单条信息触发交易。</td>
+      </tr>
+      <tr>
+        <td><code>复盘 A股Radar</code></td>
+        <td>复盘 A股短线 Radar 样本、主线强弱、角色判断、规则是否过严或过松。</td>
+        <td><code>报表输出/LATEST/A股短线Radar复盘_LATEST.md</code> 与晚间操作指导。</td>
+        <td>Phase 1A 训练期；真实仓位 0 或小额训练，不打板、不排板、不自动交易。</td>
+      </tr>
+      <tr>
+        <td><code>更新13F学习</code></td>
+        <td>每季 13F 披露窗口后，学习 P0/P1/P2 对冲基金和自营交易公司持仓变化。</td>
+        <td><code>系统优化升级依据/</code> 与 <code>research_snapshots/</code> 下季度 13F 学习报告；反哺美股 Radar 字段。</td>
+        <td>13F 滞后，只用于完善 Radar skills，不照抄、不自动交易。</td>
+      </tr>
+      <tr>
+        <td><code>复盘 V6-A</code></td>
+        <td>查看 V6-A pilot、stale-data、release gate、风险退出和执行质量。</td>
+        <td>V6 报告、release gate、managed state、Daily Board 提醒。</td>
+        <td>STALE_DATA_MODE 下 BUY/ADD 阻断；SELL 只做人工风险复核。</td>
+      </tr>
+      <tr>
+        <td><code>复盘 V6-B</code></td>
+        <td>研究美股 Radar / Dynamic Pool / V6-B universe 的候选、漏网和回测准备。</td>
+        <td><code>v6_strategy_lab/reports/</code>、V6-B 执行卡、Radar 样本闭环。</td>
+        <td>V6-B 当前 research / SIM only；不占预算、不直接下单。</td>
+      </tr>
+      <tr>
+        <td><code>复盘 [标的]</code><br>例：<code>复盘 PDD</code>、<code>复盘 NVDA</code></td>
+        <td>财报后主仓 thesis re-underwrite，或价格/经营变化后的持仓复核。</td>
+        <td>公司研究、估值报告、26 策略文件中的仓位和价格带更新。</td>
+        <td>先看 thesis 和估值，再谈仓位；不得用财报情绪强行加仓。</td>
+      </tr>
+      <tr>
+        <td><code>记录 SA 信号</code></td>
+        <td>Seeking Alpha 免费公开信息源试验，收集标题/链接/摘要作为美股 Radar 输入。</td>
+        <td><code>external_signal_trials/seeking_alpha_trial.csv</code> 或相关样本文件。</td>
+        <td>只整理公开信息，不绕 paywall，不自动交易。</td>
+      </tr>
+      <tr>
+        <td><code>今天要做什么</code><br><code>开盘前看什么</code></td>
+        <td>读取 Daily Board / 事件日历 / 当前工作流动作清单。</td>
+        <td>优先看 <code>morning_brief.py</code> 邮件与 <code>events_calendar.json</code>。</td>
+        <td>不要靠聊天记忆临时编任务；Daily Board 是正式任务中枢。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">报告文件位置</div>
+  <pre><code>/Users/zhangkun/Desktop/AI个人投资公司/screener/reports/
+  ├── screener_watchlist_YYYYMMDD.html   # 持仓监控报告
+  ├── earnings_YYYYMMDD.html             # 季报追踪报告
+  ├── risk_YYYYMMDD.html                 # 风险监控报告
+  └── macro_YYYYMMDD.html                # 宏观择时报告
+
+/Users/zhangkun/Desktop/AI个人投资公司/公司估值/
+  └── [代码]_初筛报告_YYYYMMDD.html     # 初筛报告</code></pre>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 12 — MIGRATION
+════════════════════════════════════════════ -->
+<div class="section-divider" id="migration">12 &nbsp; 新电脑迁移指南</div>
+
+<div class="card">
+  <div class="alert-box alert-blue" style="margin-bottom:16px">
+    <strong>📋 当前迁移重点：</strong>优先迁移 <code>知识库_v1</code>、<code>screener + 估值体系</code>、<code>Cash Alpha V3</code>、<code>Cash Alpha V6 / V6 Strategy Lab / V6-B</code>、<code>Value Wheel V2</code>、<code>tax_calc_v1</code>。
+    <strong>旧铁鹰只属于历史归档，不再作为现役系统迁移目标。</strong>
+  </div>
+
+  <div class="section-title">迁移清单（按顺序执行）</div>
+  <ol class="step-list">
+    <li>
+      <strong>安装 Python 3.11+</strong><br>
+      <code>python3 --version</code> 验证。推荐使用 Homebrew 安装：<code>brew install python3</code>
+    </li>
+    <li>
+      <strong>安装 Python 依赖包</strong>
+      <pre><code>pip3 install yfinance pandas numpy requests
+pip3 install futu-api      # Cash Alpha V3 / Value Wheel 需要
+pip3 install openbb        # 估值数据获取（可选）
+pip3 install akshare       # A股数据（可选）</code></pre>
+    </li>
+    <li>
+      <strong>复制桌面系统目录</strong><br>
+      复制到新电脑：<br>
+      <code>/Users/[新用户名]/Desktop/AI个人投资公司/</code>
+    </li>
+    <li>
+      <strong>确认 LLM Wiki / 知识库_v1 已完整迁移</strong><br>
+      这是 AI agent 的长期记忆层，不是普通资料夹。迁移后必须确认以下路径存在：
+      <pre><code>/Users/[新用户名]/Desktop/AI个人投资公司/知识库_v1/
+/Users/[新用户名]/Desktop/AI个人投资公司/知识库规划_Dingcle_LLM_Wiki_v1.md</code></pre>
+      若从外接盘、Time Machine 或 root 权限目录复制，先修正 owner，避免后续 Claude Code / Codex 写入失败：
+      <pre><code>sudo chown -R [新用户名]:staff "/Users/[新用户名]/Desktop/AI个人投资公司/知识库_v1"</code></pre>
+    </li>
+    <li>
+      <strong>复制主仓库</strong><br>
+      至少保留以下目录：<br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/morning_brief.py</code>、<code>central_risk_board.py</code>、<code>events_calendar.json</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/system_health_check.py</code>、<code>MIGRATION_CHECKLIST.md</code>、<code>BACKUP_MANIFEST.md</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/cash_alpha_v3_repo</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/attack_engine_*.py</code> 与 <code>backtest_results/attack_engine_*/</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/V6_STRATEGY_LAB.md</code>、<code>v6_strategy_lab/</code>、<code>v6b_*.py</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/investment_screener/radar_astock.json</code>、<code>A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code>、<code>A_SHARE_RADAR_REVIEW_SOP.md</code>、<code>A_SHARE_RADAR_AUTOMATION_ROADMAP.md</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/value_wheel_repo</code><br>
+      <code>/Users/[新用户名]/WorkBuddy/程序化/量化程序/tax_calc_v1</code>
+    </li>
+    <li>
+      <strong>更新路径（若用户名不同）</strong><br>
+      检查 <code>.plist</code>、<code>run.sh</code>、本地 HTML / 脚本中的硬编码路径，将 <code>/Users/zhangkun/</code> 替换为新用户名路径
+    </li>
+    <li>
+      <strong>复制 LaunchAgent 文件</strong>
+      <pre><code>cp ~/[旧电脑备份]/Library/LaunchAgents/com.investment.*.plist ~/Library/LaunchAgents/</code></pre>
+    </li>
+    <li>
+      <strong>注册 LaunchAgents（必须执行）</strong>
+      <pre><code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.earnings.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.screener.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.screener.quarterly.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.risk.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.investment.macro.plist</code></pre>
+    </li>
+    <li>
+      <strong>配置 Futu OpenD</strong><br>
+      下载富途牛牛 → 登录 → 设置 → OpenD API → 启动。<br>
+      V6 预览、Value Wheel 最新行情扫描、A股 Radar 快照 / K线、部分报告工具都依赖 OpenD。Cash Alpha V3 当前报告停发，但若未来重启也依赖 OpenD。
+    </li>
+    <li>
+      <strong>验证邮件配置</strong>
+      <pre><code>cd /Users/[新用户名]/Desktop/AI个人投资公司/screener
+bash run.sh test-email</code></pre>
+    </li>
+    <li>
+      <strong>验证桌面系统</strong>
+      <pre><code>bash run.sh earnings --no-email
+bash run.sh risk --no-email
+bash run.sh macro --offline</code></pre>
+    </li>
+    <li>
+      <strong>验证 Cash Alpha V3</strong>
+      <pre><code>cd /Users/[新用户名]/WorkBuddy/程序化/量化程序/cash_alpha_v3_repo
+python3 small_track_release_gate.py
+python3 large_track_release_gate.py
+# 注意：V3 模拟盘日报/周报当前应保持 disabled，除非用户明确要求恢复。</code></pre>
+    </li>
+    <li>
+      <strong>验证 Cash Alpha V6</strong>
+      <pre><code>cd /Users/[新用户名]/WorkBuddy/程序化/量化程序
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 v6_reporting.py --period daily
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 attack_engine_release_gate.py --tag migration_check</code></pre>
+      同时确认 V6-B 研发入口存在：
+      <pre><code>ls V6_STRATEGY_LAB.md
+ls v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md
+ls v6b_radar_momentum_challenger.py</code></pre>
+    </li>
+    <li>
+      <strong>验证 Daily Board 与 A股 Radar</strong>
+      <pre><code>cd /Users/[新用户名]/WorkBuddy/程序化/量化程序
+python3 system_health_check.py
+python3 morning_brief.py --no-email
+ls investment_screener/radar_astock.json
+ls investment_screener/A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code></pre>
+    </li>
+    <li>
+      <strong>验证 Value Wheel V2</strong>
+      <pre><code>cd /Users/[新用户名]/WorkBuddy/程序化/量化程序/value_wheel_repo
+PYTHONPATH=src python3 src/value_wheel/run_wheel_cli.py --mode analyze-only --report-tag latest</code></pre>
+    </li>
+    <li>
+      <strong>验证知识库_v1 可被 AI agent 调用</strong><br>
+      重点确认入口、系统规则、公司层、研究输入层和执行层都存在：
+      <pre><code>cd /Users/[新用户名]/Desktop/AI个人投资公司/知识库_v1
+ls README.md
+ls 00_System/受控词表.md
+ls 02_Companies/估值报告迁移台账.md
+ls 04_Research_Notes/研究输入索引.md
+ls 06_Execution/Watchlist_当前动作.md</code></pre>
+    </li>
+    <li>
+      <strong>复制 Claude Code 斜杠命令（/初筛、/估值）</strong><br>
+      <pre><code>mkdir -p ~/.claude/commands
+cp [备份]/初筛.md ~/.claude/commands/初筛.md
+cp [备份]/估值.md ~/.claude/commands/估值.md</code></pre>
+      然后验证：<code>/初筛 NVDA</code>、<code>/估值 PDD 98.5</code>
+    </li>
+    <li>
+      <strong>配置 Claude Code Skills（确认路径）</strong><br>
+      验证斜杠命令中的两个关键路径在新机器上存在：
+      <pre><code># /初筛 和 /估值 都依赖这两个文件：
+ls /Users/[新用户名]/Desktop/AI个人投资公司/fetch_financials.py
+ls /Users/[新用户名]/Desktop/AI个人投资公司/config文件/AI投资助手SOP_优化版.md</code></pre>
+    </li>
+  </ol>
+
+  <div class="section-title">关键配置文件清单</div>
+  <table>
+    <thead><tr><th>文件</th><th>作用</th><th>迁移注意</th></tr></thead>
+    <tbody>
+      <tr><td><code>screener/config.json</code></td><td>邮件 + 筛选参数</td><td>直接复制，含 SMTP 授权码</td></tr>
+      <tr><td><code>screener/holdings.json</code></td><td>实际持仓明细</td><td>直接复制</td></tr>
+      <tr><td><code>screener/earnings_calendar.json</code></td><td>财报日历</td><td>直接复制</td></tr>
+      <tr><td><code>screener/macro_cache.json</code></td><td>手动维护的宏观数据</td><td>直接复制</td></tr>
+      <tr><td><code>screener/watchlist.json</code></td><td>观察标的 + 估值数据</td><td>直接复制</td></tr>
+      <tr><td><code>events_calendar.json</code></td><td>Daily Board 唯一正式事件源</td><td>只保留 WorkBuddy 路径；不要在 Desktop 另建同名 calendar</td></tr>
+      <tr><td><code>morning_brief.py</code></td><td>每日 Daily Board / 任务中枢</td><td>迁移后必须先跑 <code>--no-email</code> 验证</td></tr>
+      <tr><td><code>central_risk_board.py</code></td><td>中央风险看板</td><td>负责跨主仓、V6、Radar、实验线风险视角</td></tr>
+      <tr><td><code>system_health_check.py</code></td><td>迁移健康检查</td><td>换机后第一批运行；0 fail 才继续恢复自动化</td></tr>
+      <tr><td><code>知识库_v1/README.md</code></td><td>AI Wiki 总入口</td><td>必须保留；迁移后先让 AI 读取此文件</td></tr>
+      <tr><td><code>知识库_v1/00_System/受控词表.md</code></td><td>状态、身份、估值报告状态统一词表</td><td>防止 agent 写法漂移</td></tr>
+      <tr><td><code>知识库_v1/02_Companies/估值报告迁移台账.md</code></td><td>公司估值报告进入知识层的全量台账</td><td>迁移后检查 source file 路径是否仍有效</td></tr>
+      <tr><td><code>知识库_v1/04_Research_Notes/研究输入索引.md</code></td><td>宏观、文章、横向比较等输入型材料入口</td><td>防止非公司材料误塞入公司层</td></tr>
+      <tr><td><code>知识库_v1/06_Execution/</code></td><td>Watchlist、击球区、待验证、本周动作</td><td>属于短周期动态区，需要迁移后继续更新</td></tr>
+      <tr><td><code>cash_alpha_v3_repo/small_track_live_execution_policy.json</code></td><td>小资金线执行约束</td><td>不要随意改动；先看 release gate</td></tr>
+      <tr><td><code>v6_live_launch_policy.json</code></td><td>V6 真实/模拟放行策略</td><td>当前只允许模拟盘验证；真实账户需要重新 gate 和人工确认</td></tr>
+      <tr><td><code>V6_STRATEGY_LAB.md</code></td><td>V6-A / V6-B / V6-C / Allocator 研发总入口</td><td>新 AI 接手 V6 前必须先读</td></tr>
+      <tr><td><code>v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md</code></td><td>V6 stale-data 风险退出政策</td><td>定义“无 K线额度时只允许刹车，不允许踩油门”</td></tr>
+      <tr><td><code>v6_strategy_lab/</code></td><td>V6 challenger 假设、报告、scorecard 和 roadmap</td><td>必须保留 point-in-time 与防作弊证据</td></tr>
+      <tr><td><code>v6b_radar_momentum_challenger.py</code></td><td>V6-B Radar 动态资源池回测入口</td><td>当前 research only，不直接上线</td></tr>
+      <tr><td><code>investment_screener/radar_astock.json</code></td><td>A股 Radar 观察池</td><td>当前 Phase 1A 手动维护；复盘前必须先读</td></tr>
+      <tr><td><code>investment_screener/A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code></td><td>A股短线系统总规格</td><td>新 AI 做 A股短线前必须先读</td></tr>
+      <tr><td><code>investment_screener/A_SHARE_RADAR_REVIEW_SOP.md</code></td><td>A股 Radar 复盘与周度新候选 SOP</td><td>定义每日复盘、周五扫描、纯概念硬排除</td></tr>
+      <tr><td><code>investment_screener/A_SHARE_RADAR_AUTOMATION_ROADMAP.md</code></td><td>A股 Radar 自动化路线图</td><td>Phase 1A 不接券商委托；PTrade 约 100万信用账户净资产再评估</td></tr>
+      <tr><td><code>backtest_results/attack_engine_replay/</code></td><td>V6 replay、逐年表现和黑天鹅测试证据</td><td>必须保留，迁移后先检查最新 tag 是否可读</td></tr>
+      <tr><td><code>backtest_results/attack_engine_sim_executor/</code></td><td>V6 模拟盘计划、订单和执行报告</td><td>用于核验模拟盘是否按目标仓位运行</td></tr>
+      <tr><td><code>cash_alpha_v3_repo/backtest_results/live_bundles/</code></td><td>reviewed bundle / live reviewed 归档</td><td>保留，便于复原当前口径</td></tr>
+      <tr><td><code>value_wheel_repo/configs/</code></td><td>Wheel runtime / policy</td><td>确认账户、邮件和数据路径</td></tr>
+      <tr><td><code>~/Library/LaunchAgents/com.investment.*.plist</code></td><td>screener 自动化调度</td><td>复制后需重新 bootstrap</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-green" style="margin-top:14px">
+    ✅ <strong>迁移完成验证：</strong><code>bash run.sh earnings</code> 正常输出，<code>launchctl list | grep investment</code> 有记录，
+    <code>python3 small_track_release_gate.py</code> 与 <code>python3 large_track_release_gate.py</code> 能正常运行，
+    Value Wheel 能生成最新建议报告，且 <code>知识库_v1/README.md</code>、<code>00_System/受控词表.md</code>、
+    <code>02_Companies/估值报告迁移台账.md</code>、<code>06_Execution/Watchlist_当前动作.md</code> 均可读取，即可视为迁移成功。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 12B — AI One-Person Investment Company
+════════════════════════════════════════════ -->
+<div class="section-divider" id="ai_company">12B &nbsp; AI一人投资公司组织架构</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon" style="background:#e8f5e9">🏢</div>
+    <div>
+      <div class="card-title" style="color:var(--accent)">AI 一人投资公司 operating system</div>
+      <div class="card-subtitle">价值投资 + V6量化进攻 + AI Wiki + 多 Agent 执行网络</div>
+    </div>
+  </div>
+
+  <div class="alert-box alert-blue" style="margin-bottom:14px">
+    <strong>核心定位：</strong>价值投资负责长期认知和大资金底盘；V6 负责美股高进攻动量；AI Wiki 负责长期记忆；四类 agent 负责研究、量化、风控和运营执行。
+  </div>
+
+  <div class="alert-box alert-green" style="margin-bottom:14px">
+    <strong>2026-05-18 运营中枢更新：</strong><br>
+    Daily Board 是唯一正式任务中枢：<code>events_calendar.json</code> 是唯一事件源，<code>morning_brief.py</code> 负责输出今日投资 agenda，<code>central_risk_board.py</code> 负责中央风险视角。<br>
+    X扫描、A股 Radar、V6、主仓财报复盘、美股 Radar / V6-B、周期复盘都必须把待办汇入 Daily Board；任何 agent 不应仅凭对话记忆安排任务。
+  </div>
+
+  <div class="alert-box alert-green" style="margin-bottom:14px">
+    <strong>2026-05-14 方向锁定：</strong>未来目标不是做成“什么都做”的缩小版 Point72，而是做成 <strong>少数领域极强、流程像机构、风险受控、可持续复盘进化</strong> 的小型投资公司。<br>
+    正式四层结构锁定为：<code>价值投资主仓</code> + <code>V6</code> + <code>Radar-Sourced Overlay</code> + <code>Research / Experimental Sleeves</code>；期权被定义为 <code>Options Expression Layer</code>，只表达已有 edge，不单独成为主系统。收益目标可以有进攻性，但最高约束是主仓安全、生活质量和长期复利。
+  </div>
+
+  <div class="section-title">未来 12 个月升级主线（高层版）</div>
+  <table>
+    <thead><tr><th>支柱</th><th>要解决的问题</th><th>当前结论</th><th>未来 2-4 个月最重要动作</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Central Risk Board</strong></td><td>统一全账户、跨 sleeve 的中央风控层</td><td>已落地 <code>v1.2</code>；<code>2026-05-14</code> 状态 <code>RED</code>，主问题是腾讯 / PDD / 单一主题过度集中</td><td>继续提高主账本自动化、主题映射质量，并补事件窗口和 overlap 深化</td></tr>
+      <tr><td><strong>Research Supply Chain</strong></td><td>避免候选靠记忆和临时推动，减少主线漏网</td><td>两条研究链方向正确：<code>Value Rail</code> 与 <code>Dynamic Rail</code></td><td>把 <code>Magic Formula → 估值系统</code> 和 <code>Radar → Registry → Universe → Triage</code> 两条链做成稳定机器</td></tr>
+      <tr><td><strong>Order-to-Valuation Reality Check</strong></td><td>避免把“强主线”误判成“现在还能买”</td><td><code>Radar_Order_to_Valuation_Reality_Check_v1</code> 已落地</td><td>每个高优先级 Radar / V6-B / 外部朋友样本都要用订单、ARR、指引、未来收入和合理市值区间判断当前价格是否已透支</td></tr>
+      <tr><td><strong>Low-Correlation Sleeves</strong></td><td>避免总账户只靠一个 alpha 来源活着</td><td>现在已有主仓 / V6 / Overlay 雏形，但真正低相关 sleeve 还不够多</td><td>先不盲目扩系统；只允许增加逻辑独立、记账独立、归因独立的新 sleeve</td></tr>
+      <tr><td><strong>Performance Attribution</strong></td><td>把“赚/亏了”拆成可解释的过程，不让复盘退化成情绪</td><td>已落地 <code>v1</code>；当前 Futu 覆盖 <code>55.9%</code>，最大正贡献 <code>NVDA</code>，最大拖累 <code>PDD</code></td><td>补全 A股 / 港股通 / RSU 成本账本，并逐步增加 delta-adjusted exposure 视角</td></tr>
+      <tr><td><strong>Governance Review Layer</strong></td><td>把复盘从聊天和记忆，升级为固定证据链</td><td><code>Monthly Research Review</code>、<code>Overlay Journal</code>、<code>6月1日执行卡</code> 已落地</td><td>按周/月稳定运行，并让 backlog 真正反哺 V6、Radar 和仓位治理</td></tr>
+      <tr><td><strong>System Improvement Review</strong></td><td>每次改进后评估是否符合主线、是否有系统增益</td><td><code>系统改进增益评估卡 v1</code> 已落地</td><td>任何新规则、新脚本、新模块都必须回答方向一致性、系统增益、风险影响、可验证性和复杂度成本</td></tr>
+      <tr><td><strong>Options Expression Layer</strong></td><td>把期权从主观玩票，降级为定义风险的系统表达层</td><td><code>Options Manual v1</code> 与 <code>期权表达评估模板</code> 已落地；V6 期权化当前只研究，不直接实盘</td><td>任何主仓 / V6 / V6-B / Radar 标的进入操作设计前，都必须有期权评估板块；优先验证 <code>V6 signal + call debit spread</code>、<code>sideways regime + index iron condor</code>、<code>high-risk window + protective put</code>，通过回测和 20-30 笔样本后再谈自动化</td></tr>
+      <tr><td><strong>Daily Board / Events Hub</strong></td><td>把所有每日/周期复盘任务汇聚到唯一正式入口</td><td><code>morning_brief.py</code> 已读 <code>events_calendar.json</code>、V6 stale-data、review cadence、portfolio HTML、X Radar 状态</td><td>后续所有“今天该做什么”都进 Daily Board，不再靠聊天记忆；X扫描只追加事件，不替代 Daily Board</td></tr>
+      <tr><td><strong>A股 Shortline Radar</strong></td><td>建立一套可训练、可审计、可迭代的短线主线系统</td><td><code>A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code> 已落地；Phase 1A 只用 FutuAPI + 长江手动下单</td><td>跑满 20 个交易日复盘和 50 笔样本审计前，不扩大资金、不接自动委托、不把收益纳入生活费计划</td></tr>
+      <tr><td><strong>组织目标收敛</strong></td><td>不做什么都做的系统，做少数领域极强的系统</td><td>已锁定</td><td>所有新研究与新系统都必须服务于这个定位，而不是摊大饼</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">当前建议配比（基于你的需求）</div>
+  <table>
+    <thead><tr><th>配比类型</th><th>当前建议</th><th>解释</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>研究精力配比（未来 3-6 个月）</strong></td>
+        <td><code>Value Rail 55%</code> / <code>Dynamic Rail 45%</code></td>
+        <td>主仓仍是资本底盘，不能因追热点削弱；但当前最大短板正是主线捕捉与动态候选，所以 Dynamic Rail 必须接近半壁江山，而不是只做边角料。</td>
+      </tr>
+      <tr>
+        <td><strong>资本预算配比（当前阶段）</strong></td>
+        <td><code>价值投资主仓 75%-85%</code> / <code>V6 10%-20%</code> / <code>Radar Overlay 0%-3%</code> / <code>实验线 0%-2%</code></td>
+        <td>这是当前最符合“不能赌、但必须提升主线捕捉能力”的结构。Overlay 与实验线只争取右尾，不允许反客为主。期权预算包含在 Overlay / 实验线内，必须定义最大亏损。V6 未来只有在真实执行与治理跑稳后才有资格扩大。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-orange" style="margin-top:12px">
+    <strong>低相关 sleeve 的正确理解：</strong>它可能会降低单一主线最狂热阶段的账面冲刺速度，但未必会降低长期几何收益。<br>
+    正确标准不是“看起来更分散”，而是 <strong>加入后总组合的收益 / 回撤 / 睡眠质量是否更优</strong>。如果只是多加一条低效线去稀释收益，那就不该加。
+  </div>
+
+  <div class="section-title">绩效归因升级方向（你以后只看这一层就能知道哪里出问题）</div>
+  <table>
+    <thead><tr><th>归因层</th><th>核心问题</th><th>当前要做</th></tr></thead>
+    <tbody>
+      <tr><td><strong>账户层</strong></td><td>总账户赚钱/亏钱主要来自哪条线</td><td>拆开主仓 / V6 / Overlay / 实验线</td></tr>
+      <tr><td><strong>Sleeve 层</strong></td><td>哪条系统真的在创造增量 alpha</td><td>建立每周与每月的 sleeve 贡献表</td></tr>
+      <tr><td><strong>主题层</strong></td><td>是 AI、消费、港股红利、半导体谁在贡献 / 拖累</td><td>增加主题映射与主题净暴露</td></tr>
+      <tr><td><strong>执行层</strong></td><td>收益变化是逻辑对，还是仓位 / 执行 / timing 导致</td><td>把 process / result 分离，防止情绪化复盘</td></tr>
+    </tbody>
+  </table>
+
+  <table>
+    <thead><tr><th>角色</th><th>职责</th><th>推荐模型</th><th>禁止事项</th></tr></thead>
+    <tbody>
+      <tr><td><strong>研究员 Agent</strong></td><td>行业、公司、财报、估值、公司卡、行业学习</td><td><code>GPT-5.4 xhigh</code></td><td>不下单，不改量化策略</td></tr>
+      <tr><td><strong>量化员 Agent</strong></td><td>回测、replay、challenger、V6 Strategy Lab</td><td><code>GPT-5.4 high</code>；复杂整合用 <code>GPT-5.5 medium</code></td><td>不越过 release gate，不直接升级主策略</td></tr>
+      <tr><td><strong>风控员 Agent</strong></td><td>仓位、回撤、订单、偏离、OpenD、reconciliation</td><td><code>GPT-5.5 medium</code></td><td>不把 pending 说成 PASS，不碰未授权实盘</td></tr>
+      <tr><td><strong>运营员 Agent</strong></td><td>日报、周报、税务、迁移、GitHub/private repo、备份</td><td><code>GPT-5.4 high</code></td><td>不提交敏感文件，不删除历史证据链</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">新 Agent 继承路径</div>
+  <pre><code>1. 投资系统全景图_SYSTEM_OVERVIEW.html
+2. AI_HANDOFF_CURRENT.md
+3. AI_WORK_SYNC_CURRENT.md
+4. README_CURRENT.md
+5. MIGRATION_CHECKLIST.md / BACKUP_MANIFEST.md
+6. REVIEW_CADENCE_POLICY.md
+7. events_calendar.json
+8. 知识库_v1/README.md
+9. 知识库_v1/00_System/AI一人投资公司组织架构.md
+10. V6_STRATEGY_LAB.md
+11. v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md
+12. investment_screener/A_SHARE_SHORTLINE_SYSTEM_SPEC.md
+13. investment_screener/A_SHARE_RADAR_REVIEW_SOP.md
+14. investment_screener/A_SHARE_RADAR_AUTOMATION_ROADMAP.md</code></pre>
+
+  <div class="alert-box alert-orange" style="margin-top:14px">
+    <strong>执行原则：</strong>新 agent 读完文件后，必须先复述系统理解和角色边界；在用户确认前，不允许写文件、运行交易脚本或下单。
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 13 — AI继承指南
+════════════════════════════════════════════ -->
+<div class="section-divider" id="handover">13 &nbsp; AI继承指南（给下一个Claude / Codex）</div>
+
+<div class="card">
+  <div class="section-title">用户画像（必须先理解）</div>
+  <table>
+    <thead><tr><th>维度</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>投资哲学</strong></td><td>巴菲特绝对估值 + 芒格反向排除 + Pabrai不对称赔率。核心目标是“现金增强”，帮助用户更耐心地等待价值投资击球区。</td></tr>
+      <tr><td><strong>工作语言</strong></td><td>中文为主；代码注释、文件名允许中文；ticker、Sharpe、drawdown、DTE 等术语可直接保留英文</td></tr>
+      <tr><td><strong>沟通偏好</strong></td><td>简洁直接，不要废话；重大改动前先说明逻辑；不喜欢“自 high 的乐观回测”</td></tr>
+      <tr><td><strong>权限授权方式</strong></td><td>用户会说“给你所有相关权限”或“你来决定”，通常表示授权你自主推进，不用每一步都确认</td></tr>
+      <tr><td><strong>资本规模</strong></td><td>当前程序可投资资金约 <code>$20k~$25k</code>；未来若提升到 <code>$150k~$225k</code>，再切入大资金线；长线股票 / 港股 / A股仓位另计</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-red" style="margin-top:12px">
+    <strong>第一原则：</strong>旧铁鹰期权自动化已经被证伪并停用。
+    <strong>任何 AI 都不能再把它当作主系统、实盘系统或优先任务，也不能建议重启旧调度器。</strong>
+    如果需要提到它，只能当作失败案例、审计材料、以及“如何防止回测 / 实盘失真”的教训。
+  </div>
+
+  <div class="section-title">系统优先级（从高到低）</div>
+  <ol class="step-list">
+    <li><strong>Daily Board / 事件中枢</strong> —— <code>morning_brief.py</code> + <code>events_calendar.json</code> 是每日正式任务入口；先看今天该做什么。</li>
+    <li><strong>价值投资主仓 + /估值</strong> —— 长期资本底盘；财报、估值、thesis 变化时事件驱动复盘，不做每日短线噪音复盘。</li>
+    <li><strong>Cash Alpha V6 Attack</strong> —— 当前高进攻动量量化主线；V6-A 小额真实人工 pilot，V6-B research / SIM only。</li>
+    <li><strong>A股短线 Radar</strong> —— Phase 1A 训练系统；FutuAPI 复盘 + 长江证券手动下单，不接委托接口。</li>
+    <li><strong>美股 Radar / V6-B Dynamic Pool</strong> —— 主题扩散与右尾候选供给链；默认研究输入，不默认买入。</li>
+    <li><strong>Value Wheel V2 / Options Expression Layer</strong> —— 半自动期权决策系统。先手动估值，再由系统出建议，用户人工决定是否执行。</li>
+    <li><strong>Cash Alpha V3</strong> —— 现金增强/低波备用线；当前模拟盘日报/周报停发，不作为近期主线。</li>
+    <li><strong>风险 / 宏观 / 季报 / tax_calc_v1</strong> —— 风险、事件、税务与运营生产力，不直接替代投资决策。</li>
+  </ol>
+
+  <div class="section-title">当前状态总表</div>
+  <table>
+    <thead><tr><th>系统</th><th>当前状态</th><th>允许做什么</th><th>不允许做什么</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Cash Alpha V6 Attack</strong></td>
+        <td><code>V6-A_REAL_MANUAL_PILOT_ACTIVE</code>；stale-data 模式下 BUY 阻断，SELL 需人工复核</td>
+        <td>replay、release gate、live preview、reconciliation、日报/周报、stale-data 风险退出复核</td>
+        <td>无 fresh K线时买入/加仓；自动改 baseline；给 V6-B 非零实盘权重</td>
+      </tr>
+      <tr>
+        <td><strong>Cash Alpha V3 小资金线</strong></td>
+        <td>现金增强低波候选 <code>S00001</code>；模拟盘日报/周报已停发</td>
+        <td>保留历史证据；未来若重启，从 release gate 和 reviewed bundle 重新评估</td>
+        <td>擅自恢复日报、恢复调度或在 stale snapshot / gate 未绿时 live</td>
+      </tr>
+      <tr>
+        <td><strong>Cash Alpha V3 大资金线</strong></td>
+        <td><code>PORT_LCFF0001_PRIMARY</code> 历史上到 <code>PAPER_VALIDATION_READY</code>，当前报告停发</td>
+        <td>只作为未来低波现金增强备用研究线</td>
+        <td>在 <code>$150k</code> 以下、无完整 gate 或用户未要求时恢复</td>
+      </tr>
+      <tr>
+        <td><strong>Daily Board</strong></td>
+        <td><code>morning_brief.py</code> 已是正式每日任务中枢；事件源只认 WorkBuddy <code>events_calendar.json</code></td>
+        <td>生成今日 agenda、复盘提醒、V6异常提示、A股 Radar / X Radar / 财报待办</td>
+        <td>在 Desktop 另建同名 calendar；绕过 Daily Board 单独安排正式任务</td>
+      </tr>
+      <tr>
+        <td><strong>A股短线 Radar</strong></td>
+        <td>Phase 1A：<code>radar_astock.json</code> + 收盘复盘 + 周五候选扫描；当前样本绿的谐波/三丰智能/纽威数控</td>
+        <td>复盘主线、角色、买点、退出；记录样本；训练 20日/50笔审计</td>
+        <td>自动下单；买纯概念炒作；未满样本就扩大资金；把短线结论用于主仓</td>
+      </tr>
+      <tr>
+        <td><strong>Value Wheel V2</strong></td>
+        <td>半自动可用</td>
+        <td>导入最新估值报告、生成 sell put / covered call 建议、发 HTML / 邮件</td>
+        <td>自动提交真实订单</td>
+      </tr>
+      <tr>
+        <td><strong>screener + /估值</strong></td>
+        <td>稳定运行</td>
+        <td>扫描、提醒、初筛、估值、更新 watchlist</td>
+        <td>跳过来源和日期直接编造估值结论</td>
+      </tr>
+      <tr>
+        <td><strong>tax_calc_v1</strong></td>
+        <td>可落地使用</td>
+        <td>归集、导出、辅助报税准备</td>
+        <td>充当正式税务或法律意见</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Cash Alpha V3：不可违背的约束</div>
+  <table>
+    <thead><tr><th>约束</th><th>当前结论</th><th>意义</th></tr></thead>
+    <tbody>
+      <tr><td>以可投资现金 sizing</td><td>只读现金 / 近现金，不读账户总资产</td><td>防止把长线仓位误算进量化仓位</td></tr>
+      <tr><td>先过 gate，再谈 live</td><td><code>readiness</code>、<code>realism</code>、<code>stress retest</code>、<code>dry-run</code>、<code>guard</code> 要一次性全绿</td><td>把回测、模拟盘和未来 live 压到同一口径</td></tr>
+      <tr><td>先 live pilot，再谈放大</td><td>即便 gate 全绿，也要先用小额度真实资金跑 <code>pilot</code>，确认成交与风控环境无系统性偏差</td><td>把“能跑”与“值得放大”分开验证</td></tr>
+      <tr><td>输出隔离</td><td><code>manual / SIMULATE / REAL / reviewed paper</code> 必须写 scoped <code>latest_*</code> 文件</td><td>防止报告、guard、executor 读取到另一个环境的旧证据</td></tr>
+      <tr><td>大资金线攻击腿受限</td><td><code>N0670</code> 按 reviewed 假设固定 <code>max_contracts=1</code>、<code>slippage_mult=3.5</code></td><td>避免用乐观点差把收益吹高</td></tr>
+      <tr><td>资金分层切换</td><td><code>&lt;150k</code> 不上大资金线；默认先跑小资金线</td><td>小账户和大账户不是一套模型硬套</td></tr>
+      <tr><td>状态阻断优先</td><td>遇到 stale snapshot、现金不足、真实成本异常，一律 block</td><td>宁可错过，也不要冒险带着脏数据下单</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">接班操作顺序（量化主系统）</div>
+  <ol class="step-list">
+    <li><strong>先确认账户可投资现金</strong>：只看现金 / 货币基金 / 近现金，不看总资产。</li>
+    <li><strong>确认当前应该跑哪条线</strong>：<code>$20k~$25k</code> 小资金线；<code>$150k+</code> 才进入大资金线 shadow / pilot / primary 阶段。</li>
+    <li><strong>先做 selector / gate / realism / stress / dry-run</strong>：任何一步不过，都不准把系统描述成“ready for live”。</li>
+    <li><strong>先 simulate / paper，再 live</strong>：尤其要看真实点差、snapshot 新鲜度、账户限制、最小下单单位。</li>
+    <li><strong>日报要对比理论与现实</strong>：理论目标仓位、实际盘口、可成交性、模拟成交结果必须能对应得上。</li>
+  </ol>
+
+<div class="section-title">关键文件地图（当前主系统）</div>
+  <pre><code>/Users/zhangkun/WorkBuddy/程序化/量化程序/
+├── morning_brief.py                            # Daily Board / 每日正式任务中枢
+├── central_risk_board.py                       # 中央风险看板
+├── events_calendar.json                        # 唯一正式事件源
+├── REVIEW_CADENCE_POLICY.md                    # 复盘频率与 Daily Board 提醒策略
+├── system_health_check.py                      # 换机 / 迁移健康检查
+├── MIGRATION_CHECKLIST.md                      # 新 Mac 迁移清单
+├── BACKUP_MANIFEST.md                          # 备份清单
+├── AI_HANDOFF_CURRENT.md                       # AI 继承当前状态
+├── AI_WORK_SYNC_CURRENT.md                     # AI 工作同步当前态
+├── collab_sync.py                              # Claude / GPT 协作同步工具
+├── attack_engine_deterministic_replay.py       # V6 replay
+├── attack_engine_release_gate.py               # V6 release gate
+├── attack_engine_live_order_preview.py         # V6 live/sim preview
+├── v6_reporting.py                             # V6 日/周/月报告，含 STALE_DATA_MODE
+├── attack_engine_sim_executor.py               # V6 simulate executor / 历史入口
+├── v6_live_launch_policy.json                  # V6 放行策略
+├── V6_STRATEGY_LAB.md                          # V6-A/B/C/Allocator 研发总入口
+├── v6b_radar_momentum_challenger.py            # V6-B Radar 动态池 challenger
+├── v6_strategy_lab/                            # V6 假设、报告、scorecard
+│   └── reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md
+├── investment_screener/
+│   ├── radar_astock.json                       # A股 Radar 当前观察池
+│   ├── A_SHARE_SHORTLINE_SYSTEM_SPEC.md        # A股短线系统总规格
+│   ├── A_SHARE_RADAR_REVIEW_SOP.md             # A股 Radar 复盘 / 候选扫描 SOP
+│   └── A_SHARE_RADAR_AUTOMATION_ROADMAP.md     # A股 Radar 自动化路线图
+├── backtest_results/attack_engine_replay/      # V6 replay 证据
+├── backtest_results/attack_engine_sim_executor/# V6 模拟盘执行证据
+├── cash_alpha_v3_repo/
+│   ├── strategy_selector.py
+│   ├── small_track_release_gate.py
+│   ├── small_track_guarded_live_runner.py
+│   ├── small_track_reporting.py
+│   ├── large_track_release_gate.py
+│   ├── large_track_guarded_paper_runner.py
+│   ├── large_track_reporting.py
+│   └── backtest_results/
+├── value_wheel_repo/
+│   ├── src/value_wheel/run_wheel_cli.py
+│   ├── README.md
+│   └── configs/
+├── tax_calc_v1/
+└── （旧）铁鹰相关脚本 —— 仅历史归档，不得当生产入口</code></pre>
+
+  <div class="section-title">关键文件地图（桌面投资中台）</div>
+  <pre><code>/Users/zhangkun/Desktop/AI个人投资公司/
+├── 投资系统全景图_SYSTEM_OVERVIEW.html
+├── Cash_Alpha_V3_模型总览.html
+├── Value_Wheel_V2_架构设计.html
+├── Value_Wheel_V2_使用流程.html
+├── 知识库规划_Dingcle_LLM_Wiki_v1.md
+├── 知识库_v1/
+│   ├── README.md
+│   ├── 00_System/            # 长期规则、受控词表、投资纪律
+│   ├── 01_Portfolio/         # 当前组合、目标区间、等待资本
+│   ├── 02_Companies/         # 公司总卡、报告索引、估值迁移台账
+│   ├── 03_Industries/        # 行业学习与赛道理解
+│   ├── 04_Research_Notes/    # 宏观、文章、横向比较等输入蒸馏
+│   ├── 05_Systems/           # 系统卡片与边界
+│   ├── 06_Execution/         # Watchlist、击球区、待验证、本周动作
+│   ├── 07_Decisions_Reviews/ # 决策与复盘
+│   ├── 08_Learning_Tracks/   # 能力圈扩张与持续学习
+│   ├── 98_Templates/
+│   └── 99_Inbox/
+├── screener/
+│   ├── screener.py
+│   ├── run.sh
+│   ├── holdings.json
+│   ├── earnings_calendar.json
+│   ├── macro_cache.json
+│   ├── watchlist.json
+│   └── reports/
+└── 公司估值/</code></pre>
+
+  <div class="section-title">斜杠命令（/初筛、/估值）</div>
+  <table>
+    <thead><tr><th>命令</th><th>文件位置</th><th>触发方式</th><th>依赖</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>/初筛 [代码]</code></td>
+        <td><code>~/.claude/commands/初筛.md</code></td>
+        <td>初筛 v2：35分质量底座 + 10-20x Radar 六条件 + 反证机制 + 仓位等级，决定是否进入估值阶段</td>
+        <td><code>fetch_financials.py</code>（量化数据拉取，失败可跳过）</td>
+      </tr>
+      <tr>
+        <td><code>/估值 [代码] [股价]</code><br>或<br><code>分析标的：X，当前股价：Y</code></td>
+        <td><code>~/.claude/commands/估值.md</code></td>
+        <td>完整五阶段 SOP 估值：定性尽调 → FCF真实性核查 → DCF → 赔率 → 凯利仓位 → 持仓管理<br><span style="color:var(--gray)">执行纪律：adjusted / non-GAAP 指标只能辅助，正式结论必须回到 <code>GAAP EBIT → FCFF / Owner Earnings → DCF / EV/FCF</code>。</span></td>
+        <td><code>fetch_financials.py</code> + <code>AI投资助手SOP_优化版.md</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-orange" style="margin-top:10px">
+    <strong>给非 Claude AI（Codex 等）使用：</strong>
+    斜杠命令是 Claude Code 专属机制，但效果可等价复用——把命令文件全文贴给它即可。
+    若新机器用户名不同，记得替换命令中的硬编码路径 <code>/Users/zhangkun/</code>。
+  </div>
+
+  <div class="section-title">环境与凭证</div>
+  <table>
+    <thead><tr><th>项目</th><th>用途</th><th>注意事项</th></tr></thead>
+    <tbody>
+      <tr><td><code>screener/config.json</code></td><td>163 SMTP 邮件配置</td><td>授权码失效时更新 Section 10 对应字段</td></tr>
+      <tr><td>Futu OpenD</td><td>V6 preview / Value Wheel / A股 Radar / 美股 Radar 实时数据入口</td><td>交易日若需拉行情必须保持登录；Cash Alpha V3 当前停发报告但未来重启也依赖 OpenD</td></tr>
+      <tr><td>本地估值报告</td><td>Value Wheel 卖 Put / Covered Call 锚点</td><td>优先使用最新日期版本；同一标的只取最后日期</td></tr>
+      <tr><td><code>~/.claude/commands/X扫描.md</code></td><td>X Radar 输入整理命令</td><td>只写永久 summary 和必要事件增量；事件必须写 WorkBuddy <code>events_calendar.json</code></td></tr>
+      <tr><td><code>~/.claude/commands/A股Radar复盘.md</code></td><td>A股 Radar Claude 复盘命令</td><td>必须遵守纯概念硬排除和 Phase 1A 手动下单边界</td></tr>
+      <tr><td>GitHub 备份</td><td><code>git@github.com:DanielKunZhang/--V6.git</code> / <code>v6-governance-and-reporting</code></td><td>提交前做敏感词扫描；不要把授权码、私钥、账户截图直接提交</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">不要重犯的错误</div>
+  <table>
+    <thead><tr><th>错误</th><th>后果</th><th>当前防线</th></tr></thead>
+    <tbody>
+      <tr><td>回测与实盘止损 / 成交口径不一致</td><td>回测失去参考价值，实盘表现严重偏离</td><td>任何策略上线前必须做 full-chain 对齐检查</td></tr>
+      <tr><td>用账户总资产替代可投资现金</td><td>仓位计算虚高，真实风险被低估</td><td>只按现金 / 近现金 sizing</td></tr>
+      <tr><td>在 stale snapshot 上继续交易</td><td>价格失真，guard 失效</td><td>snapshot 不新鲜就 block，不允许“先下再说”</td></tr>
+      <tr><td>忽略真实点差 / 容量 / 最小成交单位</td><td>回测收益被掺水，实盘滑点扩大</td><td>realism、capacity、reviewed bundle 先行</td></tr>
+      <tr><td>把失败系统继续当主线</td><td>浪费时间，放大错误</td><td>旧铁鹰只准当反面教材，不能复活</td></tr>
+      <tr><td>在 Desktop 另建 <code>events_calendar.json</code></td><td>Daily Board 与 X扫描事件源分裂</td><td>唯一正式源固定在 WorkBuddy 路径，Desktop 同名文件必须不存在</td></tr>
+      <tr><td>把 A股短线纯概念炒作当 Radar 候选</td><td>训练系统被情绪票污染</td><td>必须有业绩/订单/客户验证/产能瓶颈/政策落地/财报改善或真实供需变化支撑</td></tr>
+      <tr><td>无 K线额度时继续按旧 V6 BUY 信号加仓</td><td>把过期信号当新信号，扩大亏损风险</td><td><code>STALE_DATA_MODE</code> 下 BUY 阻断；SELL 人工复核</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">账户结构（新仓位建议时匹配账户）</div>
+  <table>
+    <thead><tr><th>账户</th><th>定位</th><th>当前说明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>富途美股账户</strong></td><td>美股主账户</td><td>美股长线持仓 + 程序可投资 USD 现金 / 现金基金；Cash Alpha V3 主要面向这里的可投资现金</td></tr>
+      <tr><td><strong>富途港股账户</strong></td><td>港股持仓</td><td>腾讯 / 泡泡玛特 / 网易等仓位；Value Wheel 可基于你的持仓与估值做半自动建议</td></tr>
+      <tr><td><strong>港股通账户</strong></td><td>境内港股通</td><td>辅助港股持仓渠道</td></tr>
+      <tr><td><strong>A股账户</strong></td><td>境内 A 股</td><td>美的集团 / 招商银行等长期仓位；A股 Radar 训练资金未来单独管理，当前通过长江证券手动下单</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">主动触发建议规则</div>
+  <table>
+    <thead><tr><th>触发条件</th><th>AI需主动做什么</th></tr></thead>
+    <tbody>
+      <tr><td>用户问“今天要做什么”或“开盘前/收盘后看什么”</td><td>先看 <code>morning_brief.py</code> / <code>events_calendar.json</code> / Daily Board，不要只凭聊天记忆回答</td></tr>
+      <tr><td>运行宏观 / 风险 / 初筛 / 估值分析</td><td><strong>必须</strong>附“对你持仓的影响”，逐只说清楚，不要只给泛泛结论</td></tr>
+      <tr><td>程序可投资现金明显变化</td><td>主动提醒是否仍适合当前小资金线，或是否达到大资金线 shadow / pilot 阈值</td></tr>
+      <tr><td>Value Wheel 发现高质量机会</td><td>明确说明是 sell put 还是 covered call，锚定的估值价格来自哪份报告、什么日期</td></tr>
+      <tr><td>V6 报告出现 <code>STALE_DATA_MODE</code></td><td>说明 BUY/ADD 已阻断；只有出现 <code>RISK_EXIT_PENDING</code> 才需要用户判断是否手动卖出</td></tr>
+      <tr><td>A股 Radar 出现新热点或用户提到短线票</td><td>先按 <code>A_SHARE_SHORTLINE_SYSTEM_SPEC.md</code> 和 <code>A_SHARE_RADAR_REVIEW_SOP.md</code> 判断主线、支撑证据、纯概念硬排除和仓位边界</td></tr>
+      <tr><td>用户准备换电脑或做备份</td><td>先跑 <code>system_health_check.py</code>，再检查 GitHub <code>--V6</code> 分支、Desktop 数据目录、LaunchAgents、Claude commands 和 Futu OpenD</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">与用户协作的注意事项</div>
+  <div class="alert-box alert-green">
+    <strong>✅ 有效的工作方式：</strong>
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li><strong>代码行为问题必须追完整调用链</strong>：找到配置值的使用处 → 追到函数体 → 确认全链路，不要只看表面定义</li>
+      <li><strong>数据诚信</strong>：财务数字、股价、回测结论都要有来源和日期；不确定就明确说不确定</li>
+      <li>先保证与实盘一致，再讨论收益优化；真实性优先于漂亮数字</li>
+      <li>代码改动前先读文件，确认现有逻辑；不要自作主张重构</li>
+    </ul>
+  </div>
+  <div class="alert-box alert-orange" style="margin-top:10px">
+    <strong>⚠️ 避免的行为：</strong>
+    <ul style="padding-left:18px;margin-top:8px;line-height:2">
+      <li>不要把旧铁鹰、旧回测或旧邮件报警链路继续当作“现役系统”</li>
+      <li>不要在没有现实成本 / gate 支撑的情况下宣称策略“可上线”</li>
+      <li>不要跳过估值来源就让 Value Wheel 直接给出强结论</li>
+      <li><strong>wheel_tencent（腾讯港股期权 Wheel）已废弃</strong>，进程死了不要建议重启</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<div class="footer">
+  个人投资公司 — 系统全景图 v3.0 &nbsp;|&nbsp; 更新日期：2026-05-19<br>
+  投资哲学：巴菲特价值投资 · 芒格反向排除法 · Pabrai不对称赔率 · 期权Wheel纪律<br>
+  <br>
+  <strong style="color:#c62828">⚠️ 本文件含敏感信息（SMTP授权码、账户ID），请妥善保管，勿公开分享。</strong>
+</div>
+
+</body>
+</html>
