@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>26年阶段性组合策略计划 | 当前主指导文件 | 最后更新 2026-05-17</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: rgba(15, 23, 42, 0.92);
+      --panel-2: rgba(30, 41, 59, 0.72);
+      --card: rgba(15, 23, 42, 0.82);
+      --line: rgba(148, 163, 184, 0.2);
+      --line-strong: rgba(148, 163, 184, 0.34);
+      --text: #edf3ff;
+      --muted: #a8b7d4;
+      --green: #34d399;
+      --blue: #60a5fa;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+      --red: #f87171;
+      --purple: #a78bfa;
+      --cyan: #22d3ee;
+      --radius: 22px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+      --maxw: 1460px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(96, 165, 250, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 10%, rgba(167, 139, 250, 0.14), transparent 24%),
+        linear-gradient(180deg, #07101d 0%, #091321 42%, #08111f 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.62;
+    }
+
+    .wrap {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 28px 22px 72px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(7, 15, 28, 0.76);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.22);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .brand::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      box-shadow: 0 0 18px rgba(96, 165, 250, 0.52);
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: #dce8ff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .hero {
+      margin-top: 18px;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(96, 165, 250, 0.16), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(52, 211, 153, 0.12), transparent 24%),
+        linear-gradient(135deg, rgba(16, 28, 48, 0.96), rgba(9, 16, 30, 0.98));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero h1 {
+      margin: 14px 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      max-width: 1080px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .tag-row, .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tag, .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.05);
+      color: #eff6ff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.primary { background: rgba(96, 165, 250, 0.14); border-color: rgba(96, 165, 250, 0.28); }
+    .tag.green { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.25); }
+    .tag.orange { background: rgba(251, 146, 60, 0.12); border-color: rgba(251, 146, 60, 0.25); }
+
+    section {
+      margin-top: 20px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      color: #f8fbff;
+      font-size: 17px;
+    }
+
+    p { color: var(--muted); }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+    }
+
+    .kicker {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .num {
+      color: #fff;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .muted { color: var(--muted); }
+    .green { color: var(--green); }
+    .blue { color: var(--blue); }
+    .yellow { color: var(--yellow); }
+    .orange { color: var(--orange); }
+    .red { color: var(--red); }
+    .purple { color: var(--purple); }
+    .cyan { color: var(--cyan); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.06);
+      white-space: nowrap;
+    }
+
+    .pill.core { color: var(--green); background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.24); }
+    .pill.hold { color: var(--blue); background: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.24); }
+    .pill.exit { color: var(--red); background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.24); }
+    .pill.watch { color: var(--yellow); background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.24); }
+    .pill.radar { color: var(--purple); background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.24); }
+    .pill.flex { color: var(--cyan); background: rgba(34, 211, 238, 0.1); border-color: rgba(34, 211, 238, 0.24); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, 0.22);
+    }
+
+    th, td {
+      padding: 12px 12px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      font-size: 13px;
+    }
+
+    th {
+      color: #eaf2ff;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      background: rgba(148, 163, 184, 0.08);
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    td strong { color: #fff; }
+
+    ul, ol {
+      margin: 10px 0 0 18px;
+      padding: 0;
+      color: var(--muted);
+    }
+
+    li { margin: 6px 0; }
+
+    .notice {
+      padding: 14px 16px;
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      border-radius: 16px;
+      background: rgba(251, 191, 36, 0.1);
+      color: #fff3c4;
+    }
+
+    .danger {
+      padding: 14px 16px;
+      border: 1px solid rgba(248, 113, 113, 0.26);
+      border-radius: 16px;
+      background: rgba(248, 113, 113, 0.1);
+      color: #fee2e2;
+    }
+
+    .ok {
+      padding: 14px 16px;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 16px;
+      background: rgba(52, 211, 153, 0.1);
+      color: #d1fae5;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      padding: 16px 16px 16px 52px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 16px;
+      top: 17px;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(52, 211, 153, 0.85));
+      color: #06101e;
+      font-weight: 1000;
+      font-size: 12px;
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+      .topbar { position: static; }
+      .hero { padding: 26px 20px; }
+      section { padding: 20px 16px; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+      td { white-space: normal; min-width: 140px; }
+    }
+
+    @media print {
+      body { background: #fff; color: #111827; }
+      .topbar { display: none; }
+      .hero, section, .card { box-shadow: none; background: #fff; color: #111827; }
+      p, ul, ol, .muted { color: #374151; }
+      th { color: #111827; background: #f3f4f6; }
+      td, th, section, .card, .hero, table { border-color: #d1d5db; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topbar">
+      <div class="brand">Dingcle 26年阶段性组合策略计划 · 当前主指导文件</div>
+      <div class="nav">
+        <a href="#summary">总览</a>
+        <a href="#governance-layer">治理层</a>
+        <a href="#architecture">结构</a>
+        <a href="#targets">目标表</a>
+        <a href="#triggers">触发价</a>
+        <a href="#overweights">超配调整</a>
+        <a href="#timeline">路线图</a>
+        <a href="#radar-20260509">V6-B</a>
+        <a href="#verification">验证</a>
+        <a href="#discipline">纪律</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="tag-row">
+        <span class="tag primary">26年阶段性组合策略计划 · 当前主指导文件</span>
+        <span class="tag green">最后更新：2026-05-19</span>
+        <span class="tag orange">目标：资金效率 + Alpha + 可持续性 + 不毁灭性回撤</span>
+      </div>
+      <h1>2026 阶段性组合策略计划｜最后更新 2026-05-19</h1>
+      <p class="muted" style="font-size:20px; margin-top:-6px;">
+        先修正腾讯与 PDD 超配，再把进攻仓、V6-A 和现金 / 等待资金纳入新主阵型
+      </p>
+      <p>
+        这份文件是当前投资策略的<strong>主指导文件</strong>；后续所有组合策略、Radar、V6、仓位纪律和阶段性调仓建议，原则上都要同步更新到这里。
+        这份计划从 2026-05-09 起改为<strong>全资产口径</strong>：富途账户、腾讯 RSU、A 股账户合并看。
+        当前目标函数已升级为：在不触发永久性资本损失风险的前提下，提高资金效率、Alpha 和可持续复利能力。
+        从 2026-05-13 起，正式采用<strong>双账本治理</strong>：<strong>风险账本</strong>按全资产看，<strong>执行账本</strong>按富途账户看。
+        具体执行上，先把腾讯与 PDD 的历史超配降到可承受区间，同时给 ADBE、NVDA、V6-A、富途现金缓冲和小额实验仓腾出资本空间。V6-B / 美股 Radar 暂不占预算，A股 Radar 只作为训练账户。
+      </p>
+      <div class="chip-row">
+        <span class="chip">全资产：约 39.5 万 USD / 约 284 万 RMB</span>
+        <span class="chip">主线：底仓 + 进攻仓 + V6-A + 现金 / 等待资金</span>
+        <span class="chip">目标函数：资金效率 / Alpha / 可持续性</span>
+        <span class="chip">底线：不发生毁灭性回撤</span>
+        <span class="chip">纪律：PDD 降至 8%-10%，腾讯降至 12%-15%</span>
+        <span class="chip">执行：3-6 个月渐进调整，不情绪化砍仓</span>
+      </div>
+    </header>
+
+    <section id="summary">
+      <h2>一页结论</h2>
+      <div class="notice">
+        <strong>当前主结论：</strong>
+        组合目标是相对安全地快速增长资本，不是炫技。接下来把腾讯降到 12%-15%、PDD 降到 8%-10%，进攻仓先围绕 NVDA、ADBE、泡泡玛特、NU 和 PDD 财报后结论来做；V6-A 与 A股 Radar 单独验证，不和主观进攻仓混在一起。
+      </div>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="kicker">全资产口径</div>
+          <div class="num green">约39.5万 USD</div>
+          <p>富途约 22.07 万 USD，A 股 / 港股通约 10.23 万 USD，腾讯 RSU 约 7.25 万 USD。风险看全资产，执行看富途账户。</p>
+        </div>
+        <div class="card">
+          <div class="kicker">最大结构风险</div>
+          <div class="num orange">52%+</div>
+          <p>腾讯约 31.8%，PDD 正股约 20.3%（含 LEAP 约 20.8%）。组合第一任务是去双集中，不是再找更多低反馈底仓。</p>
+        </div>
+        <div class="card">
+          <div class="kicker">进攻引擎</div>
+          <div class="num blue">NVDA / ADBE / 泡泡玛特</div>
+          <p>当前主观进攻仓先围绕 NVDA、ADBE、泡泡玛特、NU；PDD 等 Q1 后重估。V6-A 和 A股 Radar 单独验证，不混算。</p>
+        </div>
+        <div class="card">
+          <div class="kicker">执行口径</div>
+          <div class="num purple">富途主战场</div>
+          <p>只有<strong>富途账户</strong>能真正承接 V6、美股价值投资、短线和玩票实验；A 股 / 港股通负责底盘，RSU 计入风险但不计入当前主动资金池。</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-19 HQ Compounder 重估摘要</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>分类</th>
+              <th>目标 / 上限</th>
+              <th>现在动作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>腾讯</strong></td><td>底仓，但必须降权</td><td>12%-15%，阶段上限 18%-20%</td><td>持有降权；HK$430-440 以下才重新复核</td></tr>
+            <tr><td><strong>美的</strong></td><td>底仓，但不再扩</td><td>8%-10%，阶段上限 12%</td><td>持有不新增；RMB 75-76 才舒服补仓</td></tr>
+            <tr><td><strong>ADBE</strong></td><td>底仓候选</td><td>当前 3%-5%；Q2/CEO gate 后 5%-8%</td><td>持有观察仓；不因便宜一次打满</td></tr>
+            <tr><td><strong>NVDA</strong></td><td>底仓 + 进攻仓</td><td>核心 8%-10%；进攻部分 10%-15%</td><td>财报前不新增；Q1 后决定进攻部分去留</td></tr>
+            <tr><td><strong>PDD</strong></td><td>待 Q1 后重估</td><td>正股目标 8%-10%，阶段上限 12%</td><td>财报前不加仓；LEAP 仅作替代弹性</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-19 进攻仓配置摘要</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>方向</th>
+              <th>定位</th>
+              <th>目标 / 上限</th>
+              <th>现在动作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>NVDA</strong></td><td>最强进攻核心</td><td>10%-12%；强通过可 12%-15%</td><td>等 FY2027 Q1，财报前不新增</td></tr>
+            <tr><td><strong>ADBE</strong></td><td>软件错杀候选</td><td>3%-5%；通过 gate 后 5%-8%</td><td>等 Q2 和 CEO 继任检查</td></tr>
+            <tr><td><strong>泡泡玛特</strong></td><td>消费 IP 进攻仓</td><td>4%-6%；上限 6%</td><td>持有，不因销售更新追高</td></tr>
+            <tr><td><strong>NU</strong></td><td>高成长观察</td><td>2%-3%；Q2 后再看 5%</td><td>暂停加仓，等信用质量</td></tr>
+            <tr><td><strong>PDD</strong></td><td>高赔率但需财报确认</td><td>暂按 8%-10% 降权路径</td><td>Q1 前不新增，财报后重估</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-19 V6-A 策略仓配置摘要</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>总资产占比</th>
+              <th>约对应金额</th>
+              <th>扩容条件</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>V6-A 5k pilot</strong></td><td>约 1%-2%</td><td>$5,000 左右</td><td>当前阶段；验证真实执行、滑点、持仓同步和日报链路</td></tr>
+            <tr><td><strong>V6-A 第一档扩容</strong></td><td>5%-8%</td><td>约 $20,000-$32,000</td><td>2 周 pilot 通过后，先到 5%，再看是否到 8%</td></tr>
+            <tr><td><strong>V6-A 第二档扩容</strong></td><td>10%-12%</td><td>约 $40,000-$47,000</td><td>至少 3 个月真实运行稳定后再讨论</td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:10px;">
+          当前可扩容的是 V6-A；V6-B / 美股 Radar 暂不占正式预算，只有未来 Sharpe、回撤、稳定性和可执行性明显通过后，才并入整体 V6。
+          详细规则见 <a href="系统优化升级依据/26年V6策略仓配置_20260519.md">26年V6策略仓配置_20260519.md</a>。
+        </p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-19 A股 Radar 定位摘要</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>资金</th>
+              <th>升级条件</th>
+              <th>定位</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>当前训练仓</strong></td><td>5 万 RMB</td><td>当前阶段</td><td>训练主线识别、买点过滤和退潮信号</td></tr>
+            <tr><td><strong>小幅扩容</strong></td><td>10 万 RMB</td><td>至少 50 笔真实样本，扣费后正期望，最大回撤可控</td><td>仍是训练仓，不是大仓</td></tr>
+            <tr><td><strong>验证仓</strong></td><td>20 万 RMB</td><td>至少 100 笔真实样本，经历退潮期后仍能控制回撤</td><td>只在方法稳定后讨论</td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:10px;">
+          A股 Radar 当前只用长江证券手动下单，不接自动交易；详细规则见 <a href="系统优化升级依据/26年A股Radar定位_20260519.md">26年A股Radar定位_20260519.md</a>。
+        </p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-19 现金 / 等待资金规则</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>层级</th>
+              <th>总资产</th>
+              <th>富途账户</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>最低现金</strong></td><td>5%</td><td>10%</td><td>防止被迫卖出，保留执行缓冲</td></tr>
+            <tr><td><strong>正常现金</strong></td><td>8%-12%</td><td>15%-25%</td><td>等 ADBE / NVDA / V6-A / PDD 财报后机会</td></tr>
+            <tr><td><strong>回撤期释放</strong></td><td>可降到 3%-5%</td><td>可降到 8%-12%</td><td>只在明确击球机会出现时释放</td></tr>
+            <tr><td><strong>高风险等待</strong></td><td>12%-18%</td><td>25%-35%</td><td>目标没到价、财报未验证或市场过热</td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:10px;">
+          现金是等待更好机会的弹药，不是保守摆设；详细规则见 <a href="系统优化升级依据/26年现金等待资金规则_20260519.md">26年现金等待资金规则_20260519.md</a>。
+        </p>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-12 泡泡玛特最新经营更新：</strong>
+        公司披露 <strong>2026Q1 总收入同比 +75% 至 +80%</strong>，其中<strong>中国区 +100% 至 +105%</strong>、<strong>中国线上 +150% 至 +155%</strong>、<strong>美洲 +55% 至 +60%</strong>、<strong>欧洲及其他 +60% 至 +65%</strong>。
+        这说明高增长仍在延续，尤其国内线上强于预期。更重要的是，我们 2026-04-12 正式估值采用的本来就是<strong>偏保守</strong>的长期增长假设，因此现在更准确的结论是：<strong>经营兑现强于模型保守假设，股价依然偏便宜或至少不贵</strong>；但这仍是一份<strong>销售更新</strong>，不是完整利润/IP拆分季报，所以<strong>先不上调价值锚，也不无纪律追高</strong>。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>双账本正式口径：</strong>
+        <strong>总资产风险账本</strong>负责管理腾讯/PDD集中度、长期目标结构和单一风险暴露；
+        <strong>富途执行账本</strong>负责管理 V6-A、美股主动仓、富途现金缓冲和 1%-3% 的小资金实验仓。
+        RSU 计入风险，不计入当前主动进攻资金池；国内账户负责 A 股 / 港股通底盘，不承担 V6-A 预算来源角色。
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-14 主要持仓财报 / 经营同步</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>最新官方更新</th>
+              <th>核心变化</th>
+              <th>执行结论</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>腾讯</strong></td><td>2026Q1（05-13）</td><td>收入 <strong>+9%</strong>、广告 <strong>+20%</strong>、金融科技与企业服务 <strong>+9%</strong>、FCF <strong>+20%</strong>。</td><td>经营质量小幅上修，核心持有不变；但旧 Kelly / Wheel 推仓位口径降级，<strong>只在 HK$430-440 以下重新评估加仓，仍按总暴露约束去超配</strong>。</td></tr>
+            <tr><td><strong>泡泡玛特</strong></td><td>2026Q1 经营更新（05-12）</td><td>总收入 <strong>+75%~80%</strong>，中国区 <strong>+100%~105%</strong>，国内线上继续超预期。</td><td>说明实际增长强于 4 月保守模型，<strong>依然偏便宜/至少不贵</strong>；但仍是销售更新，<strong>先持有、不追高</strong>。</td></tr>
+            <tr><td><strong>美的</strong></td><td>2026Q1（04-29）</td><td>收入 <strong>+2.55%</strong>、归母 <strong>+2.03%</strong>，但扣非归母 <strong>-14.02%</strong>。</td><td>公司没坏，但节奏放慢；仍在击球区，<strong>只做分段补仓，不再用“无脑强加”口径</strong>。</td></tr>
+            <tr><td><strong>招商银行</strong></td><td>2026Q1（04-29）</td><td>收入 <strong>+3.81%</strong>、归母 <strong>+1.52%</strong>、不良率 <strong>0.94%</strong> 持平，财富管理收入 <strong>+25.42%</strong>。</td><td>稳定性继续验证，但仍更像 <strong>RMB 停泊仓 / 现金替代</strong>，不是主收益引擎。</td></tr>
+            <tr><td><strong>QCOM</strong></td><td>FY26 Q2（04-29）</td><td>收入 <strong>$10.6B</strong>，Handset <strong>-13%</strong>，Auto <strong>+38%</strong>，IoT <strong>+9%</strong>。</td><td>多元化方向继续兑现，但手机链压力仍在；<strong>继续持有，不把它提到主仓优先级</strong>。</td></tr>
+            <tr><td><strong>IT / Gartner</strong></td><td>2026Q1（05-05）</td><td>CV <strong>+1%</strong>（fx-neutral），收入 <strong>-1.5%</strong>，FCF <strong>+28.7%</strong>。</td><td>研究主业和现金流仍稳，但咨询偏弱；<strong>继续当灵活舒服仓，不抢资本优先级</strong>。</td></tr>
+            <tr><td><strong>ADBE</strong></td><td>FY26 Q1（03-12）</td><td>收入 <strong>$6.40B</strong>、同比 <strong>+12%</strong>，经营现金流 <strong>$2.96B</strong>，AI-first ARR 同比 <strong>3x+</strong>。</td><td>AI 货币化继续验证，thesis 未转弱；<strong>维持分段扩到 5%</strong> 的优先级。</td></tr>
+            <tr><td><strong>PDD</strong></td><td>截至 05-17 暂无 26Q1 正式披露</td><td>最新官方仍是 03-25 的 FY2025 / Q4：Q4 收入 <strong>+12%</strong>，季度净利润 <strong>-11%</strong>。05-15 估值已把 V_base 下修至约 <strong>$148</strong>。</td><td>估值仍有折价，但 Temu 利润修复未验证；<strong>等 2026-05-19 Q1，财报前不加仓</strong>。</td></tr>
+            <tr><td><strong>NU</strong></td><td>2026Q1（05-14 晚）</td><td>客户超 <strong>1.35 亿</strong>、收入首次超 <strong>$5B</strong>、净利润 <strong>$871M</strong>、ROE <strong>29%</strong>；但 15-90 天 NPL 升至 <strong>5.0%</strong>，信用损失准备环比 <strong>+33%</strong>，risk-adjusted NIM 降至 <strong>9.5%</strong>。</td><td>长期 thesis 未破，但信用成本需要 Q2 验证；<strong>现有 600 股观察仓继续持有，暂停加仓</strong>，不再执行“跌破 13 自动分段加”。</td></tr>
+            <tr><td><strong>NVDA</strong></td><td>截至 05-14 暂无 FY27 Q1 新季报</td><td>最新官方仍是 FY2026 / Q4：收入 <strong>$68.1B</strong>、Data Center <strong>$62.3B</strong>。</td><td>主 thesis 仍强；若未来与 V6 仓位重叠，<strong>也必须继续按主仓财报口径跟踪</strong>，不能因为 V6 身份跳过更新。</td></tr>
+          </tbody>
+        </table>
+        <div class="notice" style="margin-top:14px;">
+          <strong>重叠持仓新纪律：</strong>
+          以后只要某只股票同时出现在 <strong>主仓</strong> 和 <strong>V6</strong>，财报 / 经营更新仍按<strong>主仓 thesis 层</strong>做完整同步，不允许因为它也属于 V6 自动仓就被降级成“可忽略更新”。
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>Dingcle Capital 目标函数</h3>
+        <p>
+          在不触发永久性资本损失风险的前提下，尽可能提高单位风险收益率和资金周转效率；
+          用价值主仓保证长期生存，用 V6-A 提高小资金阶段的资金效率；V6-B / 美股 Radar 先作为研究输入，不占当前预算。
+        </p>
+        <div class="notice" style="margin:12px 0;">
+          <strong>最高目标函数：</strong>
+          投资是热爱的事业，但不能毁掉生活。长期目标是学习巴菲特 / 芒格 / 段永平式复利；
+          小资金阶段允许通过 V6、Radar 和定义风险 Overlay 争取 <strong>45%-55%+</strong> 的右尾年份，
+          但这只能是受控进攻的奖励，不能成为常态预期，更不能反过来破坏主仓安全、生活质量和系统纪律。
+        </div>
+        <div class="notice" style="margin:12px 0;">
+          <strong>投资哲学总纲：</strong>
+          以价值投资为底层世界观，以系统化风控和量化工具提高资本配置效率，在不牺牲长期安全性的前提下追求更高复利。
+          <br>
+          <span class="muted">主从关系写死：价值主仓是主哲学和大资金底盘；V6 是规则化收益增强工具；Radar 是研究供给链和主线发现工具；Overlay / 期权是定义风险表达层；Micro Futures 只属于独立学费仓。所有增强器都必须服从长期复利、风险优先、少数高质量决策和可关闭可复盘原则。</span>
+        </div>
+        <div class="notice" style="margin:12px 0;">
+          <strong>2026-05-19 占比再分配方向：</strong>
+          组合不改成纯趋势基金，但主仓内部要从“便宜、稳、低反馈资产过重”逐步调整为
+          <strong>底仓 + 进攻仓</strong>。底仓负责不死，进攻仓负责推动净值增长。
+          执行上不是卖掉价值哲学，而是把新增资金、超配回流资金和低优先级仓位回收资金，优先分配给已经通过财报、产业趋势和估值纪律验证的进攻仓资产。
+        </div>
+        <div class="notice" style="margin:12px 0;">
+          <strong>动态占比总原则：</strong>
+          当前 300 万 RMB 左右本金阶段，组合应比 3000 万以后更主动地动态调整占比；所有系统、评估和复盘都要服务于
+          <strong>在不破坏底层价值哲学的前提下，提高资本配置效率</strong>。
+          300 万-1000 万阶段允许更高反馈、更高频的占比调整；1000 万-3000 万阶段逐步降低换手；3000 万以上再明显转向慢调整、低换手和更低永久损失风险。
+          动态调整必须由财报兑现、估值位置、主题强度、拥挤度、V6/Radar 信号和组合回撤共同触发，不能由短期焦虑或身边人收益刺激触发。
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>目标</th>
+              <th>风险边界</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>价值主仓</td><td>承载最大资金，保证长期复利；内部拆成底仓与进攻仓</td><td>单票不因信仰超配；PDD 类高不确定性票目标降至 8%-10%，阶段上限 12%；进攻仓资产必须同时通过基本面、估值和拥挤度复核</td></tr>
+            <tr><td>V6-A</td><td>系统化捕捉动量，提高资金效率；独立策略仓，不和主观进攻仓混算</td><td>当前 5k pilot；通过后先到总资产 5%-8%；至少 3 个月真实稳定后才讨论 10%-12%；V6-B 暂不占预算</td></tr>
+            <tr><td>Radar / SA / X Radar</td><td>研究输入层，负责发现 V6-B 候选池、进攻仓候选和反证风险</td><td>默认不直接交易；信号必须样本化、可追踪，进入主仓前必须经过估值、财报和拥挤度复核</td></tr>
+            <tr><td>Central Risk Board</td><td>统一监控占比、相关性、回撤、现金和主题拥挤度</td><td>任何动态加仓都必须通过总暴露和机会成本检查，防止 AI/半导体/高 beta 同质化过度集中</td></tr>
+            <tr><td>卫星实验仓</td><td>小额玩票 / 学费 / micro 试验</td><td>常态 1%-3%，绝对不超过 5%；独立记账，不纳入价值投资或 V6 绩效</td></tr>
+            <tr><td>AI 右尾期权袖珍仓</td><td>承接 AI 基建 / 数据中心 / 光互连 / 电力等右尾机会</td><td>只属于小额实验 / Radar 附属表达；初期总预算 1% 内，验证后上限 1%-3%；单笔 $300-$1,500，默认可归零；5-26 和 6-01 前只做准备，不实盘。</td></tr>
+            <tr><td>定义风险期权表达层</td><td>研究优先、小额样本、只表达已有系统 edge</td><td>不作为独立暴富模块；V6 期权化暂不实盘，只研究 <code>call debit spread</code> / <code>index iron condor</code> / <code>protective put</code> 三类 overlay；进入实盘前必须有单独期权回测或 20-30 笔样本。</td></tr>
+            <tr><td>现金 / 低风险仓</td><td>保留再部署弹药</td><td>总资产层保留击球区弹药；富途层额外保留执行缓冲，不为了满仓而满仓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="governance-layer">
+      <h2>6月1日前的系统主线：先把治理层做实</h2>
+      <p>
+        在 <strong>2026-06-01</strong> 历史 K 线额度刷新前，最重要的工作不是继续主观扩展 V6-B，
+        而是把 <strong>中央风控、绩效归因、月度研究复盘、Overlay 样本登记、6月1日执行卡</strong>
+        固化成稳定证据链。这样等数据窗口一开，执行就不会再回到“临场讨论 + 记忆推动”。
+      </p>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>当前已落地</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th>最新状态</th>
+                <th>意义</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Central Risk Board v1.2</strong></td><td><span class="pill exit">RED</span> 单票 <strong>31.8%</strong>、前二 <strong>52.1%</strong>、第一主题 <strong>52.1%</strong></td><td>先看组合结构风险，而不是把所有问题误判成策略问题。</td></tr>
+              <tr><td><strong>Performance Attribution v1</strong></td><td>Futu 覆盖 <strong>55.9%</strong>；最大正贡献 <strong>NVDA</strong>；最大拖累 <strong>PDD</strong></td><td>把“赚/亏了”拆成主仓、V6、Overlay、主题和执行过程。</td></tr>
+              <tr><td><strong>Overlay Trade Journal</strong></td><td>关闭样本 <strong>0</strong>；当前仅有 <strong>CRDO Lane A</strong> 观察项</td><td>把右尾实验独立记账，先收集真实样本，再谈可复制性。</td></tr>
+              <tr><td><strong>Order-to-Valuation Reality Check</strong></td><td>已加入 Radar / V6-B 评分体系</td><td>用订单、ARR、指引和未来 12-24 个月收入推演，判断强主线标的当前价格是否已透支，避免“方向对但买贵”。</td></tr>
+              <tr><td><strong>Options Manual v1</strong></td><td>已固化为 <strong>定义风险表达层</strong></td><td>期权只增强主仓 / V6 / Radar 的既有 edge，不替代系统；V6 期权化先研究，不直接自动化实盘。</td></tr>
+              <tr><td><strong>期权表达评估模板</strong></td><td>已成为每个标的操作策略的必填项</td><td>任何主仓 / V6 / V6-B / Radar 标的进入“怎么买”之前，都必须判断正股/ETF 是否优于期权；可以不用期权，但必须写原因。</td></tr>
+              <tr><td><strong>AI 右尾期权袖珍仓 v1</strong></td><td><a href="系统优化升级依据/AI右尾期权袖珍仓执行卡_v1.md">执行卡已完成</a>；脚本候选池已扩到 AI 基建右尾宇宙</td><td>把 LITE / COHR / IREN / CORZ / APLD / BE / CRDO / ALAB 等右尾机会关进预算笼子；5-26 和 6-01 前只读准备，不因截图临时交易。</td></tr>
+              <tr><td><strong>Monthly Research Review</strong></td><td>主线仍是 <strong>V6-A 治理 + 集中度收敛 + V6-B 供给链准备</strong></td><td>把 backlog 固化，避免研究靠记忆和情绪推进。</td></tr>
+              <tr><td><strong>5月26日 V6-A 执行卡</strong></td><td>已写好，等待 <strong>2026-05-26</strong> cutover decision day</td><td>把 balanced challenger 是否切换的证据包、命令顺序、三种 verdict 和真实下单确认边界写死。</td></tr>
+              <tr><td><strong>6月1日 V6-B 执行卡</strong></td><td>已写好，等待 <strong>2026-06-01</strong> 数据窗口</td><td>把 universe audit / synthetic history / challenger / allocator 顺序写死。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>你的最低动作</h3>
+          <ul>
+            <li>每天看中央风控邮件，确认红灯是不是还集中在腾讯 / PDD / 单一主题。</li>
+            <li>每周看一次 V6 Review Board + 绩效归因，不让过程问题被结果情绪掩盖。</li>
+            <li>Overlay 只记真实样本；<code>watch</code> 和 <code>research_ready</code> 不计入胜率。</li>
+            <li>6月1日直接按执行卡推进，不临时改口径、不跳步骤。</li>
+          </ul>
+          <p class="muted">
+            对你来说，这层最大的价值不是“多几个文件”，而是以后即使不在电脑前，也知道
+            <strong>风险在哪里、钱是谁赚的、哪些研究该继续、哪些该停</strong>。
+          </p>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>主入口：</strong>
+        <a href="中央风控看板_CENTRAL_RISK_BOARD_LATEST.html">中央风控看板</a> /
+        <a href="绩效归因看板_PERFORMANCE_ATTRIBUTION_LATEST.html">绩效归因看板</a> /
+        <a href="Radar_Overlay_Journal_LATEST.html">Overlay Journal</a> /
+        <a href="系统优化升级依据/Radar_Order_to_Valuation_Reality_Check_v1.md">订单估值现实检查</a> /
+        <a href="Monthly_Research_Review_LATEST.html">Monthly Research Review</a> /
+        <a href="2026-05-26_V6A_balanced_cutover_执行检查卡_v1.md">5月26日 V6-A 执行卡</a> /
+        <a href="6月1日_V6B_执行卡.md">6月1日 V6-B 执行卡</a>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>组合架构：总资产风险账本 + 富途执行账本</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>价值投资主仓</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>标的</th>
+                <th>角色</th>
+                <th>2026 新口径</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>腾讯</strong></td><td><span class="pill core">高质量错杀复利仓 / 当前降权</span></td><td>2026Q1 经营质量继续增强，但富途、RSU、港股通必须合并计算；确认共 2100 股，最新约 31.8%，新目标降到 12%-15%，阶段上限 18%-20%。</td></tr>
+              <tr><td><strong>美的</strong></td><td><span class="pill core">核心底盘</span></td><td>RMB 稳定复利资产；26Q1 证明公司没坏，但盈利节奏放慢，因此继续分段补仓而不是激进扩。</td></tr>
+              <tr><td><strong>NVDA</strong></td><td><span class="pill core">全球核心</span></td><td>AI 主线最强资产之一；截至 2026-05-14 仍沿用 FY2026/Q4 强势口径，下一检查点是 FY2027/Q1。</td></tr>
+              <tr><td><strong>ADBE</strong></td><td><span class="pill hold">质量成长</span></td><td>FY26 Q1 已继续验证 AI 货币化与现金流质量；现价在可建仓区附近，但新口径按 2%-3% → 3%-5% → 5%-8% 分段。</td></tr>
+              <tr><td><strong>GOOGL</strong></td><td><span class="pill hold">长期监控</span></td><td>2026-05-16 估值 review 后纳入系统长期监控；它是 AI 时代仍具强现金流和平台护城河的美国核心资产候选，但当前只进入观察/机会成本比较，不因 V6 持仓或指数成分身份自动升级为主仓。</td></tr>
+              <tr><td><strong>PDD</strong></td><td><span class="pill watch">治理验证</span></td><td>赔率仍高，但不确定性高；截至 2026-05-14 暂无 26Q1 新季报，正股约 20.3%，含 LEAP 合并暴露约 20.8%，新目标降到 8%-10%，阶段上限 12%。</td></tr>
+              <tr><td><strong>NU</strong></td><td><span class="pill hold">高成长观察仓</span></td><td>拉美数字金融龙头；2026Q1 仍验证客户、收入、效率和盈利能力，但信用成本与 15-90 天 NPL 走高，执行口径从“跌破 13 分段加”下调为 <strong>暂停加仓、等待 Q2 信用质量验证</strong>。</td></tr>
+              <tr><td><strong>泡泡玛特</strong></td><td><span class="pill radar">Optionality 偏高概率进攻</span></td><td>2026-05-14 已把 800 股招商银行换成 200 股 156.6HKD 泡泡玛特，合计 800 股；最新经营兑现已高于 4 月保守估值假设，因此当前判断是 <strong>依然偏便宜/至少不贵</strong>，但仍需完整财报继续验证利润率、IP 接力和海外质量。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>富途执行与机动模块</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th>身份</th>
+                <th>使用规则</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Radar</strong></td><td><span class="pill radar">研究输入层</span></td><td>降级为 V6-B 动态资源池来源；默认不再单独前台买正股。</td></tr>
+              <tr><td><strong>V6-A</strong></td><td><span class="pill flex">独立策略仓</span></td><td>只从富途账户出预算；当前先做 5k pilot，通过后总资产先看 5%-8%，再按真实稳定性扩容。</td></tr>
+              <tr><td><strong>卫星实验仓</strong></td><td><span class="pill flex">玩票 / 学费 / micro</span></td><td>常态 1%-3% 总资产，对应富途约 2%-5%；独立记账，允许归零，不补钱翻本。</td></tr>
+              <tr><td><strong>IT</strong></td><td><span class="pill flex">战术舒服仓</span></td><td>2026Q1 现金流强、咨询偏弱；已降为小仓，现价进入 140-150 舒服区，可继续观察，但不抢 ADBE / NU / V6-A 的资本优先级。</td></tr>
+              <tr><td><strong>富途现金</strong></td><td><span class="pill flex">等待资本</span></td><td>承接富途腾讯/PDD/IT减仓回流；富途内目标保留 15%-25% 作为 ADBE / V6-A / 实验仓和美元缓冲。</td></tr>
+            </tbody>
+          </table>
+          <div class="ok" style="margin-top:14px;">
+            <strong>关键理解：</strong>新结构不是简单 7+1，而是<strong>总资产层控制风险，富途层负责主动执行</strong>。真正能承接 V6、美股价值投资、短线和玩票实验的，是富途这一个美元主战场。
+          </div>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>账户职责固定：</strong>
+        国内账户负责 A 股 / 港股通底盘和税务友好层，不承担 V6 或美股主动预算；RSU 必须纳入腾讯总仓位管理，但只算风险来源和第二层腾挪来源，不算当前主动进攻现金池。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-03 新增：生意模式分类约束</strong>
+        以后不只看“好公司 / 坏公司”，而是先把候选放到
+        <strong>市场特许经营 / 弱势特许经营 / 强势一般事业 / 一般化商品</strong>
+        的光谱上，再讨论估值与仓位。
+        <strong>这一步是约束器，不是二元开关。</strong>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>当前目标席位的生意模式重标（v1）</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>更接近哪一层</th>
+              <th>对系统的直接含义</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>腾讯</strong></td><td><span class="pill core">市场特许经营</span></td><td>有资格竞争底盘层大仓，但价格与仓位仍独立约束，不因“好生意”豁免超配纪律。</td></tr>
+            <tr><td><strong>美的</strong></td><td><span class="pill hold">强势一般事业上沿 / 中间地带</span></td><td>比普通制造业更强，兼有品牌、渠道与服务网络，但仍不应被误判成超强特许经营。</td></tr>
+            <tr><td><strong>NVDA</strong></td><td><span class="pill hold">弱势特许经营上沿 / 更强特许经营中间地带</span></td><td>CUDA、软件栈与工作流锁定都很强，但技术迭代、客户集中与 Capex 周期决定它仍需中间地带表述。</td></tr>
+            <tr><td><strong>ADBE</strong></td><td><span class="pill hold">弱势特许经营</span></td><td>品牌、工作流、转换成本都强，但 AI 再定价风险决定它仍需价格纪律与持续验证。</td></tr>
+            <tr><td><strong>PDD</strong></td><td><span class="pill watch">弱势特许经营 / 中间地带</span></td><td>平台效率和执行力强，但治理、披露、竞争与地缘折价限制其核心仓上限。</td></tr>
+            <tr><td><strong>NU</strong></td><td><span class="pill hold">弱势特许经营 / 中间地带</span></td><td>更像高成长金融平台，适合高概率进攻层，不该在信用周期未验证前承担底盘层角色；2026Q1 后需重点跟踪 15-90 天 NPL、90+ 天 NPL、risk-adjusted NIM 和准备金节奏。</td></tr>
+            <tr><td><strong>泡泡玛特</strong></td><td><span class="pill radar">弱势特许经营</span></td><td>最新销售更新继续强化需求持续性与平台化验证；按我们 4 月已偏保守的增长假设看，它现在仍算 <strong>偏便宜或至少不贵</strong>。当前更准确的身份是 <strong>进攻仓中的高赔率候选</strong>，但仍需完整财报继续确认利润率、IP接力和海外增长质量。</td></tr>
+            <tr><td><strong>IT / 灵活席位</strong></td><td><span class="pill flex">强势一般事业</span></td><td>适合做舒服的质量替代仓，不适合承载“超级特许经营”的估值容忍度。</td></tr>
+            <tr><td><strong>紫金 / 周期窗口</strong></td><td><span class="pill flex">一般化商品中的强者</span></td><td>只能按战术 / 周期错位看，不进长期核心层，不拿景气高点利润直接资本化。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="capital-layers">
+      <h2>四类资金结构（底仓 / 进攻仓 / V6-A / 现金）</h2>
+      <p class="muted">
+        以下统一按<strong>总资产口径</strong>理解，不是要求任何时点都把四层同时打到上限。
+        具体股票总仓位仍服从后文的 <strong>95 / 90 / 80 状态带</strong>。
+      </p>
+      <div class="card" style="margin-bottom:14px;">
+        <h3>双账本执行原则</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>账本</th>
+              <th>看什么</th>
+              <th>正式口径</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>总资产风险账本</strong></td><td>腾讯/PDD集中度、长期目标结构、单一风险暴露</td><td>富途 + RSU + A 股 / 港股通全部合并看</td></tr>
+            <tr><td><strong>富途执行账本</strong></td><td>V6、美股价值投资、短线、卫星实验仓、美元缓冲</td><td>只按富途约 21.68 万 USD 规划预算，不拿国内账户和 RSU 抽象代替</td></tr>
+            <tr><td><strong>国内账户</strong></td><td>美的、招行、港股通腾讯/泡泡玛特底盘</td><td>负责稳，不负责 V6 资金来源</td></tr>
+            <tr><td><strong>RSU</strong></td><td>腾讯暴露与第二层减仓来源</td><td>计入风险，不计入当前主动进攻资金池</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid cols-4">
+        <div class="card">
+          <h3>底仓：35-50%</h3>
+          <ul>
+            <li><strong>任务：</strong>负责长期生存、睡眠质量、组合稳定性与大部分净值底座。</li>
+            <li><strong>适合放：</strong>`腾讯 / 美的 / 部分NVDA / 部分现金` 这类能长期拿住、结果大概率不会太差的仓位。</li>
+            <li><strong>纪律：</strong>这层优先追求确定性和可持有性，不承担“把年化拉到 26%”的主要责任。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>进攻仓：20-30%</h3>
+          <ul>
+            <li><strong>任务：</strong>负责把组合年化从“稳健”拉向“更快”，但仍建立在高概率胜出的前提上。</li>
+            <li><strong>适合放：</strong>`NVDA进攻部分 / ADBE / 泡泡玛特 / NU / PDD财报后机会` 这类高概率胜出、赔率和再评级空间都更高的名字。</li>
+            <li><strong>纪律：</strong>允许比底盘层更积极，但仍服从机会成本和击球区纪律，不为了快而乱追，也不为了生活费需求被迫卖出。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>小额实验 / 特殊机会：1-3%</h3>
+          <ul>
+            <li><strong>任务：</strong>给少数特殊机会留学习和观察预算，不承担组合主收益责任。</li>
+            <li><strong>适合放：</strong>`卫星实验仓 / 少数特殊高赔率机会 / 周期错位窗口`。</li>
+            <li><strong>纪律：</strong>这层必须预算化存在，不能吞掉整个系统，也不能被错误地当成底仓或进攻仓。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>V6-A + 现金 / 等待资金：13-20%</h3>
+          <ul>
+            <li><strong>任务：</strong>等价格、等验证、承接减仓回流资金，并给 V6-A 与富途执行层留预算。</li>
+            <li><strong>适合放：</strong>`富途现金 / V6-A / 尚未落位到目标席位的回流资金`。</li>
+            <li><strong>纪律：</strong>V6-A 必须独立复盘，现金必须服务击球区，不为了满仓买低优先级资产。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>正式理解：</strong>
+        你当前不是在“前期巴菲特”和“后期巴菲特”二选一，而是在做：
+        <strong>后期巴菲特式底盘 + 前期巴菲特式受控加速器</strong>。
+        小资金阶段的优势来自低容量机会、快速切换、低覆盖预期差和可控右尾，而不是来自重仓不确定性、卖期权杠杆或追社群暴富案例。
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>小资金 Alpha 映射</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>资金层</th>
+              <th>对应目标</th>
+              <th>系统约束</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>底仓</td><td>约 35%-50%，承载腾讯/美的/部分 NVDA 等长期复利与低波资产</td><td>保证生存率和心理稳定，但不再让低反馈资产长期挤占全部主仓预算</td></tr>
+            <tr><td>进攻仓</td><td>约 20%-30%，承载 NVDA 进攻部分、ADBE、泡泡玛特、NU、PDD 财报后机会等</td><td>必须有财报验证、产业趋势、估值纪律和回撤预案；不买纯概念，不在拥挤高潮无计划追高</td></tr>
+            <tr><td>V6-A</td><td>当前 5k pilot；通过后先看总资产 5%-8%；至少 3 个月真实稳定后再讨论 10%-12%</td><td>必须预算化、可复盘、有退出；V6-B 未通过前不占扩容预算</td></tr>
+            <tr><td>卫星实验 / 特殊机会</td><td>常态 1%-3%，绝对不超过 5%</td><td>独立记账，不纳入 V6 或价值投资绩效；只用富途预算，不补钱翻本</td></tr>
+            <tr><td>右尾彩票期权</td><td>0%，默认取消</td><td>不作为系统常规模块</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>和 7+1 的关系：</strong>
+        <strong>目标席位解决“长期由谁构成组合”，资金结构解决“这些资金各自承担什么收益任务”。</strong>
+        同一个名字可以在结构上是永久席位，但在资金层面属于底仓或进攻仓。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>生活费纪律：</strong>
+        进攻仓可以在阶段性上贡献部分已实现收益，偶尔覆盖生活费；
+        <strong>但生活费需求不能反过来绑架进攻仓卖点，更不能破坏底仓纪律。</strong>
+      </div>
+      <div class="danger" style="margin-top:14px;">
+        <strong>禁止误用：</strong>
+        不允许把“进攻仓”理解成高频交易仓，也不允许把“小额实验 / 特殊机会”无限上纲成全组合主发动机。
+      </div>
+    </section>
+
+    <section id="targets">
+      <h2>当前仓位与执行路线图（2026-05-19）</h2>
+      <p class="muted">
+        当前仓位按全资产口径估算：富途账户以 <strong>2026-05-14 10:07 OpenD REAL snapshot</strong> 为准，真实净资产约 <strong>22.07 万 USD</strong>，可用现金约 <strong>2.04 万 USD</strong>；
+        腾讯 RSU 1200 股按 HK$471 约 <strong>7.25 万 USD</strong>，A 股 / 港股通账户按今日“卖 800 股招行、买 200 股泡泡玛特”后的仓位估算约 <strong>10.23 万 USD</strong>。采用粗略汇率 HKD/USD=7.8、RMB/USD=7.19，合计总资产约 <strong>39.5 万 USD</strong>。以下百分比按这一版近实时口径估算。
+      </p>
+      <div class="notice" style="margin-bottom:14px;">
+        <strong>阅读方法：</strong>
+        这张表不是静态持仓清单，而是未来 3-6 个月的<strong>执行路线图</strong>。仓位百分比统一按<strong>总资产风险账本</strong>写；但凡涉及 <strong>V6 / 美股主动仓 / 玩票实验 / 富途现金</strong>，都要再换算到<strong>富途执行账本</strong>看。当前富途账户约 <strong>21.68 万 USD</strong>，是唯一可承接 V6、美股和短线实验的美元资金池。
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>模块 / 标的</th>
+            <th>当前约仓位</th>
+            <th>阶段目标</th>
+            <th>仓位归类</th>
+            <th>现在动作</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>腾讯（富途 + RSU + 港股通）</strong></td>
+            <td>约 31.8%（2100 股，约 12.37 万 USD）</td>
+            <td>12%-15%（阶段上限 18%-20%）</td>
+            <td><span class="pill core">底仓</span></td>
+            <td>持有，等待合适窗口继续降超配；当前不新增</td>
+            <td>2026-05-19 HQ Compounder 重估：腾讯仍是 Core HQ Compounder，但当前不是特别错杀价。HK$430-440 以下重新复核；HK$380-400 以下且 thesis 未破才进入错杀增配区；HK$600+ 触发更积极降权复核。</td>
+          </tr>
+          <tr>
+            <td><strong>美的 / A股核心底盘</strong></td>
+            <td>约 14.4%（5000 股，约 5.59 万 USD / 40.20 万 RMB）</td>
+            <td>8%-10%（阶段上限 12%）</td>
+            <td><span class="pill core">底仓</span></td>
+            <td>持有，不新增；等待自然回到目标带</td>
+            <td>2026-05-19 HQ Compounder 重估：美的仍是 Core HQ Compounder，但更适合人民币现金流底座，不适合 15%+。当前约 14.4% 高于新上限；RMB 78 以下小额复核，75-76 舒服补仓，72 以下且 thesis 未破才做较大补仓复核。</td>
+          </tr>
+          <tr>
+            <td><strong>招商银行 / RMB 停泊仓</strong></td>
+            <td>约 3.8%（2700 股，约 1.49 万 USD / 10.73 万 RMB）</td>
+            <td>0-2%</td>
+            <td><span class="pill flex">现金 / 等待资金</span></td>
+            <td>只作现金替代/腾挪来源</td>
+            <td>V_base 约 52.2，现价约 38 有安全边际；但不是主收益引擎，资金优先级低于美的击球区、强趋势主仓和更高 Alpha 机会。</td>
+          </tr>
+          <tr>
+            <td><strong>NVDA</strong></td>
+            <td>约 12.8%（约 4.97 万 USD）</td>
+            <td>核心 8%-10%；趋势增强 10%-15%（上限 15%）</td>
+            <td><span class="pill core">底仓 + 进攻仓</span></td>
+            <td>持有，等 FY2027 Q1；财报前不新增</td>
+            <td>2026-05-19 重估：NVDA 是底仓 + 进攻仓。当前约 12.8% 可以持有；财报强通过维持 12%-15%，中性通过回到 10%-12%，未通过先把进攻部分降下来。</td>
+          </tr>
+          <tr>
+            <td><strong>ADBE</strong></td>
+            <td>约 1.9%（约 0.72 万 USD）</td>
+            <td>当前 3%-5%；Q2/CEO gate 后 5%-8%（上限 8%）</td>
+            <td><span class="pill hold">底仓候选</span></td>
+            <td>持有观察仓，Q2 后决定是否升级</td>
+            <td>2026-05-19 重估：ADBE 是底仓候选。当前估值已像错杀，但 AI 侵蚀和 CEO 交接仍需反证；不因便宜一次性打到 5%-8%。</td>
+          </tr>
+          <tr>
+            <td><strong>PDD</strong></td>
+            <td>约 20.3% 正股 / 20.8% 含 LEAP（正股约 7.90 万 USD，LEAP 约 0.19 万 USD）</td>
+            <td>8-10%（上限 12%）</td>
+            <td><span class="pill watch">进攻仓</span></td>
+            <td>只减不加</td>
+            <td>估值和赚钱能力仍强，但治理/地缘/披露不确定性决定它不能再做前二大仓；LEAP 只服务于未来减正股后的弹性保留。</td>
+          </tr>
+          <tr>
+            <td><strong>NU</strong></td>
+            <td>约 2.0%（600 股，约 0.77 万 USD）</td>
+            <td>3-5%（Q2后再评估）</td>
+            <td><span class="pill hold">进攻仓</span></td>
+            <td>已建 1%-2% 初始仓</td>
+            <td>2026Q1 后从“击球区加仓”改为“观察仓持有”：客户增长、收入、效率仍强，但信用成本上行；暂不从 2% 往 3%-5% 推进，等 Q2 证明 NPL 与 risk-adjusted NIM 稳住后再评估。</td>
+          </tr>
+          <tr>
+            <td><strong>泡泡玛特</strong></td>
+            <td>约 4.1%（800 股，约 1.61 万 USD）</td>
+            <td>5-6%</td>
+            <td><span class="pill radar">进攻仓</span></td>
+            <td>持有为主；回落或完整财报再加</td>
+            <td>2026-05-14 已用 800 股招商银行换入 200 股港股通泡泡玛特，合计 800 股。当前属于进攻仓。处理建议：在 4 月保守模型下它现在仍偏便宜，但执行上仍是<strong>先持有，不因为销售更新追高</strong>；若价格回落到 150 一带，或完整财报继续验证利润率/IP 接力/海外质量，再讨论从约 4.1% 往 5%-6% 提。</td>
+          </tr>
+          <tr>
+            <td><strong>A股 Radar 训练仓</strong></td>
+            <td>当前计划 5 万 RMB</td>
+            <td>5 万训练；50 笔样本后才讨论 10 万；100 笔后才讨论 20 万</td>
+            <td><span class="pill radar">A股 Radar / 训练仓</span></td>
+            <td>手动下单，先积累样本</td>
+            <td>当前目标是训练主线识别、买点过滤和退潮信号，不是大仓赚钱。达到样本数、正期望和回撤要求前，不扩仓、不自动交易。</td>
+          </tr>
+          <tr>
+            <td><strong>V6-A 量化策略仓</strong></td>
+            <td>0 / V6-A 5k pilot ready 但尚未下单；V6-B 仅模拟</td>
+            <td>当前 5k pilot；通过后 5%-8%；3 个月稳定后再讨论 10%-12%</td>
+            <td><span class="pill flex">V6-A</span></td>
+            <td>先完成 5k pilot；不提前扩容</td>
+            <td>当前可扩容的是 V6-A。V6-B / 美股 Radar 暂不占预算；未来若 Sharpe、回撤和可执行性明显通过，再并入整体 V6。</td>
+          </tr>
+          <tr>
+            <td><strong>卫星实验 / 学费仓</strong></td>
+            <td>0%</td>
+            <td>常态 1%-3% / 绝对不超过 5%；对应富途约 2%-5%</td>
+            <td><span class="pill flex">小额实验仓</span></td>
+            <td>小额、独立、允许归零</td>
+            <td>只用于玩票、micro、小额短线学习；独立记账，不纳入价值投资或 V6 绩效，不允许亏损后补钱翻本。</td>
+          </tr>
+          <tr>
+            <td><strong>TME</strong></td>
+            <td>0%</td>
+            <td>0%</td>
+            <td><span class="pill exit">退出 / 已清理</span></td>
+            <td>直接退出</td>
+            <td>与腾讯生态暴露重复，组合不可替代性低。</td>
+          </tr>
+          <tr>
+            <td><strong>IT</strong></td>
+            <td>约 1.8%（约 0.72 万 USD）</td>
+            <td>0-4%</td>
+            <td><span class="pill flex">非主线仓</span></td>
+            <td>进入舒服区，可观察式补</td>
+            <td>已从约 17,000 USD 降到约 7,223 USD；现价进入 140-150 区间，但资本优先级仍低于 ADBE 与 NU。</td>
+          </tr>
+          <tr>
+            <td><strong>富途现金</strong></td>
+            <td>约 7.6%（可用现金约 2.96 万 USD；若含 BIL 近现金约 3.02 万 USD）</td>
+            <td>总资产正常 8%-12%；富途内正常 15%-25%；最低不低于总资产 5% / 富途 10%</td>
+            <td><span class="pill flex">现金 / 等待资金</span></td>
+            <td>等击球机会；不为满仓而买</td>
+            <td>现金是 ADBE、NVDA、V6-A、PDD 财报后机会和美元缓冲的共同弹药。回撤期只有在明确机会出现时释放，富途现金可降到 8%-12%，但不能降到 0。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="grid cols-2" style="margin-top:14px;">
+        <div class="card">
+          <h3>富途执行账户目标结构</h3>
+          <ul>
+            <li><strong>美股主动主仓：</strong>约 50%-60%，内部拆分为底仓约 25%-35%，进攻仓约 20%-30%。</li>
+            <li><strong>V6-A 预算池：</strong>当前 5k pilot；通过后富途内约 9%-15%；3 个月稳定后再讨论 18%-22%。V6-B 暂不占预算。</li>
+            <li><strong>卫星实验仓：</strong>约 2%-5%</li>
+            <li><strong>富途现金 / 近现金：</strong>正常 15%-25%，最低 10%；回撤期有明确机会时可降到 8%-12%</li>
+            <li><strong>其余：</strong>历史超配清理过渡带，优先由富途腾讯 / PDD / IT 回流提供；回流资金优先补进攻仓和 V6-A，而不是继续堆低优先级资产。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>国内账户与 RSU 职责</h3>
+          <ul>
+            <li><strong>国内账户：</strong>美的、招行、港股通腾讯 / 泡泡玛特负责底盘与税务友好层，不承担 V6 预算来源。</li>
+            <li><strong>RSU：</strong>必须纳入腾讯总暴露管理，但只作为风险来源和第二层减仓来源。</li>
+            <li><strong>执行含义：</strong>不要再用“我总资产还有很多”来替代富途真实可用美元预算。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="triggers">
+      <h2>估值锚与击球区</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>标的</th>
+            <th>价值锚</th>
+            <th>击球区 / 好价</th>
+            <th>执行动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>腾讯 0700.HK</strong></td>
+            <td>V_base ≈ HK$560-620</td>
+            <td>HK$430-440 以下重新复核；HK$380-400 以下且 thesis 未破才进入错杀增配区</td>
+            <td>2026-05-19 HQ Compounder 重估后，腾讯分类为 <strong>Core HQ Compounder / Hold But Deweight</strong>。当前 HK$460 附近不新增，目标仓位降至 <strong>12%-15%</strong>，阶段上限 <strong>18%-20%</strong>；HK$600+ 开始更积极降权，HK$650+ 进入估值兑现 / 再平衡区。</td>
+          </tr>
+          <tr>
+            <td><strong>美的 000333.SZ</strong></td>
+            <td>Bear ≈ RMB 70-78；Base ≈ RMB 105-115；Bull ≈ RMB 135-150</td>
+            <td>80-100 偏便宜持有；&lt;78 小额复核；75-76 舒服补仓区；&lt;=72 较大补仓复核区</td>
+            <td>2026-05-19 HQ Compounder 重估后，分类为 <strong>Core HQ Compounder / Position Capped</strong>。26Q1 收入和归母仍增长，但扣非归母同比 -14.02%，说明公司没坏、增长斜率放慢。目标仓位降至 <strong>8%-10%</strong>，阶段上限 <strong>12%</strong>；当前约 14.4% 不新增，不再把美的当新增资金第一优先。</td>
+          </tr>
+          <tr>
+            <td><strong>招商银行 600036.SH</strong></td>
+            <td>V_base ≈ RMB 52.2；Floor ≈ RMB 33.7；Ceiling ≈ RMB 71.8</td>
+            <td>38 附近持有可；33-36 更舒服；接近 Floor 才进入深度复核区</td>
+            <td>26Q1 继续证明其“稳健但不高弹性”的身份；适合 RMB 低波停泊仓 / 现金替代，不升级为战略核心，不抢主仓进攻资金。</td>
+          </tr>
+          <tr>
+            <td><strong>NVDA</strong></td>
+            <td>Bear ≈ $150-185；Base ≈ $230-$260；Bull ≈ $300-$360</td>
+            <td>$220-260 持有等财报；$190-210 财报通过后小补；$170-185 核心击球区；$260-280 复核降低进攻部分</td>
+            <td>2026-05-19 重估后，NVDA 是底仓 + 进攻仓。8%-10% 是长期核心，10%-15% 是进攻部分；当前 12.8% 不新增，等 FY2027 Q1 决定进攻部分去留。</td>
+          </tr>
+          <tr>
+            <td><strong>ADBE</strong></td>
+            <td>Bear ≈ $180-220；Base ≈ $380-430；Bull ≈ $550-650</td>
+            <td>$250-320 错杀候选区；$220-250 深度错杀复核；$180-220 特别机会复核但必须确认非 thesis 破坏</td>
+            <td>2026-05-19 重估后，ADBE 是底仓候选。FY26 Q1 继续验证 AI 货币化与现金流质量，当前估值便宜；但 Q2 与 CEO 继任检查通过前，只允许 3%-5%，不直接升到 5%-8%。</td>
+          </tr>
+          <tr>
+            <td><strong>GOOGL</strong></td>
+            <td>长期监控锚：等待正式 SOP 估值沉淀；先按“强平台现金牛 + AI 再定价不确定性”处理</td>
+            <td>只进入观察与机会成本比较；需要明显安全边际或 AI/搜索/云业务验证增强后再讨论主仓席位</td>
+            <td>2026-05-16 决策：纳入系统长期监控。当前不抢 ADBE / NVDA / PDD 降超配回流资金的优先级，也不因 V6 可能持有 GOOGL 而跳过主仓 thesis 跟踪。</td>
+          </tr>
+          <tr>
+            <td><strong>PDD</strong></td>
+            <td>V_base ≈ $148；Bear ≈ $79；Bull ≈ $262；净现金底 ≈ $39.8/ADS</td>
+            <td>95-100 属于合理持有区；79-90 才是加仓复核区；&lt;=79 且 thesis 未破坏才进入战略击球复核；148+ 开始按价值锚分批降仓</td>
+            <td>2026-05-15 财报前估值报告已把 V_base 从旧 $234 下修至 $148，原因是 FY2025 EBIT/OCF 压缩、Temu 监管风险显性化和 WACC 上调。最终动作：底仓继续持有，<strong>等待 2026-05-19 Q1 验证 Temu 利润率/现金流，财报前不加仓</strong>；即使 Q1 好转，也必须通过机会成本和总仓位约束。</td>
+          </tr>
+          <tr>
+            <td><strong>NU</strong></td>
+            <td>V_floor ≈ $11.5-12.5；V_base ≈ $17-19；Bull ≈ $23-25</td>
+            <td>12.5-13.5 进入复核区；&lt;12 且信用未恶化才进入更强击球区</td>
+            <td>2026Q1 后长期 thesis 未破，但信贷组合、LDR 和信用成本需要二次验证。现有 600 股继续持有，暂停主动加仓；若 Q2 早期逾期率回落/稳定、90+ 天 NPL 不恶化、risk-adjusted NIM 稳在 9% 以上，再恢复分段加仓讨论。</td>
+          </tr>
+          <tr>
+            <td><strong>泡泡玛特 9992.HK</strong></td>
+            <td>V_floor / Bear ≈ HK$100-120；V_base ≈ HK$220-240；Bull ≈ HK$280-320</td>
+            <td>145-165 持有跟踪，不追；120-135 更舒服；&lt;120 明显击球区</td>
+            <td>2026-05-14 已把 800 股招商银行换成 200 股 156.6HKD 泡泡玛特，现合计 800 股。经营更新说明实际增长强于 4 月保守长期假设，但仍是销售更新而非完整利润/IP拆分；执行上是<strong>持有、不追高，等回撤或完整财报验证利润率/IP 接力/海外质量后再讨论目标仓位 5%-6%</strong>。</td>
+          </tr>
+          <tr>
+            <td><strong>IT</strong></td>
+            <td>V_base ≈ $217.4</td>
+            <td>&lt;=155 可认真买；&lt;=152 严格击球区</td>
+            <td>灵活席位优先候选，当前比 NU 更接近可以执行的价格。</td>
+          </tr>
+          <tr>
+            <td><strong>紫金 2899.HK</strong></td>
+            <td>Base ≈ HK$34-38</td>
+            <td>30-33 开始舒服；27-30 好球区；&lt;=27 深击球区</td>
+            <td>只作为对冲与硬资产模块，不当主收益引擎。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="card" style="margin-top:14px;">
+        <h3>主要标的价格带执行卡（每日查阅版）</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>当前优先动作</th>
+              <th>加仓 / 补仓区</th>
+              <th>持有 / 不追区</th>
+              <th>减仓 / 降风险区</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>腾讯 0700.HK</strong></td>
+              <td>底仓但降权；当前不新增</td>
+              <td>HK$430-440 以下重新复核；HK$380-400 以下且 thesis 未破才考虑错杀增配</td>
+              <td>HK$440-580：核心持有，但继续等窗口降超配</td>
+              <td>HK$600+ 更积极降权；HK$650+ 估值兑现 / 再平衡</td>
+            </tr>
+            <tr>
+              <td><strong>美的 000333.SZ</strong></td>
+              <td>当前约 14.4%，高于新上限，不新增</td>
+              <td>&lt;78 小额复核；75-76 舒服补仓；&lt;=72 且 thesis 未破才较大补仓复核</td>
+              <td>78-100：便宜但以持有为主，不让它挤压更高预期收益资产</td>
+              <td>超过 12% 阶段上限时不再扩；明显高估再讨论腾挪</td>
+            </tr>
+            <tr>
+              <td><strong>NVDA</strong></td>
+              <td>财报前不新增，等 FY2027 Q1 决定进攻部分去留</td>
+              <td>$190-210 财报通过后小补；$170-185 核心击球区</td>
+              <td>$220-260：持有等财报，维持 10%-15% 区间内纪律</td>
+              <td>$260-280 复核降低进攻部分；财报中性回 10%-12%，未通过先降到 8%-10%</td>
+            </tr>
+            <tr>
+              <td><strong>ADBE</strong></td>
+              <td>当前不到 2% 可持有；$264 附近不追</td>
+              <td>$240 左右开始认真复核补到约 3%；$230-235 且 thesis 未破，可向 3%-5% 靠</td>
+              <td>$250-320：错杀候选区，但 Q2 / CEO gate 通过前不一次打满</td>
+              <td>Q2 / CEO gate 未通过则维持观察仓；通过后才讨论 5%-8%</td>
+            </tr>
+            <tr>
+              <td><strong>PDD</strong></td>
+              <td>财报后重估前不新增；当前目标是从约 20.3% 降到 8%-10%</td>
+              <td>$79-90 才是加仓复核区；&lt;=79 且 thesis 未破才战略击球复核</td>
+              <td>$95-100：合理持有区，不因为便宜感继续加重仓</td>
+              <td>$108-112 减第一段；$114-118 再减；$120+ 继续靠近 8%-10%</td>
+            </tr>
+            <tr>
+              <td><strong>NU</strong></td>
+              <td>现有 600 股观察仓继续持有；Q2 前暂停加仓</td>
+              <td>$12.5-13.5 进入复核；&lt;$12 且信用未恶化才更强击球</td>
+              <td>$13.5-17：等 Q2 信用质量，不因单纯便宜加仓</td>
+              <td>若 15-90 天 NPL、90+ NPL 或 risk-adjusted NIM 继续恶化，先降风险</td>
+            </tr>
+            <tr>
+              <td><strong>泡泡玛特 9992.HK</strong></td>
+              <td>现有 800 股持有；不因销售更新追高</td>
+              <td>HK$120-135 更舒服；&lt;HK$120 明显击球区</td>
+              <td>HK$145-165：持有跟踪，不追；等完整财报验证利润率/IP 接力/海外质量</td>
+              <td>若完整财报显示利润率、IP 接力或海外质量不及预期，停止扩到 5%-6%</td>
+            </tr>
+            <tr>
+              <td><strong>招商银行 600036.SH</strong></td>
+              <td>RMB 停泊仓 / 现金替代，不抢主收益资金</td>
+              <td>RMB 33-36 更舒服；接近 RMB 33.7 floor 才深度复核</td>
+              <td>RMB 38 附近可持有，但不升级为战略核心</td>
+              <td>需要资金给美的击球区、ADBE、V6-A 或进攻仓时，可作为腾挪来源</td>
+            </tr>
+            <tr>
+              <td><strong>IT</strong></td>
+              <td>非主线仓，小仓观察</td>
+              <td>$152-155 可认真买；&lt;=$152 严格击球区</td>
+              <td>$155-170：舒服观察，不抢 ADBE / NU / V6-A 预算</td>
+              <td>若资本需要更高优先级机会，继续作为回流来源</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:10px;">
+          这张表是 daily 邮件之外的人工执行边界：价格到位只代表“允许复核”，不代表自动下单；任何加仓仍必须同时通过 thesis、财报/经营验证、仓位上限、机会成本和现金规则。
+        </p>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-17 SOP v2.5 补丁后主要持仓估值更新：</strong>
+        本次更新不改变组合主策略，只更新动作纪律与估值锚：
+        <strong>PDD 持有等 05-19 Q1；腾讯核心持有但 Kelly/Wheel 降级；泡泡玛特 HK$150 附近不追；NU 继续小仓/观察；招商银行维持 RMB 停泊仓。</strong>
+        后续任何“加仓”都必须同时通过主变量、价格、仓位、机会成本和 Central Risk Board 五条件。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-10 主要仓位估值复核：</strong>
+        复核范围为腾讯、美的、招商银行、NVDA、PDD、ADBE、泡泡玛特。
+        核心更新是：NVDA 因 FY2026 收入/FCF 上台阶而上修价值锚；招商银行正式补入 RMB 停泊仓估值表；
+        腾讯/PDD 仍受仓位约束，估值便宜不等于可以加仓。
+      </div>
+      <div class="ok" style="margin-top:14px;">
+        <strong>执行顺序不是按喜好，而是按系统缺口。</strong>
+        当前战术优先级：<strong>TME 已退出 → 把进攻仓提升到 20%-30% 目标带 → ADBE/NVDA/AI infra 按财报和估值分段配置 → V6-A 小额验证，V6-B 只做研究 → 等 PDD/腾讯合适窗口降超配 → 现金保留击球区弹药</strong>。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-15 NU 估值更新：</strong>
+        NU 2026Q1 客户、收入、效率和净利润继续增长，长期 thesis 未破；但 15-90 天 NPL 升至 5.0%、信用损失准备环比大增、risk-adjusted NIM 降至 9.5%，说明市场担心点从“增长够不够”转为“信用扩张质量是否稳”。新估值口径：Bear 约 <strong>$9.5-$10.5</strong>，Base 约 <strong>$15-$17</strong>，Bull 约 <strong>$21-$22</strong>。执行结论：<strong>现有 600 股观察仓继续持有，暂停加仓</strong>；Q2 若早期逾期率回落/稳定、90+ 天 NPL 不恶化、risk-adjusted NIM 维持 9% 以上，再考虑恢复分段加仓。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-10 美的 / 招商银行 / NU 估值更新（NU 已被 05-15 新口径覆盖）：</strong>
+        美的现价约 <strong>80.6 RMB</strong> 仍在正式击球区，但因 2026Q1 扣非利润下滑，执行上采用分段补仓，不再使用“无脑强力建仓”口径。
+        <strong>2026-05-19 执行细化：</strong>美的作为长期核心底盘，跌破 <strong>78 RMB</strong> 只触发第一档小加仓复核；<strong>75-76 RMB</strong> 触发第二档；<strong>72 RMB 以下</strong> 才进入较大加仓复核。任何一档都必须确认不是业绩、现金流、利润率或治理问题导致的 thesis 破坏，并不得让美的权重挤压 PDD / NVDA / 腾讯等更高预期收益资产。
+        招商银行现价约 <strong>38 RMB</strong> 对 V_base 约 52.2 有安全边际，但只作为 RMB 低波停泊仓或现金替代。
+        NU 原先“跌破 13 分段加”的口径已暂停，执行以 2026-05-15 新口径为准。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>2026-05-12 泡泡玛特经营更新后的执行口径：</strong>
+        这份更新足以支持<strong>继续看多经营趋势、继续持有现有仓位</strong>，也支持把泡泡玛特从“普通验证仓”上调为<strong>Optionality 偏高概率进攻</strong>；
+        同时，因为我们 2026-04-12 正式估值本来就没有按当前这种高增速线性外推，所以最新数据反而强化了“<strong>依然偏便宜/至少不贵</strong>”这一判断。只是它仍是<strong>销售更新</strong>而非完整季报，所以当前最优处理依然不是追高，而是：<strong>先持有、等回落加、等完整财报再决定是否把目标仓位从 3%+ 继续抬向 5%-6%</strong>。
+      </div>
+    </section>
+
+    <section id="overweights">
+      <h2>腾讯 / PDD 超配调整操作框架（2026-05-13）</h2>
+      <p class="muted">
+        这部分不回答“它们是不是好公司”，而只回答一个更关键的问题：
+        <strong>在 thesis 未被证伪的前提下，如何把两个历史超配仓位降到更舒服、可持续、不会主导组合情绪的位置。</strong>
+      </p>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>腾讯 0700.HK：核心底盘，但必须去超配</h3>
+          <ul>
+            <li><strong>问题定义：</strong>腾讯的问题不是 thesis 错，而是总暴露太大，已经超出“底盘仓”应有的组合权重。</li>
+            <li><strong>主原则：</strong>不在当前舒服区以下低位砍仓，但也不再因为“长期看好”而允许继续维持 30%+ 总暴露。</li>
+            <li><strong>执行原则：</strong>只在反弹时分档减仓，不追求一次卖在完美价格；目标是把总暴露逐步从约 31.8% 收回到 15%-18%，阶段上限 20%。</li>
+            <li><strong>账户原则：</strong>富途、RSU、港股通必须合并看；默认减仓顺序写死为 <strong>富途 &gt; RSU &gt; 港股通</strong>，除非临近执行时出现明确税务或流动性反转。富途侧优先减的另一个原因，是它同时承担 V6、美股主动仓和实验仓的美元资金池角色。</li>
+          </ul>
+          <div class="notice" style="margin-top:12px;">
+            <strong>腾讯减仓顺序：</strong>
+            先减 <strong>富途账户 500 股</strong>，再减 <strong>RSU 1200 股</strong>，<strong>港股通 400 股最后动</strong>。
+            原因是：第一，富途仓位最灵活，且当前成本约 HK$549.9，高于现价，先减这部分最不影响长期结构；第二，RSU 已解禁、已完税后，本质上就是普通腾讯暴露，可以作为第二层腾挪来源；第三，港股通在当前制度下对内地个人投资者的转让差价所得继续暂免个税至 <strong>2027-12-31</strong>，且它同时承担境内账户底盘与税务隔离价值，所以最后动。
+          </div>
+          <table style="margin-top:12px;">
+            <thead>
+              <tr>
+                <th>价格区间</th>
+                <th>动作</th>
+                <th>目的</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>当前舒服区及以下</td>
+                <td>只减不加，但不主动低位重砍</td>
+                <td>避免把“仓位问题”处理成“低位情绪化卖出”</td>
+              </tr>
+              <tr>
+                <td>500-520</td>
+                <td>先减一小段超配</td>
+                <td>开始回收历史过重暴露，降低心理压力</td>
+              </tr>
+              <tr>
+                <td>540-560</td>
+                <td>继续按计划减仓</td>
+                <td>把腾讯从“主导组合情绪”改造成“稳定底盘仓”</td>
+              </tr>
+              <tr>
+                <td>580+</td>
+                <td>加快降到 15%-18% 的节奏</td>
+                <td>完成结构修正，而不是继续拖延</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="notice" style="margin-top:12px;">
+            <strong>正式口径：</strong>腾讯是长期核心席位，但不再允许因为“核心资产”四个字而豁免仓位纪律。
+          </div>
+        </div>
+        <div class="card">
+          <h3>PDD：赔率高，但要把“重正股”改造成“舒服仓”</h3>
+          <ul>
+            <li><strong>问题定义：</strong>PDD 当前的问题不是便宜与否，而是“高赔率 + 高不确定性”不应该承载前二大仓的组合权重。</li>
+            <li><strong>主原则：</strong>不在低位情绪化卖出，但必须机械地把正股仓位从约 20.3% 往 8%-10% 降，阶段上限 12%。</li>
+            <li><strong>LEAP 新口径：</strong>已建立的长期 call 只定义为<strong>替代型弹性仓</strong>，作用是帮助未来减正股后仍保留部分上行参与权，不是追加第二层重仓赌注。</li>
+            <li><strong>执行原则：</strong>所有 PDD 风险必须按“正股 + 长期 call 的合并暴露”来理解；在财报与管理层口径再次明朗前，不再继续加第二张 call。</li>
+          </ul>
+          <table style="margin-top:12px;">
+            <thead>
+              <tr>
+                <th>价格区间</th>
+                <th>动作</th>
+                <th>目的</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>&lt;100 附近</td>
+                <td>不新增，不情绪化卖</td>
+                <td>先观察财报与市场反馈，不把低估感受误当作加仓许可</td>
+              </tr>
+              <tr>
+                <td>108-112</td>
+                <td>先减第一段正股</td>
+                <td>开始把超重仓位往下收，不等完美价格</td>
+              </tr>
+              <tr>
+                <td>114-118</td>
+                <td>再减第二段正股</td>
+                <td>把“重正股”逐步转成“较轻正股 + 少量长期弹性仓”</td>
+              </tr>
+              <tr>
+                <td>120+</td>
+                <td>继续朝 8%-10% 目标靠拢</td>
+                <td>完成治理验证仓的正式降级，不再允许回到前二大仓</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="notice" style="margin-top:12px;">
+            <strong>正式口径：</strong>PDD 的 call 只能服务于减正股后的弹性保留，不能成为延迟降仓或继续叠加总暴露的理由。
+          </div>
+        </div>
+      </div>
+      <div class="ok" style="margin-top:14px;">
+        <strong>两只票的共同目标：</strong>
+        不是否定 thesis，而是把“ thesis 可能对，但仓位过重 ”这个问题工程化解决。
+        你真正要修的，是组合结构，而不是在每次波动里重新审判公司本身。
+      </div>
+    </section>
+
+    <section id="timeline">
+      <h2>2026 年四阶段路线图（5月10日修订）</h2>
+      <div class="timeline">
+        <div class="step">
+          <b>阶段 1：5-6 月 — 修正结构，不追热点。</b>
+          TME 已退出；IT 不再加；Radar 前台加仓暂停，转入研究输入层；开始把新增资金和回流资金优先分配给进攻仓候选；PDD 与腾讯只减不加，但不在低位情绪化卖。PDD 的长期 call 只作为替代型弹性仓管理。
+        </div>
+        <div class="step">
+          <b>阶段 2：7-8 月 — 进攻仓 / V6-A / V6-B 验证。</b>
+          若 NVDA/ADBE/AI infra 等进攻仓候选继续通过财报、估值和拥挤度复核，进攻仓向 20%-25% 推进；V6-A 完成模拟或小额实盘稳定性检查；V6-B 完成 Radar 动态池 standalone 回测、与 V6-A 对比和组合测试，但不占当前预算。
+        </div>
+        <div class="step">
+          <b>阶段 3：9-10 月 — 降低腾讯/PDD 双集中。</b>
+          若 PDD 反弹到分层减仓区，机械把正股约 20.3% 往 8%-10% 降；若腾讯具备窗口，逐步从约 31.8% 往 12%-15% 收。重点复核底仓是否仍过重、进攻仓是否有效、V6-A/V6-B 是否能贡献增量。
+        </div>
+        <div class="step">
+          <b>阶段 4：11-12 月 — 年底定型，不机械满仓。</b>
+          检查腾讯/PDD 是否明显从超配回落；进攻仓是否进入 20%-30% 目标带且不是追高堆出来；V6-A 是否具备扩容条件；V6-B 是否证明增量收益；现金是否仍有足够等待弹药。
+        </div>
+      </div>
+    </section>
+
+    <section id="radar-20260509">
+      <h2>2026-05-10 V6-B 研发方向与 Radar 输入纪律</h2>
+      <p class="muted">
+        本节按最新口径补充：富途账户、腾讯 RSU 1200 股、A 股 / 港股通账户合并为全部投资资产。
+        A 股 / 港股通账户本轮按你的手工成交更新：持仓包括美的 5000 股、招商银行 2700 股、腾讯港股通 400 股、泡泡玛特港股通 400 股。A股 Radar 另按 5 万 RMB 训练仓管理。
+        按本次详细折算，全资产约 <strong>38.89 万 USD</strong>。
+        这里是组合建议与 V6-B 研发纪律，不代表已下单。
+      </p>
+
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>当前核心暴露</h3>
+          <ul>
+            <li><strong>腾讯总暴露：</strong>富途 500 股 + RSU 1200 股 + 港股通 400 股，共 <strong>2100 股</strong>；按 HK$459.6 约 <strong>12.37 万 USD</strong>，占全资产约 <strong>31.8%</strong>。</li>
+            <li><strong>美的：</strong>A 股 5000 股，市值约 <strong>40.20 万 RMB</strong>；正式定位为 A 股核心底盘与高分红长期仓。新增资金只按 78 / 75-76 / 72 以下三档复核，不因单日回调情绪化加仓。</li>
+            <li><strong>招商银行：</strong>A 股 2700 股，市值约 <strong>10.73 万 RMB</strong>；定位为 RMB 停泊仓，继续可作为腾挪来源，但不再是主要新增资金去向。</li>
+            <li><strong>泡泡玛特：</strong>富途 400 股 + 港股通 400 股，共 <strong>800 股</strong>；确定性评价较原计划上调，但仍按验证仓纪律管理。</li>
+            <li><strong>PDD：</strong>正股约 <strong>7.90 万 USD / 20.3%</strong>；若连同已建 LEAP 合并看约 <strong>8.09 万 USD / 20.8%</strong>。</li>
+            <li><strong>NVDA：</strong>约 <strong>4.97 万 USD</strong>，占全部投资资产约 <strong>12.8%</strong>。</li>
+            <li><strong>A股 Radar：</strong>当前只按 5 万 RMB 训练仓管理；50 笔真实样本前不扩到 10 万，不接自动交易。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>3-6 个月主线</h3>
+          <ul>
+            <li><strong>V6-B：</strong>先独立验证 Radar 动态资源池能否赚钱，不允许直接并入 V6-A。</li>
+            <li><strong>Radar：</strong>从前台正股仓降级为研究输入层，只负责提供候选池、漏网复盘和主题链条。</li>
+            <li><strong>资金来源：</strong>V6-A、ADBE 和卫星实验仓的预算优先来自<strong>富途现金 + 富途腾讯/PDD/IT减仓回流</strong>；不要把国内账户和 RSU 抽象当成可直接执行的美元资金池。</li>
+            <li><strong>PDD LEAP：</strong>已建立少量长期 call，但只能作为未来减正股后的替代弹性，不是第二层加码理由。</li>
+            <li><strong>腾讯 RSU：</strong>必须纳入腾讯总仓位管理，不能只看富途里的腾讯。</li>
+            <li><strong>结构目标：</strong>PDD 从正股约 20.3% 往 8%-10% 降，腾讯从约 31.8% 往 12%-15% 降，阶段上限 18%-20%，腾出的空间优先给进攻仓 / V6-A / 现金。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>执行理解</h3>
+          <ul>
+            <li>当前不是“组合太分散”，而是腾讯与 PDD 两个核心暴露过重，V6 体系还没有形成稳定策略仓。</li>
+            <li>Radar 的任务是补足 AI 主题扩散、产业链二阶机会、一阶龙头再加速和困境反转动量，但最终由 V6-B 统一验证。</li>
+            <li>第一阶段不再把 Radar 正股仓作为主线扩容，先证明 Radar 动态池对 V6-B 有真实增量收益。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>2026-05-10 Radar 漏网修正：AMD / INTC 复盘后新增三轨</h3>
+        <p class="muted">
+          这次修正的核心不是追涨，而是承认原 Radar 第一版偏窄：过度偏向二阶瓶颈和冷门预期差，导致
+          <strong>AMD</strong> 这类“明牌但继续上修”的一阶龙头没有进入仓位讨论；
+          <strong>INTC</strong> 这类“不是典型好生意但有政策/资本/周期反转动量”的标的没有进入候选池。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>新增轨道</th>
+              <th>目标</th>
+              <th>最低候选池</th>
+              <th>进入 V6-B 的边界</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>一阶龙头再加速</strong></td>
+              <td>已经热门，但收入、订单、客户、毛利或一致预期继续上修。</td>
+              <td><code>NVDA / AMD / AVGO / ANET / TSM</code></td>
+              <td>允许进入 V6-B universe；人工正股只作为 0%-3% 例外，不再默认加仓。</td>
+            </tr>
+            <tr>
+              <td><strong>二阶/三阶瓶颈扩散</strong></td>
+              <td>真实供不应求瓶颈、利润池迁移、预期差仍存在。</td>
+              <td><code>MU / WDC / AMKR / LITE / SITM / ETN / VRT / GEV / AMBA / SYNA / CEVA / HIMX</code></td>
+              <td>允许进入 V6-B universe；必须有订单、收入、毛利或客户验证，不能只靠股价涨幅。</td>
+            </tr>
+            <tr>
+              <td><strong>困境反转动量</strong></td>
+              <td>非好生意但有收入/利润拐点、政策/资本结构催化、趋势确认。</td>
+              <td><code>INTC / WDC</code> 及后续半导体周期修复候选</td>
+              <td>允许进入 V6-B universe，但要独立标记为反转动量，不得价值主仓化。</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="notice" style="margin-top:14px;">
+          <strong>新增强制动作：</strong>
+          每周 Radar 复盘必须加入 <code>Missing Opportunity Review</code>：
+          过去 2-4 周 AI / 半导体 / 数据中心链条显著上涨但未进池的标的，必须判断是合理排除还是系统漏网。
+          错过一次行情不可怕；可怕的是没有把漏网原因固化成下一次扫描规则。
+        </div>
+        <div class="danger" style="margin-top:14px;">
+          <strong>仓位纪律更新：</strong>
+          AMD / INTC 类型的机会优先进入 V6-B 资源池，由系统按动量、风控和再平衡规则处理；
+          除非单独授权，人工不再因为 Radar 评分高而直接扩正股仓或买彩票期权。
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>V6-B 四阶段研发路线</h3>
+        <p class="muted">
+          正确路线不是把 V6-A 越改越复杂，而是把 V6-B 作为独立 challenger 验证，再决定是否进入组合层。
+          Radar 只提供动态资源池，不能在历史回测中提前使用未来才发现的标的。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>目标</th>
+              <th>通过标准</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>阶段 1：V6-B 单独回测</strong></td>
+              <td>只验证 Radar 池能不能赚钱。</td>
+              <td>必须使用 point-in-time universe，输出 full/OOS/recent、MaxDD、Sharpe、rolling 3y/5y、黑天鹅窗口。</td>
+            </tr>
+            <tr>
+              <td><strong>阶段 2：V6-A vs V6-B</strong></td>
+              <td>比较收益、回撤、Sharpe、相关性、换手和可交易性。</td>
+              <td>若 V6-B 与 V6-A 高相关，必须明显更强；若低相关，可以作为组合增强候选。</td>
+            </tr>
+            <tr>
+              <td><strong>阶段 3：V6-A + V6-B 组合</strong></td>
+              <td>测试 70/30、50/50、动态权重。</td>
+              <td>组合层必须改善风险调整收益，不能只提高名义收益但放大回撤。</td>
+            </tr>
+            <tr>
+              <td><strong>阶段 4：升级为 V6 资源池优化层</strong></td>
+              <td>只有 V6-B 稳定贡献后，才允许进入真实策略预算。</td>
+              <td>必须完成 deterministic replay、release gate、live preview、模拟盘，再谈小额实盘。</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="ok" style="margin-top:14px;">
+          <strong>长期架构：</strong>
+          V6 Engine = 经典动量 / 相对强弱 / risk-on risk-off / 波动率控制 / 回撤刹车；
+          V6-A Pool = AI Mega 固定核心池；
+          V6-B Pool = Radar 动态机会池；
+          V6-C Pool = ETF / 行业 / 全市场轮动池；
+          Allocator = 根据近期表现、相关性、回撤、regime 分配权重。
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>V6-B 资源池与回测防作弊规则</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>规则</th>
+              <th>要求</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Point-in-time universe</td><td>标的只能从进入 Radar 记录日之后参与回测；不能把 2026-05-10 才发现的标的提前放回 2015 年。</td></tr>
+            <tr><td>入池字段</td><td>每个标的必须记录 ticker、entry_date、exit_date、source、track、入池理由、反证条件。</td></tr>
+            <tr><td>候选来源</td><td>一阶龙头再加速、二阶/三阶瓶颈扩散、困境反转动量、Missing Opportunity Review。</td></tr>
+            <tr><td>出池规则</td><td>上位原因：主题证伪、趋势长期失效、财报/订单不兑现、流动性或可交易性不足时出池。执行层与 V6-B 保持一致：评分低于 60 减仓或退出；低于 50 硬退出；反证触发直接退出；risk-off regime 切到防守；研究超过 45 天未更新则禁止新买并进入复核。</td></tr>
+            <tr><td>禁止事项</td><td>禁止看完涨幅后倒填入池日期；禁止只用幸存者；禁止为了提高回测结果手工删掉失败标的。</td></tr>
+            <tr><td>上线门槛</td><td>先 research，再 replay，再 preview，再 sim；任何一步失败都不能进入真实策略预算。</td></tr>
+          </tbody>
+        </table>
+        <div class="danger" style="margin-top:14px;">
+          <strong>禁止误用：</strong>
+          V6-B 的 alpha 来源可以是动态资源池，但底层交易逻辑必须经典、可解释、可复盘。
+          如果靠倒填热点或选择性删失败标的得到好结果，宁可判定为无效。
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>人工 Radar 第一阶段加仓清单：一次性例外</h3>
+        <p class="muted">
+          本清单来自 2026-05-10 Radar Review，定位是用户已授权的手动小观察仓，不是默认前台仓扩容，也不是 V6-B 已通过验证后的系统买入。
+          执行后不再自动追加；后续新增 Radar 机会原则上先进入 V6-B point-in-time universe 和模拟盘验证。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>建议动作</th>
+              <th>定位</th>
+              <th>纪律</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>ANET</code></td><td>+5 股</td><td>AI networking / fabric 表达</td><td>只做小观察仓；若估值拥挤且趋势破坏，按 V6-B 出池规则复核。</td></tr>
+            <tr><td><code>TSM</code></td><td>+1 股</td><td>AI 制造与先进封装综合锚</td><td>质量锚，不追成重仓；地缘和先进节点需求是核心反证。</td></tr>
+            <tr><td><code>WDC</code></td><td>+1-2 股</td><td>AI data storage 二阶重估 + 周期修复交集</td><td>周期股属性强；若存储价格、订单或 AI 数据需求不兑现，快速降级。</td></tr>
+            <tr><td><code>AMBA</code></td><td>+5 股</td><td>Edge AI 冷门预期差</td><td>验证慢，小仓试错；若 design win 不转收入，退出观察。</td></tr>
+            <tr><td><code>CEVA</code></td><td>+10 股</td><td>Edge AI IP 极小仓 optionality</td><td>只能极小仓；流动性、兑现慢和低覆盖是主要风险。</td></tr>
+          </tbody>
+        </table>
+        <div class="danger" style="margin-top:14px;">
+          <strong>硬约束：</strong>
+          人工 Radar 正股合计仍按 <code>0%-3%</code> 例外仓管理；不融资、不摊平、不因短期上涨追满。
+          资金来源优先来自 TME / IT / 部分现金，不为了追 Radar 去卖低位 PDD。
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>右尾期权与人工 Radar 仓位：默认取消</h3>
+        <p class="muted">
+          当前正式口径是：不再把 Radar 正股和彩票期权作为常规系统模块。
+          它们只保留为用户单独授权时的手动例外，不进入默认周/月度执行清单。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>规则</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>主策略</td><td>价值主仓 + V6-A/V6-B；Radar 只做 V6-B 研究输入。</td></tr>
+            <tr><td>人工 Radar 正股</td><td>默认不新增；只有用户明确授权时，才允许 0%-3% 例外仓。</td></tr>
+            <tr><td>彩票期权</td><td>默认 0%；不推荐、不自动化、不进入例行筛选。</td></tr>
+            <tr><td>若用户单独授权</td><td>只能买单腿 call，不能卖期权、不能摊平、不能融资，单笔预算和熔断另行确认。</td></tr>
+            <tr><td>系统职责</td><td>可以提示“存在右尾机会”，但默认结论应是先进入 V6-B 验证，而不是直接交易。</td></tr>
+          </tbody>
+        </table>
+        <div class="danger" style="margin-top:14px;">
+          <strong>当前决策：</strong>
+          为降低认知负担和执行噪音，Radar 正股扩容与彩票期权都不是未来主线。
+          主线是把 Radar 变成 V6-B 的资源池来源，让机器负责筛选、切换、退出和风控。
+        </div>
+      </div>
+    </section>
+
+    <section id="verification">
+      <h2>财报后微调框架</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>必须重点验证的 6 个模块</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>标的</th>
+                <th>财报后先看什么</th>
+                <th>升级条件</th>
+                <th>降级条件</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>腾讯</strong></td>
+                <td>游戏、广告、视频号、云与 AI 投入回报；RSU 合并后的总仓位。</td>
+                <td>现金流与股东回报持续强，且仓位已回到可承受区间。</td>
+                <td>核心业务增长转弱或资本配置恶化，同时仓位仍明显超标。</td>
+              </tr>
+              <tr>
+                <td><strong>ADBE</strong></td>
+                <td>AI 对核心工作流是增强还是侵蚀；ARR 与定价权是否稳定。</td>
+                <td>AI 证明是增量工具，ARR/盈利质量不受损。</td>
+                <td>AI 持续侵蚀核心产品护城河或定价权。</td>
+              </tr>
+              <tr>
+                <td><strong>NU</strong></td>
+                <td>ROE、NPL、效率比率、墨西哥/哥伦比亚扩张。</td>
+                <td>高 ROE 持续，信用成本受控，国际扩张继续兑现。</td>
+                <td>NPL 恶化明显，扩张效率或盈利质量转差。</td>
+              </tr>
+              <tr>
+                <td><strong>PDD</strong></td>
+                <td>治理、披露透明度、Temu 与主站现金流质量。</td>
+                <td>治理/披露改善，负面监管事件不再升级。</td>
+                <td>再次出现治理冲击、监管恶化或现金流质量走弱。</td>
+              </tr>
+              <tr>
+                <td><strong>泡泡玛特</strong></td>
+                <td>多 IP 平台化、海外增长质量、库存/渠道/利润率。</td>
+                <td>不再依赖单一 IP，海外与利润率继续健康。</td>
+                <td>爆款单 IP 依赖恶化，海外/利润率/库存反转。</td>
+              </tr>
+              <tr>
+                <td><strong>Radar / V6-B</strong></td>
+                <td>Radar 候选是否有订单、收入、毛利、客户验证，并能在 V6-B 中形成可回测增量收益。</td>
+                <td>财报/订单/趋势同步增强，且 V6-B standalone 与组合测试通过。</td>
+                <td>AI thesis 不兑现、动态池回测无增量、point-in-time 证据不足或结果依赖倒填热点。</td>
+              </tr>
+              <tr>
+                <td><strong>V6</strong></td>
+                <td>理论持仓 vs 实际持仓、交易失败、回撤、信号切换、与回测偏离。</td>
+                <td>模拟/小额实盘稳定，偏离可解释，风控正常。</td>
+                <td>连续偏离、执行异常、回撤超阈值或策略能量源衰减。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>财报微调的正式纪律</h3>
+          <ol>
+            <li><strong>每月一次结构检查：</strong>只看真实最新仓位、永久席位偏离、现金与灵活席位占比。</li>
+            <li><strong>每季一次财报验证：</strong>重点先看 腾讯 / PDD / ADBE / 泡泡玛特 / V6-B 资源池，再看 NU / 美的 / NVDA。</li>
+            <li><strong>主仓与 V6 重叠时，更新口径向上兼容：</strong>若同一股票同时存在于主仓与 V6，必须按<strong>主仓 thesis</strong>完整同步财报与经营变化，不允许因为 V6 自动仓身份而忽略主仓更新。</li>
+            <li><strong>所有持仓与候选都执行非财报验证：</strong>不能只看季报/年报，必须同时搜索最新外部真实数据，确认财报与现实世界是否互相印证。</li>
+            <li><strong>单一数据只能做线索：</strong>任何一条社媒热度、单个榜单、一次渠道反馈或一篇报道，都不能单独推动估值上修或仓位升级。</li>
+            <li><strong>非财报验证必须标注来源与日期：</strong>优先使用最近 `30-60天` 的数据，且至少覆盖 `官方披露/IR` + `渠道/平台/行业客观数据` 或 `第三方旁证`；能覆盖三类更好。</li>
+            <li><strong>行业重点要因标的而变：</strong>消费看渠道/复购/热度，平台看用户/变现/生态，软件看留存/采用/定价，金融看坏账/获客/监管，周期看价格/订单/库存/产能。</li>
+            <li><strong>最终动作必须压缩：</strong>研究可以厚，但最后 `买 / 加 / 减 / 不动` 只能依赖少数关键变量，不允许把成功建立在过长的串联前提上。</li>
+            <li><strong>只允许两类动作：</strong>结构性减仓、击球区建仓。除此之外，不做第三种情绪化动作。</li>
+            <li><strong>微调，不推翻：</strong>财报后允许调价格带、调仓位上限、调灵活席位，但不轻易推翻永久席位框架。</li>
+            <li><strong>若财报与价格同时恶化：</strong>先降级，再谈加仓，不允许“越跌越信仰”。</li>
+          </ol>
+          <div class="danger" style="margin-top:14px;">
+            <strong>反纪律提醒：</strong>不能因为想快点实现 6 年 4 倍，就在非击球区用财报“自我说服”强行上仓位。
+          </div>
+          <div class="notice" style="margin-top:14px;">
+            <strong>总验证纪律：</strong>
+            只有当<strong>价格更舒服 + 最新外部真实数据验证未转弱，最好还在增强</strong>时，才允许提高仓位。
+            这条适用于所有标的；只是不同公司看的外部信号不同。
+          </div>
+          <div class="notice" style="margin-top:14px;">
+            <strong>综合判断纪律：</strong>
+            我们允许 `毛估估`，但这里的意思是：在财报、外部现实、行业位置、管理层、赔率与下行风险都看过后，做综合区间判断；不是凭单一数据或单一模型拍脑袋。
+          </div>
+          <div class="notice" style="margin-top:14px;">
+            <strong>反复杂化决策纪律：</strong>
+            最终每次动作前，必须明确：`这笔钱主要靠哪 1-2 个变量赚钱`。如果一个动作需要依赖 `5-6` 个以上前提同时成立，默认降级为 `不动 / 继续观察`。
+          </div>
+          <div class="notice" style="margin-top:14px;">
+            <strong>泡泡玛特专属追加纪律：</strong>
+            从验证仓往上加之前，必须额外确认 `新IP接力`、`老IP不掉队`、`多IP协同成立`、`海外增长质量持续`。
+            这里的外部数据至少要覆盖：官方披露、渠道/平台客观数据、第三方或搜索热度旁证三类，避免只靠财报滞后验证。
+            若只是出现<strong>单次销售更新很强</strong>，但没有利润率、IP拆分和库存/渠道质量的配套确认，默认只做<strong>持有加分</strong>，不直接追高升级仓位。
+            若出现 `新IP未接力`、`老IP明显掉队` 或 `海外热度快速回落`，即使财报数字好看，也不允许直接升级仓位。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="discipline">
+      <h2>年度执行纪律</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>今年只允许做四类动作</h3>
+          <ul>
+            <li><strong>结构性减仓：</strong>IT 超额部分、腾讯超配、PDD 超配；TME 已完成退出。</li>
+            <li><strong>击球区建仓：</strong>ADBE、NU、美的、泡泡玛特等长期席位。</li>
+            <li><strong>策略研发：</strong>V6-B 独立回测、V6-A 对比、组合测试、模拟盘验证。</li>
+            <li><strong>策略验证：</strong>V6 先模拟/小额，再按 release gate 扩容。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>今年不允许做的事</h3>
+          <ul>
+            <li>为了凑够 8 只而硬买。</li>
+            <li>因为“拿着不舒服”就情绪化卖出 PDD。</li>
+            <li>因为价格跌了，就预支未验证的高仓位。</li>
+            <li>因为 Radar 票短期涨得快，就跳过 V6-B point-in-time 回测和模拟验证。</li>
+            <li>因为 V6 回测好看，就跳过模拟/小额实盘验证。</li>
+            <li>因为 covered call / sell put 可做，就用期权强行维持低效率仓。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>2026 年底完成标准</h3>
+          <ul>
+            <li>腾讯总暴露从约 31.8% 明显回落，至少进入 12%-15% 路径，阶段上限不超过 18%-20%。</li>
+            <li>PDD 从正股约 20.3% 往 8%-10% 回落，阶段上限不超过 12%，且不再前二大仓。</li>
+            <li>进攻仓形成 20%-30% 的正式预算带，且由财报、估值、主题强度和拥挤度共同验证。</li>
+            <li>ADBE 完成 3%-5% 的合理落子，并根据 AI 货币化验证决定是否向 5%-8% 推进。</li>
+            <li>V6-B 完成 standalone、V6-A 对比、组合层测试，并明确是否有增量收益。</li>
+            <li>V6-A 完成上线前验证或小额实盘验证，有周报/月报；V6-B 先完成研究验证，不占当前预算。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="exposure-band">
+      <h2>股票仓位状态带（95 / 90 / 80）</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>进攻态：90-95%</h3>
+          <ul>
+            <li>含义：大部分永久席位与灵活席位都已到可执行价格，验证也未转弱。</li>
+            <li>允许状态：`ADBE / NU / 泡泡玛特 / 紫金 / IT` 中至少多数已经给出舒服价格。</li>
+            <li>执行口径：只有在赔率和验证都支持时，才把组合推近满股票仓位。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>常态：80-90%</h3>
+          <ul>
+            <li>含义：长期结构已经定了，但并非所有目标席位都到位。</li>
+            <li>允许状态：减老超配仓的同时，新席位还在等更好价格或更强验证。</li>
+            <li>执行口径：这是最常见的过渡状态，不因没有打到 95% 而焦虑。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>保守态：70-80%</h3>
+          <ul>
+            <li>含义：好价格明显不够，或验证转弱，系统主动保留较多等待资本。</li>
+            <li>允许状态：目标席位贵、旧仓在减、新仓不愿硬买。</li>
+            <li>执行口径：这不是偏离，而是赔率纪律在发挥作用。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>固定理解：</strong>
+        <strong>`7+1` 回答的是“长期由谁构成组合”，不是“任何时点都必须 95% 股票仓位”。</strong>
+        当目标席位没到价时，回流出来的现金应视为 <strong>过渡期等待资本</strong>，而不是系统出错。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>与资金结构联动：</strong>
+        股票仓位状态带只回答“当前该打到多高的股票暴露”；真正决定你年化上限的，还取决于这部分股票里，底仓 / 进攻仓 / V6-A / 现金各自占了多少。
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>边界补充：</strong>
+        状态带看的是<strong>有效股票仓位质量</strong>，不是只看股票比例本身。
+        若 `90%+` 的股票暴露主要是由 `腾讯 / PDD` 历史超配、旧仓残留或未迁移完成的结构撑出来，<strong>不算进攻态</strong>。
+        真正的进攻态必须同时包含合理比例的 ADBE / V6 或其他经过验证的新引擎；Radar 只算研究输入，不算进攻仓本身。
+      </div>
+      <div class="danger" style="margin-top:14px;">
+        <strong>禁止误用：</strong>
+        不允许为了把股票仓位硬打到 95%，在 `ADBE / NU / 泡泡玛特 / 紫金` 等尚未进入舒服区时强行高价上仓。
+      </div>
+    </section>
+
+    <section id="enhancement">
+      <h2>交易增强层与 V6 策略纪律</h2>
+      <div class="notice" style="margin-bottom:14px;">
+        <strong>2026-05-17 AI 右尾期权袖珍仓前置完成：</strong>
+        该模块已经制度化为 <strong>Radar / V6-B 的定义风险右尾表达</strong>，不是主仓替代品，也不是暴富模块。
+        候选池包括 AI 光互连、数据中心电力、HPC、存储、先进封装等方向；当前只允许研究和只读筛选，等待 <strong>2026-05-26 pilot 总结</strong> 与 <strong>2026-06-01 K 线额度刷新</strong> 后，再按执行卡决定是否出现第一批样本。
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>系统定位</h3>
+          <ul>
+            <li><strong>Wheels / 期权脚本</strong> 与 <strong>自动化交易脚本</strong> 都属于整体账户收益增强层。</li>
+            <li>它们服务主策略，不单独构成主策略，不允许反客为主。</li>
+            <li><strong>V3</strong> 更像现金增强 / 停泊工具；<strong>V6</strong> 是独立进攻策略仓，必须单独记账。</li>
+            <li>工具回答的是：<strong>当下最优动作</strong>，而不是长期仓位身份。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>统一使用规则</h3>
+          <ul>
+            <li>先看席位角色与主计划，再决定是否调用脚本。</li>
+            <li>先算最坏情况仓位，再看价格，再看权利金或策略收益。</li>
+            <li>只在准备动手时跑脚本：价格到关键区间、验证状态变化、准备调仓或准备卖 put。</li>
+            <li>V6-A 扩容必须按 5k pilot → 5%-8% → 10%-12% 三段走，并通过 deterministic replay、实盘可交易性、周报/月报与回撤阈值。V6-B 先证明 Sharpe、回撤和可执行性，再并入整体 V6。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>固定口径：</strong>
+        <strong>价值主仓先行，增强层与策略仓后置；先判断这笔钱属于长期席位、V6 策略预算，还是现金等待资本，再决定执行工具。</strong>
+      </div>
+    </section>
+
+    <section id="anti-complexity">
+      <h2>反复杂化决策纪律</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>三层拆分</h3>
+          <ul>
+            <li><strong>研究层：</strong>财报、非财报验证、行业资料、机会成本比较、外部搜索。</li>
+            <li><strong>决策层：</strong>只回答 `买 / 加 / 减 / 不动` 与席位去留。</li>
+            <li><strong>执行层：</strong>挂单、wheels、V3、现金停泊等具体工具动作。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>主变量上限</h3>
+          <ul>
+            <li><strong>永久席位：</strong>最多 `4` 个主变量：商业/人、价格、仓位、机会成本。</li>
+            <li><strong>验证仓：</strong>在永久席位基础上，只额外加 `验证状态` 这一项。</li>
+            <li><strong>灵活席位 / wheels：</strong>最多 `3` 个主变量：价格、最坏情况仓位、是否优于不动。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>默认动作</h3>
+          <ul>
+            <li>默认输出永远是 <strong>`不动`</strong>。</li>
+            <li>只有当主变量清晰、价格到位、仓位允许、机会成本通过时，才允许升级成动作。</li>
+            <li>若需要 `5-6` 个以上条件同时成立，默认降级为观察或小仓。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice" style="margin-top:14px;">
+        <strong>每次动作前强制一句：</strong>
+        `这笔钱如果赚到，最主要靠哪 1-2 个变量成立？`
+      </div>
+      <div class="danger" style="margin-top:14px;">
+        <strong>系统瘦身要求：</strong>
+        每季度至少做一次“删规则”复盘。凡是明显增加判断环节、但不明显提高胜率的规则或模块，优先合并或降级，避免研究复杂度溢出到决策层。
+      </div>
+    </section>
+
+    <div class="footer">
+      文件名：26年阶段性组合策略计划 ｜ 最后更新：2026-05-19 ｜ 状态：当前投资策略主指导文件 ｜ 用途：未来 3-6 年组合重构、V6-A/V6-B 策略仓、Radar 研究输入与财报后微调基准｜
+      交易前请再次核对最新真实仓位、期权、税费、币种与实时价格。
+    </div>
+  </div>
+</body>
+</html>
