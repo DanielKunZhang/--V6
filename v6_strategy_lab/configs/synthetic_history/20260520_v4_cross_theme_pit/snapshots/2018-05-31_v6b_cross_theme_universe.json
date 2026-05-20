@@ -1,0 +1,276 @@
+{
+  "status": "research_synthetic_historical",
+  "policy_id": "V6B_CROSS_THEME_PIT_PRICE_ONLY_V0",
+  "rules": {
+    "no_lookahead_price_signals": true,
+    "price_only_generator": true,
+    "not_for_live_trading": true
+  },
+  "as_of": "2018-05-31",
+  "entry_count": 0,
+  "track_counts": {
+    "semis_ai": 0,
+    "technology": 0,
+    "industrials_infra": 0,
+    "financials": 0,
+    "healthcare_biotech": 0,
+    "energy_resources": 0,
+    "precious_metals": 0,
+    "utilities_power": 0,
+    "consumer_discretionary": 0
+  },
+  "selected": {
+    "semis_ai": [],
+    "technology": [],
+    "industrials_infra": [],
+    "financials": [],
+    "healthcare_biotech": [],
+    "energy_resources": [],
+    "precious_metals": [],
+    "utilities_power": [],
+    "consumer_discretionary": []
+  },
+  "detail": {
+    "semis_ai": {
+      "label": "AI 算力与数据中心",
+      "source_theme_id": "ai_compute_and_data_center",
+      "benchmark": "US.SMH",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.NVDA",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.AVGO",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.AMD",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.ANET",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.TSM",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.MU",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.WDC",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.AMKR",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.COHR",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.AAOI",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.LITE",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.MRVL",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "technology": {
+      "label": "软件与互联网",
+      "source_theme_id": "software_and_internet",
+      "benchmark": "US.IGV",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.MSFT",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.GOOGL",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.META",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.AMZN",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.NFLX",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.ARKK",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "industrials_infra": {
+      "label": "机器人与具身智能",
+      "source_theme_id": "robotics_and_embodied_ai",
+      "benchmark": "US.XLI",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.TSLA",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.ROK",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.ETN",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.HON",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.IR",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.TER",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "financials": {
+      "label": "金融与资本市场",
+      "source_theme_id": "financials_and_capital_markets",
+      "benchmark": "US.XLF",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.JPM",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.BRK.B",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.KRE",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "healthcare_biotech": {
+      "label": "医疗与创新药",
+      "source_theme_id": "healthcare_and_biotech",
+      "benchmark": "US.XLV",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.LLY",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.XBI",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "energy_resources": {
+      "label": "能源与资源",
+      "source_theme_id": "energy_and_commodities",
+      "benchmark": "US.XLE",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.XLE",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.XOP",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.DBC",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "precious_metals": {
+      "label": "黄金与贵金属",
+      "source_theme_id": "gold_and_precious_metals",
+      "benchmark": "US.GLD",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.GLD",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.SLV",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.GDX",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "utilities_power": {
+      "label": "电力与基础设施",
+      "source_theme_id": "utilities_power_and_infrastructure",
+      "benchmark": "US.XLU",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.XLU",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.XLI",
+          "reason": "insufficient_history"
+        }
+      ]
+    },
+    "consumer_discretionary": {
+      "label": "可选消费",
+      "source_theme_id": "consumer_discretionary",
+      "benchmark": "US.XLY",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.AMZN",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.TSLA",
+          "reason": "insufficient_history"
+        },
+        {
+          "ticker": "US.XLY",
+          "reason": "insufficient_history"
+        }
+      ]
+    }
+  }
+}

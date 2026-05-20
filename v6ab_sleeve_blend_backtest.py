@@ -29,6 +29,33 @@ DEFAULT_PIT_MANIFEST = (
     / "20260520_v3_dynamic_optics"
     / "manifest.json"
 )
+DEFAULT_CROSS_THEME_PIT_MANIFEST = (
+    ROOT
+    / "v6_strategy_lab"
+    / "configs"
+    / "synthetic_history"
+    / "20260520_v4_cross_theme_pit"
+    / "manifest.json"
+)
+DEFAULT_CROSS_THEME_PIT_MAP = {
+    "semis_ai": ["semis_ai"],
+    "technology": ["technology"],
+    "healthcare_biotech": ["healthcare_biotech"],
+    "energy_resources": ["energy_resources"],
+    "precious_metals": ["precious_metals"],
+    "financials": ["financials"],
+    "industrials_infra": ["industrials_infra"],
+    "utilities_power": ["utilities_power"],
+    "consumer_discretionary": ["consumer_discretionary"],
+}
+DEFAULT_CROSS_THEME_FILL_GAPS_PIT_MAP = {
+    "healthcare_biotech": ["healthcare_biotech"],
+    "energy_resources": ["energy_resources"],
+    "precious_metals": ["precious_metals"],
+    "financials": ["financials"],
+    "industrials_infra": ["industrials_infra"],
+    "utilities_power": ["utilities_power"],
+}
 
 
 V6B_CONFIGS: dict[str, dict[str, Any]] = {
@@ -62,6 +89,30 @@ V6B_CONFIGS: dict[str, dict[str, Any]] = {
         "expression": "stocks",
         "stock_top_n": 2,
         "pit_manifest": str(DEFAULT_PIT_MANIFEST),
+    },
+    "v6b_cross_pit_guarded_top3_90": {
+        "top_n": 3,
+        "min_theme_score": 0.08,
+        "risk_weight": 0.90,
+        "use_cooldown": True,
+        "vol_target": 0.22,
+        "dd_brake": True,
+        "expression": "stocks",
+        "stock_top_n": 2,
+        "pit_manifest": str(DEFAULT_CROSS_THEME_PIT_MANIFEST),
+        "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+    },
+    "v6b_hybrid_gap_pit_guarded_top3_90": {
+        "top_n": 3,
+        "min_theme_score": 0.08,
+        "risk_weight": 0.90,
+        "use_cooldown": True,
+        "vol_target": 0.22,
+        "dd_brake": True,
+        "expression": "stocks",
+        "stock_top_n": 2,
+        "pit_manifest": str(DEFAULT_CROSS_THEME_PIT_MANIFEST),
+        "pit_theme_map": DEFAULT_CROSS_THEME_FILL_GAPS_PIT_MAP,
     },
 }
 
@@ -437,7 +488,12 @@ def main() -> None:
                             continue
                         rows.append({"mode": "static", "config": b_name, "weights": weights, "stats": s})
 
-        if b_name not in {"v6b_guarded_top3_90", "v6b_pit_guarded_top3_90"}:
+        if b_name not in {
+            "v6b_guarded_top3_90",
+            "v6b_pit_guarded_top3_90",
+            "v6b_cross_pit_guarded_top3_90",
+            "v6b_hybrid_gap_pit_guarded_top3_90",
+        }:
             continue
         for a_w in [0.65, 0.70, 0.75]:
             for b_w in [0.25, 0.30, 0.35]:

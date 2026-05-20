@@ -1,0 +1,197 @@
+{
+  "status": "research_synthetic_historical",
+  "policy_id": "V6B_CROSS_THEME_PIT_PRICE_ONLY_V0",
+  "rules": {
+    "no_lookahead_price_signals": true,
+    "price_only_generator": true,
+    "not_for_live_trading": true
+  },
+  "as_of": "2023-12-29",
+  "entry_count": 21,
+  "track_counts": {
+    "semis_ai": 3,
+    "technology": 3,
+    "industrials_infra": 3,
+    "financials": 3,
+    "healthcare_biotech": 2,
+    "energy_resources": 0,
+    "precious_metals": 3,
+    "utilities_power": 2,
+    "consumer_discretionary": 2
+  },
+  "selected": {
+    "semis_ai": [
+      "US.AAOI",
+      "US.AMD",
+      "US.AMKR"
+    ],
+    "technology": [
+      "US.ARKK",
+      "US.NFLX",
+      "US.AMZN"
+    ],
+    "industrials_infra": [
+      "US.IR",
+      "US.ETN",
+      "US.HON"
+    ],
+    "financials": [
+      "US.KRE",
+      "US.JPM",
+      "US.BRK.B"
+    ],
+    "healthcare_biotech": [
+      "US.XBI",
+      "US.LLY"
+    ],
+    "energy_resources": [],
+    "precious_metals": [
+      "US.GDX",
+      "US.GLD",
+      "US.SLV"
+    ],
+    "utilities_power": [
+      "US.XLI",
+      "US.XLU"
+    ],
+    "consumer_discretionary": [
+      "US.AMZN",
+      "US.XLY"
+    ]
+  },
+  "detail": {
+    "semis_ai": {
+      "label": "AI 算力与数据中心",
+      "source_theme_id": "ai_compute_and_data_center",
+      "benchmark": "US.SMH",
+      "selected": [
+        "US.AAOI",
+        "US.AMD",
+        "US.AMKR"
+      ],
+      "candidate_count": 11,
+      "blocked": [
+        {
+          "ticker": "US.WDC",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.NOK",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "technology": {
+      "label": "软件与互联网",
+      "source_theme_id": "software_and_internet",
+      "benchmark": "US.IGV",
+      "selected": [
+        "US.ARKK",
+        "US.NFLX",
+        "US.AMZN"
+      ],
+      "candidate_count": 6,
+      "blocked": []
+    },
+    "industrials_infra": {
+      "label": "机器人与具身智能",
+      "source_theme_id": "robotics_and_embodied_ai",
+      "benchmark": "US.XLI",
+      "selected": [
+        "US.IR",
+        "US.ETN",
+        "US.HON"
+      ],
+      "candidate_count": 5,
+      "blocked": [
+        {
+          "ticker": "US.TSLA",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "financials": {
+      "label": "金融与资本市场",
+      "source_theme_id": "financials_and_capital_markets",
+      "benchmark": "US.XLF",
+      "selected": [
+        "US.KRE",
+        "US.JPM",
+        "US.BRK.B"
+      ],
+      "candidate_count": 3,
+      "blocked": []
+    },
+    "healthcare_biotech": {
+      "label": "医疗与创新药",
+      "source_theme_id": "healthcare_and_biotech",
+      "benchmark": "US.XLV",
+      "selected": [
+        "US.XBI",
+        "US.LLY"
+      ],
+      "candidate_count": 2,
+      "blocked": []
+    },
+    "energy_resources": {
+      "label": "能源与资源",
+      "source_theme_id": "energy_and_commodities",
+      "benchmark": "US.XLE",
+      "selected": [],
+      "candidate_count": 0,
+      "blocked": [
+        {
+          "ticker": "US.XLE",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.XOP",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.DBC",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "precious_metals": {
+      "label": "黄金与贵金属",
+      "source_theme_id": "gold_and_precious_metals",
+      "benchmark": "US.GLD",
+      "selected": [
+        "US.GDX",
+        "US.GLD",
+        "US.SLV"
+      ],
+      "candidate_count": 3,
+      "blocked": []
+    },
+    "utilities_power": {
+      "label": "电力与基础设施",
+      "source_theme_id": "utilities_power_and_infrastructure",
+      "benchmark": "US.XLU",
+      "selected": [
+        "US.XLI",
+        "US.XLU"
+      ],
+      "candidate_count": 2,
+      "blocked": []
+    },
+    "consumer_discretionary": {
+      "label": "可选消费",
+      "source_theme_id": "consumer_discretionary",
+      "benchmark": "US.XLY",
+      "selected": [
+        "US.AMZN",
+        "US.XLY"
+      ],
+      "candidate_count": 2,
+      "blocked": [
+        {
+          "ticker": "US.TSLA",
+          "reason": "weak_trend"
+        }
+      ]
+    }
+  }
+}

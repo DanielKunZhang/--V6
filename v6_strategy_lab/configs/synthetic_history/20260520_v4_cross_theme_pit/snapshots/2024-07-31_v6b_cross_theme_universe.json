@@ -1,0 +1,223 @@
+{
+  "status": "research_synthetic_historical",
+  "policy_id": "V6B_CROSS_THEME_PIT_PRICE_ONLY_V0",
+  "rules": {
+    "no_lookahead_price_signals": true,
+    "price_only_generator": true,
+    "not_for_live_trading": true
+  },
+  "as_of": "2024-07-31",
+  "entry_count": 23,
+  "track_counts": {
+    "semis_ai": 3,
+    "technology": 3,
+    "industrials_infra": 3,
+    "financials": 3,
+    "healthcare_biotech": 2,
+    "energy_resources": 1,
+    "precious_metals": 3,
+    "utilities_power": 2,
+    "consumer_discretionary": 3
+  },
+  "selected": {
+    "semis_ai": [
+      "US.NVDA",
+      "US.ANET",
+      "US.AVGO"
+    ],
+    "technology": [
+      "US.NFLX",
+      "US.GOOGL",
+      "US.AMZN"
+    ],
+    "industrials_infra": [
+      "US.TSLA",
+      "US.IR",
+      "US.TER"
+    ],
+    "financials": [
+      "US.KRE",
+      "US.JPM",
+      "US.BRK.B"
+    ],
+    "healthcare_biotech": [
+      "US.XBI",
+      "US.LLY"
+    ],
+    "energy_resources": [
+      "US.XLE"
+    ],
+    "precious_metals": [
+      "US.GDX",
+      "US.SLV",
+      "US.GLD"
+    ],
+    "utilities_power": [
+      "US.XLU",
+      "US.XLI"
+    ],
+    "consumer_discretionary": [
+      "US.TSLA",
+      "US.XLY",
+      "US.AMZN"
+    ]
+  },
+  "detail": {
+    "semis_ai": {
+      "label": "AI 算力与数据中心",
+      "source_theme_id": "ai_compute_and_data_center",
+      "benchmark": "US.SMH",
+      "selected": [
+        "US.NVDA",
+        "US.ANET",
+        "US.AVGO"
+      ],
+      "candidate_count": 7,
+      "blocked": [
+        {
+          "ticker": "US.AMD",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.MU",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.WDC",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.AMKR",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.AAOI",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.MRVL",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "technology": {
+      "label": "软件与互联网",
+      "source_theme_id": "software_and_internet",
+      "benchmark": "US.IGV",
+      "selected": [
+        "US.NFLX",
+        "US.GOOGL",
+        "US.AMZN"
+      ],
+      "candidate_count": 3,
+      "blocked": [
+        {
+          "ticker": "US.MSFT",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.META",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.ARKK",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "industrials_infra": {
+      "label": "机器人与具身智能",
+      "source_theme_id": "robotics_and_embodied_ai",
+      "benchmark": "US.XLI",
+      "selected": [
+        "US.TSLA",
+        "US.IR",
+        "US.TER"
+      ],
+      "candidate_count": 5,
+      "blocked": [
+        {
+          "ticker": "US.ETN",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "financials": {
+      "label": "金融与资本市场",
+      "source_theme_id": "financials_and_capital_markets",
+      "benchmark": "US.XLF",
+      "selected": [
+        "US.KRE",
+        "US.JPM",
+        "US.BRK.B"
+      ],
+      "candidate_count": 3,
+      "blocked": []
+    },
+    "healthcare_biotech": {
+      "label": "医疗与创新药",
+      "source_theme_id": "healthcare_and_biotech",
+      "benchmark": "US.XLV",
+      "selected": [
+        "US.XBI",
+        "US.LLY"
+      ],
+      "candidate_count": 2,
+      "blocked": []
+    },
+    "energy_resources": {
+      "label": "能源与资源",
+      "source_theme_id": "energy_and_commodities",
+      "benchmark": "US.XLE",
+      "selected": [
+        "US.XLE"
+      ],
+      "candidate_count": 1,
+      "blocked": [
+        {
+          "ticker": "US.XOP",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.DBC",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "precious_metals": {
+      "label": "黄金与贵金属",
+      "source_theme_id": "gold_and_precious_metals",
+      "benchmark": "US.GLD",
+      "selected": [
+        "US.GDX",
+        "US.SLV",
+        "US.GLD"
+      ],
+      "candidate_count": 3,
+      "blocked": []
+    },
+    "utilities_power": {
+      "label": "电力与基础设施",
+      "source_theme_id": "utilities_power_and_infrastructure",
+      "benchmark": "US.XLU",
+      "selected": [
+        "US.XLU",
+        "US.XLI"
+      ],
+      "candidate_count": 2,
+      "blocked": []
+    },
+    "consumer_discretionary": {
+      "label": "可选消费",
+      "source_theme_id": "consumer_discretionary",
+      "benchmark": "US.XLY",
+      "selected": [
+        "US.TSLA",
+        "US.XLY",
+        "US.AMZN"
+      ],
+      "candidate_count": 3,
+      "blocked": []
+    }
+  }
+}
