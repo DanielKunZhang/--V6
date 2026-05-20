@@ -1,0 +1,57 @@
+{
+  "candidate_id": "V6AB_SIM_CANDIDATE_V1",
+  "status": "research_ready_for_paper_sim",
+  "as_of": "2026-05-20",
+  "purpose": "V6-A core engine plus V6-B dynamic theme sleeve with portfolio-level dynamic GLD/BIL overlay.",
+  "capital_mode": "paper_sim_only",
+  "base_sleeves": {
+    "V6A": 0.70,
+    "V6B_GUARDED_THEME_TO_STOCK": 0.30
+  },
+  "v6b_profile": {
+    "source": "v6b_theme_rotation_backtest.py",
+    "config": "v6b_guarded_top3_90",
+    "description": "ETF theme discovery -> theme-to-stock expression; top3 themes; guarded risk controls; 90% risk weight inside V6-B sleeve."
+  },
+  "dynamic_overlay": {
+    "max_overlay_weight": 0.30,
+    "vol_trigger": 0.28,
+    "corr_trigger": 0.60,
+    "drawdown_trigger": -0.12,
+    "hedge_assets": ["US.GLD", "US.BIL"],
+    "hedge_selection_rule": "Use GLD when GLD is above its 126-day moving average; otherwise use BIL.",
+    "overlay_policy": "Overlay is not permanent. It only reallocates part of A/B risk budget when market, volatility, drawdown, or correlation triggers fire."
+  },
+  "research_metrics": {
+    "window": "2012-05-21_to_2026-05-19",
+    "annualized_return": 0.2946,
+    "max_drawdown": -0.1863,
+    "sharpe": 1.1414,
+    "overlay_days": 1228,
+    "gld_overlay_days": 903,
+    "bil_overlay_days": 325,
+    "total_days": 3520
+  },
+  "known_weaknesses": [
+    "Sharpe is around 1.14, below the desired 1.2+ quality bar.",
+    "2018Q4, 2020 COVID shock, and 2022 hike bear windows are still negative.",
+    "Simple V6-B momentum/drawdown off-switch did not improve results and should not be used in v1."
+  ],
+  "paper_sim_gate": {
+    "allowed": true,
+    "live_capital_allowed": false,
+    "required_monitoring": [
+      "daily A/B/overlay weights",
+      "V6-B theme decisions",
+      "overlay trigger reason",
+      "current drawdown versus candidate max drawdown",
+      "A/B rolling 63-day correlation"
+    ],
+    "stop_or_review_conditions": [
+      "paper_sim_drawdown <= -10%",
+      "A/B rolling 63-day correlation >= 0.75 while SPY or QQQ is below 200-day moving average",
+      "V6-B sleeve loses more than 8% from local peak while overlay is inactive",
+      "any execution mismatch between intended sleeve weights and paper orders"
+    ]
+  }
+}

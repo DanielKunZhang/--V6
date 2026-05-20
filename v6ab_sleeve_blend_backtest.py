@@ -87,6 +87,9 @@ def dynamic_overlay_equity(
     vol_threshold: float,
     corr_threshold: float,
     dd_threshold: float,
+    b_mom_threshold: float | None = None,
+    b_dd_threshold: float | None = None,
+    b_bad_scale: float = 1.0,
     start: str,
     end: str,
 ) -> tuple[pd.Series, pd.DataFrame]:
@@ -105,7 +108,11 @@ def dynamic_overlay_equity(
     qqq_ma = frame["QQQ"].rolling(200).mean()
     gld_ma = frame["GLD"].rolling(126).mean()
     base_vol = base_ret.rolling(63).std() * np.sqrt(252)
-    ab_corr = rets["V6A"].rolling(63).corr(rets[[key for key in base_norm if key != "V6A"][0]])
+    b_key = [key for key in base_norm if key != "V6A"][0]
+    ab_corr = rets["V6A"].rolling(63).corr(rets[b_key])
+    b_mom = frame[b_key].pct_change(63)
+    b_eq = (1.0 + rets[b_key]).cumprod()
+    b_dd = b_eq / b_eq.cummax() - 1.0
 
     equity = INITIAL_CAPITAL
     rows: list[dict[str, Any]] = []
@@ -135,6 +142,17 @@ def dynamic_overlay_equity(
             weights = {key: value * risky_scale for key, value in base_norm.items()}
             weights["GLD"] = hedge_weight if hedge_asset == "GLD" else 0.0
             weights["BIL"] = hedge_weight if hedge_asset == "BIL" else 0.0
+            b_bad = False
+            if b_mom_threshold is not None:
+                b_bad = b_bad or bool(pd.notna(b_mom.loc[prev]) and b_mom.loc[prev] <= b_mom_threshold)
+            if b_dd_threshold is not None:
+                b_bad = b_bad or bool(pd.notna(b_dd.loc[prev]) and b_dd.loc[prev] <= b_dd_threshold)
+            if b_bad and b_bad_scale < 1.0:
+                old_b = weights.get(b_key, 0.0)
+                new_b = old_b * b_bad_scale
+                freed = old_b - new_b
+                weights[b_key] = new_b
+                weights[hedge_asset] = weights.get(hedge_asset, 0.0) + freed
 
         day_ret = sum(float(rets.loc[dt, key]) * weight for key, weight in weights.items() if key in rets.columns)
         equity *= 1.0 + day_ret
@@ -348,6 +366,48 @@ def main() -> None:
                                         "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
                                     }
                                 )
+        for a_w, b_w in [(0.70, 0.30), (0.65, 0.25), (0.75, 0.25)]:
+            for hedge_max in [0.25, 0.30]:
+                for corr_threshold in [0.60, 0.65]:
+                    for dd_threshold in [-0.10, -0.12]:
+                        for b_bad_scale in [0.0, 0.5]:
+                            for b_mom_threshold in [0.0, -0.03]:
+                                for b_dd_threshold in [-0.08, -0.12]:
+                                    weights = {"V6A": a_w, b_name: b_w}
+                                    eq, overlay_log = dynamic_overlay_equity(
+                                        {key: curves[key] for key in ["V6A", b_name, "GLD", "BIL", "SPY", "QQQ"]},
+                                        base_weights=weights,
+                                        hedge_max=hedge_max,
+                                        vol_threshold=0.28,
+                                        corr_threshold=corr_threshold,
+                                        dd_threshold=dd_threshold,
+                                        b_mom_threshold=b_mom_threshold,
+                                        b_dd_threshold=b_dd_threshold,
+                                        b_bad_scale=b_bad_scale,
+                                        start=args.start,
+                                        end=args.end,
+                                    )
+                                    s = stats(eq)
+                                    if not s:
+                                        continue
+                                    rows.append(
+                                        {
+                                            "mode": "dynamic_overlay_b_control",
+                                            "config": b_name,
+                                            "weights": {
+                                                **weights,
+                                                "hedge_max": hedge_max,
+                                                "vol_trigger": 0.28,
+                                                "corr_trigger": corr_threshold,
+                                                "dd_trigger": dd_threshold,
+                                                "b_bad_scale": b_bad_scale,
+                                                "b_mom_trigger": b_mom_threshold,
+                                                "b_dd_trigger": b_dd_threshold,
+                                            },
+                                            "stats": s,
+                                            "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
+                                        }
+                                    )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.json"

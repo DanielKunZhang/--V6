@@ -176,6 +176,50 @@ The refined research candidate is:
 
 This candidate is still only around Sharpe `1.14`. It is acceptable as a directionally correct research baseline, but below the desired `1.2+` quality bar.
 
+## Paper Sim Candidate
+
+The first paper-sim candidate is now fixed as:
+
+- Config: `v6_strategy_lab/configs/v6ab_sim_candidate_v1.json`
+- Base: `70% V6-A / 30% V6-B guarded`
+- Overlay: max `30%` dynamic GLD/BIL
+- Vol trigger: `28%`
+- Corr trigger: `60%`
+- Drawdown trigger: `-12%`
+
+Paper-sim metrics:
+
+- Window: `2012-05-21` to `2026-05-19`
+- Annualized return: `+29.5%`
+- Max drawdown: `-18.6%`
+- Sharpe: `1.14`
+- Overlay active: `1228 / 3520` days
+- GLD overlay: `903` days
+- BIL overlay: `325` days
+- Latest `2026-05-19` weights: `70% V6-A / 30% V6-B guarded`, no overlay.
+
+Important failed experiment:
+
+- Adding a simple V6-B 3-month momentum / V6-B drawdown off-switch did not improve the system.
+- Best B-control variants fell to about Sharpe `1.11`.
+- Conclusion: do not use simple B momentum shutoff in the sim candidate. It cuts too much trend exposure.
+
+Stress window read:
+
+| window | ann | maxDD | Sharpe | verdict |
+| --- | ---: | ---: | ---: | --- |
+| `2018Q4` | `-42.3%` | `-14.4%` | `-3.45` | weak |
+| `2020 COVID` | `-16.5%` | `-18.6%` | `-0.69` | weak |
+| `2022 Hike` | `-8.0%` | `-11.4%` | `-1.68` | weak |
+| `2025` | `+55.9%` | `-10.0%` | `1.94` | strong |
+| `2024-2026` | `+50.3%` | `-17.5%` | `1.62` | strong |
+
+Verdict:
+
+- This is good enough to start paper simulation.
+- It is not good enough for live capital allocation.
+- The next improvement must target crisis-regime risk reduction, not normal-market parameter tuning.
+
 This is not yet a production allocation. Before live allocation changes, the next required checks are:
 
 1. Walk-forward sleeve sizing.
