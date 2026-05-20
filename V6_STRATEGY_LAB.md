@@ -84,6 +84,33 @@ V6 完整版已从“研究组合”进入 `50,000 USD` 富途模拟盘验证阶
 - 不把 X Radar、13F、Seeking Alpha 或估值报告只做成展示文档；必须能反哺候选池、过滤器、权重、风控或复盘。
 - 不在成交确认前把 pending orders 记为实际持仓；必须等待 reconciliation。
 
+## V6AB 每日进化原则（2026-05-21 起）
+
+从 `2026-05-21` 起，V6AB 的进化方式正式改为 `daily evidence loop`。这不是每日改策略、每日换仓，而是每日更新证据、主线状态、候选池排序和下一步动作。
+
+核心定义：
+
+- `V6-A`：继续作为稳健底盘、真实执行纪律和风险控制验证层。
+- `V6-B`：升级为 `Mainline Radar + Mainline Classifier + Dynamic Stock Pool`，即主线进攻引擎。
+- `V6AB`：用 V6-A 的稳定性承接 V6-B 的顺风主线进攻，并由动态 sizing / overlay 控制组合回撤。
+
+每日进化闭环：
+
+1. `Market Evidence`：自动更新主题 ETF、主题股票池、3/6/12 月相对强度、趋势、广度、回撤和 SPY/QQQ 对比。
+2. `Narrative Evidence`：X Radar / 新闻 / 产业链扩散信息进入 evidence ledger，只用于候选主题、解释和确认速度，不直接触发交易。
+3. `Fundamental Evidence`：Seeking Alpha、财报、指引、订单、capex 和盈利预期修正进入主题质量分和股票池排序。
+4. `Institutional Evidence`：13F 作为慢变量确认层，只用于季度级主线持久性与高质量机构加仓验证，不做短线开关。
+5. `Mainline State`：每个主题每日更新 `candidate / starter / confirmed / aging / failed` 状态。
+6. `V6AB Feedback`：主线状态只通过三个接口影响系统：主题准入、主题内股票排序、V6-B sleeve 上限；任何变更必须再经过回测、V2 对比、模拟盘验证和人工确认。
+
+执行纪律：
+
+- 允许识别主线晚 `1-3` 个月，但不允许被假热点频繁骗仓。
+- 没有确认新主线时，当前 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING` 继续作为 fallback。
+- X Radar、Seeking Alpha、13F、估值和人工判断必须能改变候选池、评分、确认状态、仓位上限或复盘结论；不能只停留在文档展示。
+- 每日邮件必须提示 `今日人工 triage`，但用户只需要补充少量高价值语义信息；重复性数据采集由系统自动化。
+- 任何从 V2 升级到 V3 的替换，都必须先证明 full-window、OOS、压力年份、V6AB 组合层和 live-forward 均优于或明显补足 V2。
+
 ## 双 AI 对照锁定的后续优化方向（2026-05-12）
 
 Claude 和 GPT 独立分析后交叉验证，结论一致，差异仅在语气（Claude 更乐观，GPT 更保守）。共识锁定 4 条优化方向，作为后续所有 V6 工程实现的行动纲领：
