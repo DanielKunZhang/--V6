@@ -103,6 +103,26 @@ V6 完整版已从“研究组合”进入 `50,000 USD` 富途模拟盘验证阶
 5. `Mainline State`：每个主题每日更新 `candidate / starter / confirmed / aging / failed` 状态。
 6. `V6AB Feedback`：主线状态只通过三个接口影响系统：主题准入、主题内股票排序、V6-B sleeve 上限；任何变更必须再经过回测、V2 对比、模拟盘验证和人工确认。
 
+执行入口：
+
+```bash
+python3 v6ab_daily_evolution.py --asof YYYY-MM-DD
+```
+
+当前 v1 输出：
+
+- `backtest_results/v6ab_daily_evolution/latest_evidence_ledger.{md,json,csv}`
+- `backtest_results/v6ab_daily_evolution/latest_mainline_classifier.{md,json}`
+- `backtest_results/v6ab_daily_evolution/latest_daily_mainline_report.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/V6AB_Daily_Mainline_Report_LATEST.md`
+
+`2026-05-20` 首次运行结论：
+
+- `AI Memory / Storage`、`AI Networking / Fabric`、`Semis / AI Compute` 为 `STARTER`。
+- 暂无 `CONFIRMED` 主线，因此继续 fallback 到 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。
+- `b_sleeve_cap_hint = 30%`，但动作仍为 `NO_CHANGE_BACKTEST_ONLY`。
+- ticker triage 前排：`MU / TSM / AVGO / SNDK / AMD / NVDA`。
+
 执行纪律：
 
 - 允许识别主线晚 `1-3` 个月，但不允许被假热点频繁骗仓。

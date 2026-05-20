@@ -21,3 +21,15 @@ Operational entry points:
 - `README_CURRENT.md`
 - `SYSTEM_OVERVIEW.html`
 - `V6_STRATEGY_LAB.md`
+
+Daily evidence loop command:
+
+```bash
+python3 v6ab_daily_evolution.py --asof YYYY-MM-DD
+```
+
+Latest outputs:
+
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/V6AB_Daily_Mainline_Report_LATEST.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/V6AB_Evidence_Ledger_LATEST.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/V6AB_Mainline_Classifier_LATEST.md`
