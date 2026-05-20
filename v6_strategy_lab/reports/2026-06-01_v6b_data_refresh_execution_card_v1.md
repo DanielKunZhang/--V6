@@ -3,6 +3,49 @@
 - Status: ready
 - Purpose: 在 Futu 历史 K 线额度刷新后，补齐 Radar 缺失候选数据，重跑自动主线扩散扫描，并完成第一轮正式 triage。
 
+## 2026-05-20 提前执行进度
+
+OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动作已经在 `2026-05-20` 执行。
+
+### 已完成
+
+- `US.AAOI / US.ASX / US.LITE` 第一批价格缓存已补到 `2026-05-19`。
+- V6-B / Radar 扩展所需的 `US.COHR / US.WDC / US.INTC / US.AMKR / US.SMH / US.SOXX` 已按最小必要范围补齐到 `2026-05-19`。
+- `radar_theme_rotation_scanner.py --tag 20260520_quota_refresh --sync-desktop` 已运行。
+- `v6b_missing_opportunity_review.py --tag 20260520_quota_refresh` 已运行。
+- 正式 triage 已落地：
+  - `US.COHR`: `watch_add_candidate -> active_research`
+  - `US.AAOI`: `observe_only -> watch_add_candidate`
+  - `US.MRVL`: 保持 `watch_add_candidate`，但标记 stale cache / 高追高风险
+  - `US.NOK`: 保持 `observe_only`，只做外部样本归因
+  - `US.ANET / US.TSM`: 保持 active，但被标记为 active-but-weak / 需持续观察
+- `v6_strategy_lab/configs/v6b_point_in_time_universe_seed_20260510.json` 已加入 `US.COHR`，entry date 为 `2026-05-20`，避免回填到 2026-05-10。
+- 已完成第一版动态 V6-B synthetic historical 纠偏：静态名单回测被降级为风险检查；新增 `optics_and_interconnect` track，纳入 `US.COHR / US.LITE / US.AAOI`。
+- 已新增并运行 V6-B 第一层跨主题 ETF rotation v0：
+  - 脚本：`v6b_theme_rotation_backtest.py`
+  - 区间：`2018-01-01` 至 `2025-12-31`
+  - 目的：先用 ETF / 行业代理识别当期主线，再进入主题内候选池，避免 V6-B 被固定为 AI infra 子策略。
+  - 初步结果：最佳 v0 配置约 `+15.3%` 年化、`-38.8%` 最大回撤、Sharpe `0.49`；2020 和 2024-2025 有主线捕捉能力，但风险控制明显不足，不能作为 allocator 版本。
+
+### 部分完成
+
+- `US.MRVL / US.NOK` 已有本地旧缓存，但未刷新到 `2026-05-19`；当前结论仍然不允许直接追高或主动升 active。
+- robotics 第二批 `US.ROK / US.ETN / US.HON / US.IR / US.TER` 已有部分历史缓存，但尚未完成本卡要求的统一 2026-06-01 刷新与正式 triage。
+- Radar 当前截面扫描可以识别最高主线和二阶扩散，但 V6-B 主干仍需升级为“跨主题 ETF 主线轮动 -> 主题内候选池”的完整系统，避免 AI infra 过期后继续困在 AI 池。
+
+### 仍待 6月1日或额度允许时完成
+
+- 刷新第二批 robotics 全量缓存到当日最新日期。
+- 刷新第三批 `US.MRVL / US.NOK` 到当日最新日期，并重跑 `external_short_network_review.py`。
+- 用 ETF / 行业代理先完成 V6-B 第一层历史 theme rotation 验证，再进入各主题候选池；不要再把 AI infra 子模块结果当作完整 V6-B。
+- 改进 ETF theme rotation v0：
+  - 降低 `-38%` 级别回撤；
+  - 增加主题退潮识别；
+  - 增加“晚确认但不追尾”的 overheat / cooldown 规则；
+  - 将通过的 top theme 映射到主题内候选池，而不是直接买 ETF 代理。
+- 重跑 `v6_weekly_review_board.py` 和 `investment_company_dashboard.py`，确认 backlog / 驾驶舱吸收本轮结论。
+- 重新提交 6月1日正式刷新结果。
+
 ## 一句话目标
 
 6月1日不是只补 K 线。  
