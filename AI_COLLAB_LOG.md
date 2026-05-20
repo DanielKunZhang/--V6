@@ -223,3 +223,14 @@
 - [11:41] [代码] 建立估值体系自动路由：v2.5用于传统/普通质量股，AI-Core v2.6用于AI平台/软件/半导体，AI Infrastructure v2.7用于NEE等AI电力/数据中心/电网/矿转算力；morning_brief已接入路由动作，NEE会以HIGH提示走v2.7，估值结果必须回写watchlist/radar_order_valuation_seed/events_calendar等系统入口。
 - [11:54] [代码] 完成NEE AI Infrastructure SOP v2.7估值：V_floor 62-70，V_base 78-88，V_AI_infra_option 6-12，risk-adjusted value 84-96，Bull 105-120；当前约89-91，结论FAIR_BUT_NEEDS_PULLBACK / Research P1 / 不买正股。已回写radar_order_valuation_seed、screener/watchlist和events_calendar，后续跟踪Dominion审批、large-load tariff、rate base/capex recovery及横向比较CEG/VST/GEV/ETN/XEL/SO/DUK。
 - [12:20] [代码] OpenD历史K线额度恢复后按低消耗顺序推进：第一批仅补ANET/TSM/MU/AMD/AAOI/ASX/LITE到2026-05-19；同时补齐V6-A最小核心池AMZN/AVGO/GOOGL/META/MSFT/NVDA/BIL/GLD/SPY/QQQ到2026-05-19，刷新V6-A deterministic replay并解除signal_freshness stale blocker，新plan-only release gate PASS；Radar主线扫描显示AI算力与数据中心/二阶扩散、missing cache=0，Missing Review coverage gaps=0但critical misses=4（NOK/MRVL/COHR/AAOI）。未执行交易，未做泛化全量回测。
+
+---
+
+## 2026-05-21
+
+### GPT
+
+- [00:32] [代码] V6AB 已新增 PIT Evidence Ledger + historical classifier replay 管线：`v6ab_pit_evidence_replay.py` 按 `source_date/as_of/last_updated` 做 point-in-time 可见性过滤，并让 `v6ab_mainline_classifier.py` 的市场分数按每个 asof 截断本地价格缓存，避免未来价格泄漏。`v6ab_daily_evolution.py` 已接入 `pit_evidence_classifier_replay` 与 `pit_classifier_bridge_backtest` 两步。
+- [00:32] [发现] 最新 PIT replay 区间 `2012-05-21 -> 2026-05-19`，seed evidence 73 条，但现有本地历史非价格证据覆盖不足：169 个历史快照中 active allowlist 为 0；2026-05-19 仅可见 56 条证据，且无 2026-05-20 的 13F seed，因此仍 fallback 到 V2。
+- [00:32] [回测] PIT classifier bridge 已接入 V6AB 回测并生成桌面 LATEST 报告。结果：`baseline_v2_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；`pit_classifier_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；PIT active rebals = 0。结论：管线防泄漏接通，但当前 PIT 版本等同 V2，不能替换模拟盘。
+- [00:32] [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`，动作仍为 `NO_CHANGE_BACKTEST_ONLY`。下一步不是拉泛化 K 线，而是补更完整的历史 evidence ledger，尤其是 2020、2022、2024 前后的真实主线证据；若新增主题/ticker 缺价，再按最小清单拉 K 线。

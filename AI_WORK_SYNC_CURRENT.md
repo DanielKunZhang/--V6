@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-20 12:20:34`
+- Last updated: `2026-05-21 00:33:34`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -265,26 +265,18 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 | `CONFIRM` | 主线已确认；只等分歧回踩、突破回踩或中军确认；当前只记录模拟触发 | `0` |
 | `WATCH_CONFIRM` | 主线有强度，但买点/数据/风险不满足交易 | `0` |
 | `WATCH_ONLY` | 只记录表现，不交易 | `0` |
-| `WATCH_ONLY_PLUS` | 复盘证明普通观察过严，但仍因缺K线/观察期不能交易；优先补K并次日重点模拟确认 | `0` |
 
 ### 当前代码位置
 
 核心脚本：
 
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_plan.py`
 - `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_review.py`
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_feedback.py`
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_backfill.py`
 - `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_evening_guide.py`
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_daily_loop.py`
-
-待恢复/重建：
-
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_plan.py` 当前源码缺失，只剩 pyc 和既有输出；后续需要恢复为正式可审计源码。
 
 数据补给：
 
-- `a_share_radar_backfill.py` 只对复盘反哺 P0 / `WATCH_ONLY_PLUS` 标的定向补 K 线。
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_tech_screener_v1_local/fetch_a_share_csv_from_futu.py` 当前源码缺失，只剩 pyc；不作为正式入口。
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_tech_screener_v1_local/fetch_a_share_csv_from_futu.py`
 
 本地输出：
 
@@ -299,9 +291,6 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar候选_LATEST.csv`
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar主线评分_LATEST.csv`
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar晚间操作指导_LATEST.html`
-- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.md`
-- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.md`
-- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar每日闭环_LATEST.md`
 
 支撑文档：
 
@@ -310,25 +299,26 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 
 ### 当前运行命令
 
-每日闭环：
+生成计划：
 
 ```bash
-python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD
+python3 a_share_short_radar_plan.py \
+  --input-dir a_share_tech_screener_v1_local/outputs/a_share_short_radar_20260518 \
+  --next-trade-date 2026-05-18 \
+  --asof 2026-05-16 \
+  --live-snapshot
 ```
 
-如果当天已经完成 OpenD 最新价复盘，只从已有复盘继续反哺、补K和晚间指导：
+生成晚间指导：
 
 ```bash
-python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD --skip-review
+python3 a_share_short_radar_evening_guide.py --asof 2026-05-16
 ```
 
-单独步骤仍可运行：
+收盘复盘：
 
 ```bash
-python3 a_share_short_radar_review.py --asof YYYY-MM-DD
-python3 a_share_radar_feedback.py --asof YYYY-MM-DD
-python3 a_share_radar_backfill.py --asof YYYY-MM-DD
-python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
+python3 a_share_short_radar_review.py
 ```
 
 ### 最新计划状态
@@ -1042,24 +1032,6 @@ dc58870 feat: add V6 daily report automation
 
 ## 最近协作日志
 
-## 2026-05-18
-
-### GPT
-
-- [10:19] [代码] 修复Weekly Formal Board缺少今日待办：central_risk_board.py已接入morning_brief.collect_workflow_actions，并在Markdown/HTML新增Today's Workflow Actions区块；events_calendar新增2026-05-18 A股Radar收盘轻量复盘：三丰智能、纽威数控、绿的谐波，触发词‘复盘 A股Radar’。验证生成central_risk_board_weekly_workflow_actions_preview，已确认包含A股Radar和PDD两条动作。
-- [10:22] [代码] 确认每日早间邮件不论交易日都显示今日待办：morning_brief非交易日会给出‘非交易日系统维护/研究日/无需操作’低优先级提示；central_risk_board Daily/Weekly Board已接入同一workflow actions。今日2026-05-18已验证Daily和Board均显示：HIGH 复盘A股Radar（三丰智能/纽威数控/绿的谐波）、MED 复盘PDD、LOW X Radar扫描。今晚照常按‘复盘 A股Radar’做轻量复盘。
-
-
-- [17:56] [发现] A股Radar新增每周五自动新主题/新标的发现链路：Daily Board 周五提示“扫描 A股Radar 新候选”；该流程只生成 AddToRadarCandidate / ThemeWatch 候选报告，不自动写入 radar_astock.json，不生成交易指令。每日复盘继续负责现有样本保留/降级/退出；新候选扫描负责发现新主题/新标的，且必须用户确认后才可入池。已更新 morning_brief.py、REVIEW_CADENCE_POLICY.md、A_SHARE_RADAR_REVIEW_SOP.md、A_SHARE_RADAR_AUTOMATION_ROADMAP.md。
-- [17:59] [发现] A股Radar周五新候选扫描纪律补充：扫描每周可自动跑，但不是每周必须新增；默认结论应为 NoNewCandidate。固定输出三类：NoNewCandidate / ThemeWatch / AddToRadarCandidate。只有主题层同主题≥2只放量、强于大盘、非单日孤立脉冲，且个股层成交额>5日均额1.5x、涨幅>5%或突破平台/20日新高、不是一字板/高开低走，并且相对现有样本更强或补足缺口时，才允许给 AddToRadarCandidate。即使给候选，也必须用户确认后才能写入 radar_astock.json。
-- [18:21] [发现] 数据源成本纪律锁定：当前全资产约300万RMB，1000万RMB总资产之前不新增EODHD/Tiingo/Polygon/Nasdaq Data Link等付费数据源订阅；继续以Futu OpenD/FutuAPI为主。Futu历史K线额度不足时，不用付费源绕过进攻信号gate，而是进入STALE_DATA_MODE：禁止BUY/ADD/ROTATE_IN，保留实时价+managed state支持的人工风险退出提醒。外部付费数据源仅作为未来1000万RMB以上资产规模后的升级项；TradingView不作为程序化主数据源。
-### Claude
-
-- [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。
-- [17:18] [代码] A股Radar 全量收盘复盘已完成：investment_screener/radar_astock.json 更新三只样本，绿的谐波维持龙头、三丰智能维持中军、纽威数控进入 DIVERGE_WARNING 且 review_required=True、max_position_pct=0；events_calendar.json 写入 2026-05-19 Radar 跟踪事件。GPT review 后修复 morning_brief 路由，确保该事件触发词为“复盘 A股Radar”而不是“X Radar 扫描”。
-
----
-
 ## 2026-05-20
 
 ### GPT
@@ -1070,3 +1042,14 @@ dc58870 feat: add V6 daily report automation
 - [11:41] [代码] 建立估值体系自动路由：v2.5用于传统/普通质量股，AI-Core v2.6用于AI平台/软件/半导体，AI Infrastructure v2.7用于NEE等AI电力/数据中心/电网/矿转算力；morning_brief已接入路由动作，NEE会以HIGH提示走v2.7，估值结果必须回写watchlist/radar_order_valuation_seed/events_calendar等系统入口。
 - [11:54] [代码] 完成NEE AI Infrastructure SOP v2.7估值：V_floor 62-70，V_base 78-88，V_AI_infra_option 6-12，risk-adjusted value 84-96，Bull 105-120；当前约89-91，结论FAIR_BUT_NEEDS_PULLBACK / Research P1 / 不买正股。已回写radar_order_valuation_seed、screener/watchlist和events_calendar，后续跟踪Dominion审批、large-load tariff、rate base/capex recovery及横向比较CEG/VST/GEV/ETN/XEL/SO/DUK。
 - [12:20] [代码] OpenD历史K线额度恢复后按低消耗顺序推进：第一批仅补ANET/TSM/MU/AMD/AAOI/ASX/LITE到2026-05-19；同时补齐V6-A最小核心池AMZN/AVGO/GOOGL/META/MSFT/NVDA/BIL/GLD/SPY/QQQ到2026-05-19，刷新V6-A deterministic replay并解除signal_freshness stale blocker，新plan-only release gate PASS；Radar主线扫描显示AI算力与数据中心/二阶扩散、missing cache=0，Missing Review coverage gaps=0但critical misses=4（NOK/MRVL/COHR/AAOI）。未执行交易，未做泛化全量回测。
+
+---
+
+## 2026-05-21
+
+### GPT
+
+- [00:32] [代码] V6AB 已新增 PIT Evidence Ledger + historical classifier replay 管线：`v6ab_pit_evidence_replay.py` 按 `source_date/as_of/last_updated` 做 point-in-time 可见性过滤，并让 `v6ab_mainline_classifier.py` 的市场分数按每个 asof 截断本地价格缓存，避免未来价格泄漏。`v6ab_daily_evolution.py` 已接入 `pit_evidence_classifier_replay` 与 `pit_classifier_bridge_backtest` 两步。
+- [00:32] [发现] 最新 PIT replay 区间 `2012-05-21 -> 2026-05-19`，seed evidence 73 条，但现有本地历史非价格证据覆盖不足：169 个历史快照中 active allowlist 为 0；2026-05-19 仅可见 56 条证据，且无 2026-05-20 的 13F seed，因此仍 fallback 到 V2。
+- [00:32] [回测] PIT classifier bridge 已接入 V6AB 回测并生成桌面 LATEST 报告。结果：`baseline_v2_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；`pit_classifier_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；PIT active rebals = 0。结论：管线防泄漏接通，但当前 PIT 版本等同 V2，不能替换模拟盘。
+- [00:32] [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`，动作仍为 `NO_CHANGE_BACKTEST_ONLY`。下一步不是拉泛化 K 线，而是补更完整的历史 evidence ledger，尤其是 2020、2022、2024 前后的真实主线证据；若新增主题/ticker 缺价，再按最小清单拉 K 线。

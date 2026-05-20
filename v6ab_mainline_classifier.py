@@ -81,7 +81,7 @@ def price_path(ticker: str) -> Path:
     return PRICE_CACHE / f"{ticker.replace('.', '_')}_daily.csv"
 
 
-def load_price(ticker: str) -> pd.DataFrame:
+def load_price(ticker: str, asof: str | None = None) -> pd.DataFrame:
     path = price_path(ticker)
     if not path.exists():
         return pd.DataFrame()
@@ -89,6 +89,8 @@ def load_price(ticker: str) -> pd.DataFrame:
     if "date" not in df.columns or "Close" not in df.columns:
         return pd.DataFrame()
     df["date"] = pd.to_datetime(df["date"])
+    if asof:
+        df = df[df["date"] <= pd.Timestamp(asof)]
     return df.sort_values("date").reset_index(drop=True)
 
 
@@ -113,14 +115,14 @@ def clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, value))
 
 
-def market_score(theme_id: str) -> dict[str, Any]:
+def market_score(theme_id: str, asof: str | None = None) -> dict[str, Any]:
     theme = THEMES.get(theme_id, THEMES["unclassified"])
-    spy = load_price("US.SPY")
+    spy = load_price("US.SPY", asof=asof)
     spy_ret_63 = ret(spy, 63) or 0.0
     proxy_scores = []
     stock_scores = []
     for ticker in theme["proxies"]:
-        df = load_price(ticker)
+        df = load_price(ticker, asof=asof)
         if df.empty:
             continue
         r63 = ret(df, 63) or 0.0
@@ -129,7 +131,7 @@ def market_score(theme_id: str) -> dict[str, Any]:
         trend = 1.0 if above_ma(df, 200) else 0.0
         proxy_scores.append(clamp(50 + r63 * 90 + r126 * 45 + rel * 70 + trend * 10))
     for ticker in theme["stocks"]:
-        df = load_price(ticker)
+        df = load_price(ticker, asof=asof)
         if df.empty:
             continue
         r63 = ret(df, 63) or 0.0
@@ -215,7 +217,7 @@ def build_classifier(ledger: dict[str, Any], asof: str) -> dict[str, Any]:
     rows = ledger.get("rows", [])
     theme_rows = []
     for theme_id, theme in THEMES.items():
-        m = market_score(theme_id)
+        m = market_score(theme_id, asof=asof)
         e = evidence_scores(rows, theme_id)
         offensive_bonus = 3.0 if theme.get("offensive") else -4.0
         mainline = (

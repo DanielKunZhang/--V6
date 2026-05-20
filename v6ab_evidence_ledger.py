@@ -169,6 +169,14 @@ def freshness(asof: str, source_date: str) -> float:
     return 0.15
 
 
+def expiry_from_source(source_date: str, days: int) -> str:
+    try:
+        base = pd.to_datetime(source_date).date()
+    except Exception:
+        base = date.today()
+    return str(base + timedelta(days=days))
+
+
 def add_row(rows: list[dict[str, Any]], **kwargs: Any) -> None:
     base = {
         "asof": "",
@@ -225,7 +233,7 @@ def parse_x_radar(path: Path, asof: str) -> list[dict[str, Any]]:
                 confidence=confidence,
                 direction=direction,
                 freshness=freshness(asof, source_date),
-                expiry_date=str(pd.to_datetime(asof).date() + timedelta(days=14)),
+                expiry_date=expiry_from_source(source_date, 14),
                 summary=line.strip("| "),
                 weight=SOURCE_WEIGHTS["x_radar"],
             )
@@ -275,6 +283,7 @@ def parse_valuation(path: Path, asof: str) -> list[dict[str, Any]]:
         direction = "positive" if score >= 68 and "NEEDS_PULLBACK" in verdict else "mixed"
         if "TOO_MUCH_NARRATIVE" in verdict:
             direction = "negative"
+        source_date = str(row.get("last_updated", asof))
         add_row(
             rows,
             asof=asof,
@@ -282,12 +291,12 @@ def parse_valuation(path: Path, asof: str) -> list[dict[str, Any]]:
             ticker=ticker,
             source="valuation",
             source_path=str(path),
-            source_date=str(row.get("last_updated", asof)),
+            source_date=source_date,
             evidence_type="valuation_reality",
             confidence=min(0.85, 0.35 + score / 100.0 * 0.5),
             direction=direction,
-            freshness=freshness(asof, str(row.get("last_updated", asof))),
-            expiry_date=str(pd.to_datetime(asof).date() + timedelta(days=30)),
+            freshness=freshness(asof, source_date),
+            expiry_date=expiry_from_source(source_date, 30),
             summary=f"{row.get('company', '')}: {verdict}; {row.get('trade_posture_override', '')}; {row.get('source_note', '')}",
             weight=SOURCE_WEIGHTS["valuation"],
         )
