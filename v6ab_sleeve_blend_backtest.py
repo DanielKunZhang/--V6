@@ -21,6 +21,14 @@ from v6b_theme_rotation_backtest import (
 ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "v6ab_sleeve_blend"
 DEFAULT_V6A_DAILY = ROOT / "backtest_results" / "attack_engine_replay" / "attack_replay_daily_20260520_live_refreshed.csv"
+DEFAULT_PIT_MANIFEST = (
+    ROOT
+    / "v6_strategy_lab"
+    / "configs"
+    / "synthetic_history"
+    / "20260520_v3_dynamic_optics"
+    / "manifest.json"
+)
 
 
 V6B_CONFIGS: dict[str, dict[str, Any]] = {
@@ -43,6 +51,17 @@ V6B_CONFIGS: dict[str, dict[str, Any]] = {
         "dd_brake": False,
         "expression": "stocks",
         "stock_top_n": 2,
+    },
+    "v6b_pit_guarded_top3_90": {
+        "top_n": 3,
+        "min_theme_score": 0.08,
+        "risk_weight": 0.90,
+        "use_cooldown": True,
+        "vol_target": 0.22,
+        "dd_brake": True,
+        "expression": "stocks",
+        "stock_top_n": 2,
+        "pit_manifest": str(DEFAULT_PIT_MANIFEST),
     },
 }
 
@@ -371,6 +390,7 @@ def main() -> None:
             "US.COHR",
             "US.AAOI",
             "US.LITE",
+            "US.INTC",
             "US.MRVL",
             "US.NOK",
             "US.LLY",
@@ -417,7 +437,7 @@ def main() -> None:
                             continue
                         rows.append({"mode": "static", "config": b_name, "weights": weights, "stats": s})
 
-        if b_name != "v6b_guarded_top3_90":
+        if b_name not in {"v6b_guarded_top3_90", "v6b_pit_guarded_top3_90"}:
             continue
         for a_w in [0.65, 0.70, 0.75]:
             for b_w in [0.25, 0.30, 0.35]:

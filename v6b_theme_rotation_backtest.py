@@ -35,6 +35,29 @@ THEMES = {
 
 DEFENSIVE = ["US.BIL", "US.IEF", "US.GLD"]
 BENCHMARKS = ["US.SPY", "US.QQQ", "US.BRK.B", "US.VTV"]
+DEFAULT_PIT_THEME_MAP = {
+    "semis_ai": [
+        "core_reacceleration",
+        "bottleneck_diffusion",
+        "optics_and_interconnect",
+        "turnaround_momentum",
+    ]
+}
+
+
+def load_pit_universe(manifest_path: str | Path | None) -> dict[str, Any] | None:
+    if not manifest_path:
+        return None
+    path = Path(manifest_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    schedule: dict[pd.Timestamp, dict[str, list[str]]] = {}
+    dates: list[pd.Timestamp] = []
+    for row in payload.get("snapshots", []):
+        as_of = pd.Timestamp(row["as_of"])
+        dates.append(as_of)
+        schedule[as_of] = {track: list(tickers) for track, tickers in row.get("selected", {}).items()}
+    dates.sort()
+    return {"manifest_path": str(path), "dates": dates, "schedule": schedule}
 
 
 def pct_change(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str, months: int) -> float | None:
@@ -150,13 +173,38 @@ def realized_vol(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str, months:
     return float(rets.std() * np.sqrt(12))
 
 
-def stock_candidates_for_theme(theme_id: str) -> list[str]:
+def stock_candidates_for_theme(
+    theme_id: str,
+    date: pd.Timestamp | None = None,
+    pit_universe: dict[str, Any] | None = None,
+    pit_theme_map: dict[str, list[str]] | None = None,
+) -> list[str]:
+    if date is not None and pit_universe is not None:
+        theme_map = pit_theme_map or DEFAULT_PIT_THEME_MAP
+        tracks = theme_map.get(theme_id)
+        if tracks:
+            eligible_dates = [as_of for as_of in pit_universe["dates"] if as_of <= date]
+            if eligible_dates:
+                snapshot = pit_universe["schedule"].get(eligible_dates[-1], {})
+                dynamic: list[str] = []
+                for track in tracks:
+                    dynamic.extend(snapshot.get(track, []))
+                return list(dict.fromkeys(dynamic))
+            return []
     return list(THEMES.get(theme_id, {}).get("stocks", []))
 
 
-def rank_stock_candidates(monthly: pd.DataFrame, date: pd.Timestamp, theme_id: str, max_names: int) -> list[str]:
+def rank_stock_candidates(
+    monthly: pd.DataFrame,
+    date: pd.Timestamp,
+    theme_id: str,
+    max_names: int,
+    *,
+    pit_universe: dict[str, Any] | None = None,
+    pit_theme_map: dict[str, list[str]] | None = None,
+) -> list[str]:
     candidates = []
-    for ticker in stock_candidates_for_theme(theme_id):
+    for ticker in stock_candidates_for_theme(theme_id, date, pit_universe, pit_theme_map):
         if ticker not in monthly.columns or pd.isna(monthly.loc[date, ticker]):
             continue
         if not above_ma(monthly, date, ticker, 10):
@@ -181,6 +229,8 @@ def pick_weights(
     vol_target: float | None,
     expression: str,
     stock_top_n: int,
+    pit_universe: dict[str, Any] | None = None,
+    pit_theme_map: dict[str, list[str]] | None = None,
 ) -> tuple[dict[str, float], list[dict[str, Any]]]:
     rows = theme_scores(monthly, date)
     if not market_ok(monthly, date):
@@ -204,7 +254,14 @@ def pick_weights(
     sleeves: list[str] = []
     for row in chosen:
         if expression == "stocks":
-            stocks = rank_stock_candidates(monthly, date, row["theme_id"], stock_top_n)
+            stocks = rank_stock_candidates(
+                monthly,
+                date,
+                row["theme_id"],
+                stock_top_n,
+                pit_universe=pit_universe,
+                pit_theme_map=pit_theme_map,
+            )
             sleeves.extend(stocks if stocks else [row["selected_proxy"]])
         else:
             sleeves.append(row["selected_proxy"])
@@ -233,6 +290,8 @@ def run_strategy(
     dd_brake: bool = False,
     expression: str = "etf",
     stock_top_n: int = 2,
+    pit_manifest: str | Path | None = None,
+    pit_theme_map: dict[str, list[str]] | None = None,
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -241,6 +300,7 @@ def run_strategy(
     monthly_rows: dict[pd.Timestamp, list[dict[str, Any]]] = {}
     decisions = []
     preview_weights_by_date: dict[pd.Timestamp, dict[str, float]] = {}
+    pit_universe = load_pit_universe(pit_manifest)
     for dt in monthly.index:
         if monthly.index.get_loc(dt) < 12:
             weights = {"CASH": 1.0}
@@ -256,6 +316,8 @@ def run_strategy(
                 vol_target=vol_target,
                 expression=expression,
                 stock_top_n=stock_top_n,
+                pit_universe=pit_universe,
+                pit_theme_map=pit_theme_map,
             )
         preview_weights_by_date[pd.Timestamp(dt)] = weights
         monthly_rows[pd.Timestamp(dt)] = rows
