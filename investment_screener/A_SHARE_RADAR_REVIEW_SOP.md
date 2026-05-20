@@ -88,6 +88,41 @@ A股 Radar 不是价值投资估值，也不是新标的推荐。它只跟踪已
 **下次关注**：一句话
 ```
 
+## 复盘反哺规则
+
+全量复盘后必须运行复盘反哺链路，把“规则过严 / 数据缺口 / 角色误判”转成下一次系统动作，而不是停留在文字总结。
+
+命令：
+
+```bash
+python3 a_share_radar_feedback.py --asof YYYY-MM-DD
+python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
+```
+
+输出：
+
+```text
+/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.md
+/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.json
+/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.csv
+```
+
+`WATCH_ONLY_PLUS` 触发条件：
+
+- 复盘分类为 `规则过严`。
+- 原计划是 `仅实时观察` 或 `需补K线`。
+- 主题分不低于 `25`，且主题阶段为主升。
+- 标的角色为 `龙头` 或 `中军`。
+- 当日成交额不低于 `20亿 RMB`。
+- 当日涨幅不低于 `8%`。
+
+`WATCH_ONLY_PLUS` 不是买入信号。它只代表：
+
+- 优先补 K 线。
+- 次日重点观察。
+- 只记录模拟触发。
+- 观察期内真实仓位仍为 `0`。
+
 ## 角色规则
 
 - 龙头：成交额和涨幅均居前，走势不明显开高走低，能带动主题扩散

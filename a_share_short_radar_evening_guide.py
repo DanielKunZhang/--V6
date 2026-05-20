@@ -22,6 +22,8 @@ CANDIDATES_CSV = REPORT_ROOT / "A股短线Radar候选_LATEST.csv"
 THEMES_CSV = REPORT_ROOT / "A股短线Radar主线评分_LATEST.csv"
 REVIEW_MD = REPORT_ROOT / "A股短线Radar复盘_LATEST.md"
 REVIEW_JSON = REPORT_ROOT / "A股短线Radar复盘_LATEST.json"
+FEEDBACK_MD = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.md"
+FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 
 OUTPUT_DIR = ROOT / "backtest_results" / "a_share_short_radar_evening_guide"
 
@@ -64,6 +66,36 @@ def df_to_html_table(df: pd.DataFrame, max_rows: int = 8) -> str:
     for row in rows:
         body.append("<tr>" + "".join(f"<td>{esc(row.get(col, ''))}</td>" for col in cols) + "</tr>")
     return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(body)}</tbody></table>"
+
+
+def feedback_table(feedback: dict[str, Any]) -> str:
+    rows = feedback.get("rows", []) if isinstance(feedback, dict) else []
+    plus_rows = [row for row in rows if row.get("feedback_action") == "DATA_BACKFILL_AND_WATCH_ONLY_PLUS"]
+    if not plus_rows:
+        return "<p class='muted'>暂无 P0 反哺动作。</p>"
+    df = pd.DataFrame(plus_rows)
+    keep = [
+        "symbol",
+        "name",
+        "theme",
+        "role",
+        "review_change_rate",
+        "old_mode",
+        "mode_after_feedback",
+        "next_system_action",
+    ]
+    cols = [col for col in keep if col in df.columns]
+    labels = {
+        "symbol": "代码",
+        "name": "名称",
+        "theme": "主线",
+        "role": "身份",
+        "review_change_rate": "复盘涨跌",
+        "old_mode": "原模式",
+        "mode_after_feedback": "反哺模式",
+        "next_system_action": "系统动作",
+    }
+    return df_to_html_table(df[cols].rename(columns=labels), max_rows=6)
 
 
 def compact_candidate_table(candidates: pd.DataFrame, tradable_only: bool) -> str:
@@ -137,6 +169,7 @@ def summarize_plan(plan: dict[str, Any], themes: pd.DataFrame, candidates: pd.Da
 def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     plan = read_json(PLAN_JSON)
     review = read_json(REVIEW_JSON)
+    feedback = read_json(FEEDBACK_JSON)
     themes = read_csv(THEMES_CSV)
     candidates = read_csv(CANDIDATES_CSV)
     summary = summarize_plan(plan, themes, candidates)
@@ -180,6 +213,12 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 {compact_candidate_table(candidates, tradable_only=True)}
 </div>
 
+<div class="box warn">
+<h3>复盘反哺 / 数据补齐优先级</h3>
+<p class="muted">这里不是买入指令；只把收盘复盘暴露的规则过严和数据缺口转成明日系统动作。</p>
+{feedback_table(feedback)}
+</div>
+
 <div class="box">
 <h3>只观察 / 不交易候选</h3>
 <ul>{watch_only_html}</ul>
@@ -215,6 +254,8 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "candidates_csv": str(CANDIDATES_CSV),
             "themes_csv": str(THEMES_CSV),
             "review_md": str(REVIEW_MD),
+            "feedback_md": str(FEEDBACK_MD),
+            "feedback_json": str(FEEDBACK_JSON),
         },
     }
     return subject, html_content, payload
