@@ -33,6 +33,12 @@
     "action": "触发：复盘 NVDA；更新AI-Core v2.6估值、持仓上限和AI右尾期权观察"
   },
   {
+    "date": "2026-05-21",
+    "domain": "美股Radar",
+    "text": "X Radar 期权流核查：IREN put sweep 与 Jan 2027 put flow 是否进入 OI",
+    "action": "触发：X Radar 扫描；核查 IREN、BKNG、UBER、INTU、LYFT、QCOM、DELL、PATH、NTAP、HUBS 的 OI / 合约结构；只做风险温度计，不触发买卖。"
+  },
+  {
     "date": "2026-05-26",
     "domain": "V6",
     "text": "V6-A Pilot 满2周复盘",
