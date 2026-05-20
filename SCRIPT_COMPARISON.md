@@ -1,33 +1,18 @@
-# 当前生产文件地图
+# Script Map
 
-## 当前生产入口
+The previous Iron Condor production map is obsolete.
 
-- `main_ic_us.py`：美股 IC 主程序
-- `scheduler.py`：美东交易日自动调度
-- `start_scheduler.sh`：守护启动入口
-- `ic_monitor.py`：盘后监控
-- `dynamic_composite_backtest.py`：当前回测基准对照
+## Active V6 / Governance Files
 
-## 当前生产模型
+- `V6_STRATEGY_LAB.md`: V6-A / V6-B / V6AB research and operating state.
+- `v6ab_sim_executor.py`: V6AB paper-sim target/order helper.
+- `attack_engine_sim_reconciliation.py`: paper-sim order / position reconciliation.
+- `futu_sim_account_diagnostic.py`: read-only Futu SIMULATE account diagnostic.
+- `central_risk_board.py`: central risk board.
+- `morning_brief.py`: Daily Board / agenda hub.
 
-- 标的：`QQQ / IWM / GLD`
-- 结构：`P3.0% / C6.0% / Wing9% / DTE45`
-- 资金：`$15k` 实际本金，`2x` 杠杆，`$30k` 名义资金
-- 动态组数：`Config F=20x`
+## Retired
 
-## 历史遗留文件
+Old Iron Condor files such as `main_ic_us.py`, `scheduler.py`, `ic_monitor.py`, `iron_condor.py`, `iron_condor_us.py`, and parameter-sweep scripts were removed after the strategy was classified as failed / legacy.
 
-以下文件仅保留作历史参考，不再作为生产入口：
-
-- `main.py`
-- `main_ic.py`
-- `run_live.sh`
-- `run_ic_live.sh`
-- `restart.sh`
-- `com.futuwheel.plist`
-
-## 原则
-
-- 生产系统一律以美股多标的 IC 为准
-- 港股 / 腾讯 / Wheel 相关脚本不再作为执行入口
-- 如需改生产参数，先在回测中验证，再同步到实盘
+Do not use archived references as production entry points.

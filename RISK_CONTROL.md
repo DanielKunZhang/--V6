@@ -1,47 +1,18 @@
-# 美股 IC 风控说明
+# Risk Control Status
 
-当前生产系统只以 `QQQ / IWM / GLD` 美股 ETF 铁鹰为准。
+The old Iron Condor risk-control document is obsolete because the IC automation chain has been removed.
 
-## 核心风控
+Current risk-control sources:
 
-- HV20开仓阈值：
-  - `QQQ / IWM <= 25%`
-  - `GLD <= 18%`
-  - 超过对应阈值：禁止新开仓
-- HV20硬止损阈值：
-  - `HV20 >= 39%` 强平
-- HV20恢复阈值：
-  - `HV20 < 28%` 恢复
-- HV20降杠杆阈值：
-  - `HV20 > 22%` 时，且仅在允许开仓时，最大组数减半
-- 价格止损：
-  - 标的价格穿入翼宽 `50%`
-- 资金止损：
-  - 单标的策略权益相对峰值回撤 `5%`
-- 止盈：
-  - 盈利达到权利金 `50%`
-- 冷却期：
-  - 平仓后 `5` 天不开新仓
-- 提前平仓：
-  - 到期前 `2` 个交易日平仓
-- 节假日保护：
-  - 距美国长假 `<= 3` 个交易日时跳过新开仓
+- `CENTRAL_RISK_BOARD_SPEC.md`
+- `V6_STRATEGY_LAB.md`
+- `v6_strategy_lab/reports/2026-05-18_v6_stale_data_risk_exit_policy_v1.md`
+- `SYSTEM_OVERVIEW.html`
 
-## 资金与组数
+Current hard rules:
 
-- 实际本金：`$15,000`
-- 杠杆：`2x`
-- 名义资金：`$30,000`
-- 动态组数：`Config F=20x`
-- 组数公式：
-
-```text
-effective_groups = base × (IC_MANUAL_CAPITAL × LEVERAGE / $30K)
-```
-
-## 保护机制
-
-- `scheduler.py` 负责自动调度
-- `start_scheduler.sh` 支持守护启动
-- `scheduler.py` 内置漏跑补偿
-- `ic_monitor.py` 提供盘后监控与日报
+- No unattended real trading for V6.
+- V6-A remains a small real manual pilot.
+- V6AB remains paper simulation until fills, reconciliation, and forward evidence justify any later decision.
+- Stale data mode blocks BUY / ADD / ROTATE_IN and only allows risk-exit review.
+- Deleted Iron Condor scripts must not be treated as active controls.

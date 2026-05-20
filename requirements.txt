@@ -1,33 +1,15 @@
-# 当前美股 Iron Condor 系统依赖
+# Shared dependencies for the current investment-system tooling.
+# This file is no longer scoped to the retired Iron Condor automation chain.
 
-# 富途 OpenD API
 futu-api >= 5.0.1201
-
-# 数据处理
 pandas >= 2.0.0
 numpy >= 1.24.0
-
-# HTTP 请求（用于微信通知）
 requests >= 2.28.0
-
-# 可选：美股数据（回测用）
-yfinance >= 0.2.0
-
-# 可选：Black-Scholes 期权定价
-scipy >= 1.10.0
-
-# ============================================
-# 价值投资期权策略生成器新增依赖
-# ============================================
-
-# 配置文件解析
 pyyaml >= 6.0
-
-# 终端表格输出
 prettytable >= 3.9.0
 
-# 可选：定时任务调度（用于定时探测功能）
+# Optional research / reporting dependencies
+yfinance >= 0.2.0
+scipy >= 1.10.0
 apscheduler >= 3.10.0
-
-# 可选：时区处理（用于定时任务）
 pytz >= 2023.3
