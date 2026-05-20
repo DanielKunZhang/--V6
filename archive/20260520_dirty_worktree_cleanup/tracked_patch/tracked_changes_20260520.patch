@@ -1,0 +1,1772 @@
+diff --git a/capacity_check.py b/capacity_check.py
+index e6811a7..988dccb 100644
+--- a/capacity_check.py
++++ b/capacity_check.py
+@@ -1,51 +1,98 @@
+ #!/usr/bin/env python3
+ """
+-只读流动性容量检查（Futu/OpenD）
++半导体候选真实流动性 / 成本检查（Futu/OpenD）
+ """
+ 
+ from __future__ import annotations
+ 
++import argparse
+ import math
+ import time
+-from datetime import datetime, timedelta
++from dataclasses import dataclass
++from datetime import date, datetime
++from pathlib import Path
+ 
+ import pandas as pd
+ import pytz
+-from futu import OpenQuoteContext, RET_OK, OptionType, SubType
++from futu import OpenQuoteContext, OptionType, RET_OK, SubType
+ 
+ 
+ HOST = "127.0.0.1"
+ PORT = 11111
+-ASSETS = [
+-    {"ticker": "US.QQQ", "name": "QQQ", "base_groups": 4},
+-    {"ticker": "US.IWM", "name": "IWM", "base_groups": 2},
+-    {"ticker": "US.GLD", "name": "GLD", "base_groups": 2},
+-]
+-PUT_OTM = 0.03
+-CALL_OTM = 0.06
+-WING = 0.09
+-TARGET_DTE = 45
+-REAL_CAPITAL = 15_000
+-LEVERAGE = 2.0
+-
+-
+-def nearest_expiry(ctx: OpenQuoteContext, ticker: str) -> tuple[str, int]:
++OUT_DIR = Path(__file__).parent / "backtest_results"
++
++
++@dataclass(frozen=True)
++class CandidateSpec:
++    key: str
++    label: str
++    ticker: str
++    module: str
++    front_dte: int
++    back_months: int
++    long_offset: float
++    short_offset: float
++    put_offset: float | None = None
++
++
++CANDIDATES = {
++    "smh_diag": CandidateSpec(
++        key="smh_diag",
++        label="SMH diagonal",
++        ticker="US.SMH",
++        module="diagonal",
++        front_dte=45,
++        back_months=4,
++        long_offset=-0.05,
++        short_offset=0.08,
++    ),
++    "soxx_pmcc": CandidateSpec(
++        key="soxx_pmcc",
++        label="SOXX PMCC",
++        ticker="US.SOXX",
++        module="pmcc_collar",
++        front_dte=45,
++        back_months=4,
++        long_offset=-0.06,
++        short_offset=0.10,
++        put_offset=0.03,
++    ),
++}
++
++
++def round_strike(price: float, offset: float) -> float:
++    return max(round(price * (1.0 + offset), 0), 1.0)
++
++
++def list_expiries(ctx: OpenQuoteContext, ticker: str) -> list[date]:
+     ret, data = ctx.get_option_expiration_date(ticker)
+     if ret != RET_OK or data.empty:
+         raise RuntimeError(f"{ticker} expiration failed: {data}")
+ 
+     et_today = datetime.now(pytz.timezone("America/New_York")).date()
+-    candidates = []
++    expiries = []
+     for _, row in data.iterrows():
+         if "strike_time" in row and pd.notna(row["strike_time"]):
+-            exp = datetime.strptime(str(row["strike_time"])[:10], "%Y-%m-%d").date()
++            expiry = datetime.strptime(str(row["strike_time"])[:10], "%Y-%m-%d").date()
+         else:
+-            exp = et_today + timedelta(days=int(row.get("option_expiry_date_distance", 999)))
+-        dte = (exp - et_today).days
+-        if dte >= 7:
+-            candidates.append((exp, dte))
+-    exp, dte = min(candidates, key=lambda item: abs(item[1] - TARGET_DTE))
+-    return exp.strftime("%Y-%m-%d"), dte
++            expiry = et_today
++        expiries.append(expiry)
++    return sorted(set(expiries))
++
++
++def select_front_and_back(expiries: list[date], front_dte: int, back_months: int) -> tuple[date, date]:
++    et_today = datetime.now(pytz.timezone("America/New_York")).date()
++    front = next((expiry for expiry in expiries if (expiry - et_today).days >= front_dte), None)
++    if front is None:
++        raise RuntimeError(f"no front expiry >= {front_dte}d")
++    try:
++        front_idx = expiries.index(front)
++    except ValueError as exc:
++        raise RuntimeError("front expiry missing from expiry list") from exc
++    back_idx = front_idx + back_months
++    if back_idx >= len(expiries):
++        raise RuntimeError(f"no back expiry {back_months} months after {front}")
++    return front, expiries[back_idx]
+ 
+ 
+ def stock_price(ctx: OpenQuoteContext, ticker: str) -> float:
+@@ -57,13 +104,13 @@ def stock_price(ctx: OpenQuoteContext, ticker: str) -> float:
+     return float(data.iloc[0]["last_price"])
+ 
+ 
+-def option_chain(ctx: OpenQuoteContext, ticker: str, opt_type, expiry: str) -> pd.DataFrame:
+-    ret, data = ctx.get_option_chain(ticker, option_type=opt_type, start=expiry, end=expiry)
++def option_chain(ctx: OpenQuoteContext, ticker: str, option_type, expiry: str) -> pd.DataFrame:
++    ret, data = ctx.get_option_chain(ticker, option_type=option_type, start=expiry, end=expiry)
+     if ret != RET_OK or data.empty:
+         raise RuntimeError(f"{ticker} chain failed: {data}")
+-    data = data.copy()
+-    data["strike_price"] = data["strike_price"].astype(float)
+-    return data
++    out = data.copy()
++    out["strike_price"] = out["strike_price"].astype(float)
++    return out
+ 
+ 
+ def closest_leg(chain: pd.DataFrame, target_strike: float) -> dict:
+@@ -86,11 +133,11 @@ def order_book_depth(ctx: OpenQuoteContext, code: str) -> dict:
+         return {"bid_px": 0.0, "ask_px": 0.0, "bid_qty_10": 0, "ask_qty_10": 0}
+ 
+     def parse(levels):
+-        total = 0
+         px = 0.0
+-        for i, level in enumerate(levels or []):
++        total = 0
++        for idx, level in enumerate(levels or []):
+             if isinstance(level, (list, tuple)) and len(level) >= 2:
+-                if i == 0:
++                if idx == 0:
+                     px = float(level[0])
+                 try:
+                     total += int(float(level[1]))
+@@ -103,98 +150,210 @@ def order_book_depth(ctx: OpenQuoteContext, code: str) -> dict:
+     return {"bid_px": bid_px, "ask_px": ask_px, "bid_qty_10": bid_qty, "ask_qty_10": ask_qty}
+ 
+ 
+-def build_legs(ctx: OpenQuoteContext, ticker: str, price: float, expiry: str) -> dict:
+-    calls = option_chain(ctx, ticker, OptionType.CALL, expiry)
+-    puts = option_chain(ctx, ticker, OptionType.PUT, expiry)
+-    targets = {
+-        "sell_put": price * (1 - PUT_OTM),
+-        "buy_put": price * (1 - PUT_OTM - WING),
+-        "sell_call": price * (1 + CALL_OTM),
+-        "buy_call": price * (1 + CALL_OTM + WING),
++def build_candidate_legs(ctx: OpenQuoteContext, spec: CandidateSpec, price: float) -> tuple[list[dict], str, str]:
++    expiries = list_expiries(ctx, spec.ticker)
++    front_expiry, back_expiry = select_front_and_back(expiries, spec.front_dte, spec.back_months)
++    front_str = front_expiry.strftime("%Y-%m-%d")
++    back_str = back_expiry.strftime("%Y-%m-%d")
++
++    front_calls = option_chain(ctx, spec.ticker, OptionType.CALL, front_str)
++    back_calls = option_chain(ctx, spec.ticker, OptionType.CALL, back_str)
++    long_call = closest_leg(back_calls, round_strike(price, spec.long_offset))
++    short_call = closest_leg(front_calls, max(round_strike(price, spec.short_offset), long_call["strike"] + 1.0))
++
++    legs = [
++        {
++            "candidate": spec.key,
++            "label": spec.label,
++            "ticker": spec.ticker,
++            "leg": "long_call",
++            "side": "BUY",
++            "option_type": "CALL",
++            "expiry": back_str,
++            "code": long_call["code"],
++            "strike": long_call["strike"],
++        },
++        {
++            "candidate": spec.key,
++            "label": spec.label,
++            "ticker": spec.ticker,
++            "leg": "short_call",
++            "side": "SELL",
++            "option_type": "CALL",
++            "expiry": front_str,
++            "code": short_call["code"],
++            "strike": short_call["strike"],
++        },
++    ]
++
++    if spec.module == "pmcc_collar" and spec.put_offset is not None:
++        front_puts = option_chain(ctx, spec.ticker, OptionType.PUT, front_str)
++        long_put = closest_leg(front_puts, round_strike(price, -spec.put_offset))
++        legs.append(
++            {
++                "candidate": spec.key,
++                "label": spec.label,
++                "ticker": spec.ticker,
++                "leg": "long_put",
++                "side": "BUY",
++                "option_type": "PUT",
++                "expiry": front_str,
++                "code": long_put["code"],
++                "strike": long_put["strike"],
++            }
++        )
++
++    return legs, front_str, back_str
++
++
++def conservative_cap(legs_df: pd.DataFrame) -> dict:
++    buy_book = legs_df.loc[legs_df["side"] == "BUY", "ask_qty_10"]
++    sell_book = legs_df.loc[legs_df["side"] == "SELL", "bid_qty_10"]
++    book_depth = min(
++        int(buy_book.min()) if not buy_book.empty else math.inf,
++        int(sell_book.min()) if not sell_book.empty else math.inf,
++    )
++    if book_depth == math.inf:
++        book_depth = 0
++
++    nonzero_volume = legs_df.loc[legs_df["volume"] > 0, "volume"]
++    nonzero_oi = legs_df.loc[legs_df["open_interest"] > 0, "open_interest"]
++    min_volume = int(nonzero_volume.min()) if not nonzero_volume.empty else 0
++    min_oi = int(nonzero_oi.min()) if not nonzero_oi.empty else 0
++
++    book_cap = int(book_depth * 0.20) if book_depth else 0
++    volume_cap = int(min_volume * 0.03) if min_volume else 0
++    oi_cap = int(min_oi * 0.01) if min_oi else 0
++
++    caps = [cap for cap in [book_cap, volume_cap, oi_cap] if cap > 0]
++    recommended = min(caps) if caps else 0
++    pilot = max(1, min(recommended, 2)) if recommended else 0
++
++    return {
++        "min_10lvl_depth": book_depth,
++        "min_leg_volume": min_volume,
++        "min_leg_oi": min_oi,
++        "book_cap_20pct": book_cap,
++        "volume_cap_3pct": volume_cap,
++        "oi_cap_1pct": oi_cap,
++        "recommended_max_contracts": recommended,
++        "pilot_max_contracts": pilot,
+     }
++
++
++def combo_summary(spec: CandidateSpec, price: float, front_expiry: str, back_expiry: str, legs_df: pd.DataFrame) -> dict:
++    df = legs_df.copy()
++    sign = df["side"].map({"BUY": 1.0, "SELL": -1.0}).astype(float)
++    entry_natural = ((sign * df["entry_natural"]).sum()) * 100.0
++    entry_mid = ((sign * df["mid"]).sum()) * 100.0
++    exit_natural = ((sign * df["exit_natural"]).sum()) * 100.0
++    entry_edge = entry_natural - entry_mid
++    edge_pct = (entry_edge / abs(entry_mid) * 100.0) if entry_mid else 0.0
++    caps = conservative_cap(df)
+     return {
+-        "sell_put": closest_leg(puts, targets["sell_put"]),
+-        "buy_put": closest_leg(puts, targets["buy_put"]),
+-        "sell_call": closest_leg(calls, targets["sell_call"]),
+-        "buy_call": closest_leg(calls, targets["buy_call"]),
++        "candidate": spec.key,
++        "label": spec.label,
++        "ticker": spec.ticker,
++        "underlying": round(price, 2),
++        "front_expiry": front_expiry,
++        "back_expiry": back_expiry,
++        "module": spec.module,
++        "legs": len(df),
++        "entry_mid_debit_usd": round(entry_mid, 2),
++        "entry_natural_debit_usd": round(entry_natural, 2),
++        "entry_slippage_vs_mid_usd": round(entry_edge, 2),
++        "entry_slippage_vs_mid_pct": round(edge_pct, 2),
++        "exit_natural_hit_usd": round(exit_natural, 2),
++        **caps,
+     }
+ 
+ 
+-def groups_from_capital(actual_capital: float, asset_base_groups: int) -> float:
+-    nominal = actual_capital * LEVERAGE
+-    scale = nominal / 30_000
+-    return asset_base_groups * scale
++def main() -> None:
++    parser = argparse.ArgumentParser(description="SMH / SOXX candidate liquidity snapshot")
++    parser.add_argument("--candidate", choices=["all", *CANDIDATES.keys()], default="all")
++    args = parser.parse_args()
++
++    targets = list(CANDIDATES.values()) if args.candidate == "all" else [CANDIDATES[args.candidate]]
++    OUT_DIR.mkdir(exist_ok=True)
+ 
++    leg_rows = []
++    combo_rows = []
+ 
+-def main():
+     ctx = OpenQuoteContext(host=HOST, port=PORT)
+-    rows = []
+     try:
+-        for asset in ASSETS:
+-            ticker = asset["ticker"]
+-            price = stock_price(ctx, ticker)
+-            expiry, dte = nearest_expiry(ctx, ticker)
+-            legs = build_legs(ctx, ticker, price, expiry)
+-            codes = [leg["code"] for leg in legs.values()]
+-            snap = snapshot(ctx, codes)
++        for spec in targets:
++            price = stock_price(ctx, spec.ticker)
++            legs, front_expiry, back_expiry = build_candidate_legs(ctx, spec, price)
++            snap = snapshot(ctx, [leg["code"] for leg in legs])
+             snap_by_code = snap.set_index("code") if "code" in snap.columns else pd.DataFrame()
+-            for leg_name, leg in legs.items():
++
++            current_rows = []
++            for leg in legs:
+                 code = leg["code"]
+                 row = snap_by_code.loc[code] if code in snap_by_code.index else {}
+                 book = order_book_depth(ctx, code)
+-                bid = float(row.get("bid_price", book["bid_px"]) or 0)
+-                ask = float(row.get("ask_price", book["ask_px"]) or 0)
++                bid = float(row.get("bid_price", book["bid_px"]) or 0.0)
++                ask = float(row.get("ask_price", book["ask_px"]) or 0.0)
++                mid = (bid + ask) / 2.0 if bid and ask else max(bid, ask, 0.0)
+                 volume = int(float(row.get("volume", 0) or 0))
+                 oi = int(float(row.get("open_interest", row.get("option_open_interest", 0)) or 0))
+-                rows.append({
+-                    "asset": asset["name"],
+-                    "ticker": ticker,
++                leg_row = {
++                    **leg,
+                     "underlying": round(price, 2),
+-                    "expiry": expiry,
+-                    "dte": dte,
+-                    "leg": leg_name,
+-                    "code": code,
+-                    "strike": leg["strike"],
+                     "bid": bid,
+                     "ask": ask,
+-                    "spread": round(max(ask - bid, 0), 3),
+-                    "mid": round((bid + ask) / 2, 3) if bid and ask else 0,
++                    "mid": round(mid, 4),
++                    "spread": round(max(ask - bid, 0.0), 4),
++                    "spread_pct_mid": round((max(ask - bid, 0.0) / mid * 100.0), 2) if mid else 0.0,
+                     "volume": volume,
+                     "open_interest": oi,
+-                    "bid_qty_10": book["bid_qty_10"],
+-                    "ask_qty_10": book["ask_qty_10"],
+-                })
++                    "bid_qty_10": int(book["bid_qty_10"]),
++                    "ask_qty_10": int(book["ask_qty_10"]),
++                    "entry_natural": ask if leg["side"] == "BUY" else bid,
++                    "exit_natural": bid if leg["side"] == "BUY" else ask,
++                }
++                current_rows.append(leg_row)
++                leg_rows.append(leg_row)
++
++            combo_rows.append(combo_summary(spec, price, front_expiry, back_expiry, pd.DataFrame(current_rows)))
+     finally:
+         ctx.close()
+ 
+-    df = pd.DataFrame(rows)
+-    out = "backtest_results/capacity_check_snapshot.csv"
+-    df.to_csv(out, index=False)
+-
+-    print(df.to_string(index=False))
+-    print(f"\nCSV: {out}")
+-    print("\nCurrent F=20x hard cap at actual capital $300,000 (nominal $600,000):")
+-    for asset in ASSETS:
+-        print(f"  {asset['name']}: {groups_from_capital(300_000, asset['base_groups']):.0f} groups")
+-
+-    print("\nLiquidity bottleneck rough capacities by per-leg ADV%:")
+-    for asset in ASSETS:
+-        sub = df[df["asset"] == asset["name"]]
+-        nonzero_vol = sub["volume"][sub["volume"] > 0]
+-        nonzero_oi = sub["open_interest"][sub["open_interest"] > 0]
+-        min_volume = int(nonzero_vol.min()) if not nonzero_vol.empty else 0
+-        min_oi = int(nonzero_oi.min()) if not nonzero_oi.empty else 0
+-        min_book = int(sub[["bid_qty_10", "ask_qty_10"]].replace(0, math.inf).min().min()) if not sub.empty else 0
+-        if min_book == math.inf:
+-            min_book = 0
+-        for adv_pct in (0.01, 0.03, 0.05):
+-            groups_cap = min_volume * adv_pct if min_volume else 0
+-            actual_cap = groups_cap / asset["base_groups"] * 30_000 / LEVERAGE
+-            print(
+-                f"  {asset['name']} @ {adv_pct:.0%} min-leg volume: "
+-                f"{groups_cap:,.0f} groups ≈ actual ${actual_cap:,.0f} (nominal ${actual_cap*2:,.0f}); "
+-                f"min_leg_vol={min_volume:,}, min_leg_OI={min_oi:,}, min_10lvl_book={min_book:,}"
+-            )
++    legs_df = pd.DataFrame(leg_rows)
++    combos_df = pd.DataFrame(combo_rows)
++
++    legs_path = OUT_DIR / "capacity_check_semiconductor_legs.csv"
++    combos_path = OUT_DIR / "capacity_check_semiconductor_summary.csv"
++    legs_df.to_csv(legs_path, index=False)
++    combos_df.to_csv(combos_path, index=False)
++
++    print("== Combo Summary ==")
++    if not combos_df.empty:
++        print(combos_df.to_string(index=False))
++    print("\n== Leg Detail ==")
++    if not legs_df.empty:
++        print(
++            legs_df[
++                [
++                    "candidate",
++                    "leg",
++                    "side",
++                    "expiry",
++                    "strike",
++                    "bid",
++                    "ask",
++                    "mid",
++                    "spread",
++                    "spread_pct_mid",
++                    "volume",
++                    "open_interest",
++                    "bid_qty_10",
++                    "ask_qty_10",
++                ]
++            ].to_string(index=False)
++        )
++    print(f"\nCSV: {combos_path}")
++    print(f"CSV: {legs_path}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/central_risk_board.py b/central_risk_board.py
+index f52656a..943c983 100644
+--- a/central_risk_board.py
++++ b/central_risk_board.py
+@@ -10,7 +10,7 @@ from datetime import date, datetime
+ from pathlib import Path
+ from typing import Any
+ 
+-from morning_brief import HTML_PORTFOLIO, collect_events, collect_kline_quota, collect_portfolio_futu, collect_portfolio_html, collect_todos, collect_v6
++from morning_brief import HTML_PORTFOLIO, collect_events, collect_kline_quota, collect_portfolio_futu, collect_portfolio_html, collect_todos, collect_v6, collect_workflow_actions
+ 
+ 
+ ROOT = Path(__file__).resolve().parent
+@@ -848,6 +848,19 @@ def build_todo_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+     return rows
+ 
+ 
++def build_workflow_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
++    return [
++        {
++            "priority": row.get("priority", ""),
++            "domain": row.get("domain", ""),
++            "item": row.get("item", ""),
++            "trigger": row.get("trigger", ""),
++            "reason": row.get("reason", ""),
++        }
++        for row in payload.get("workflow_actions", [])
++    ]
++
++
+ def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> list[str]:
+     if not rows:
+         return ["_None_"]
+@@ -892,6 +905,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
+     radar_sample_loop = load_radar_sample_loop_summary()
+     morning_ops = build_morning_ops_summary()
+     events = build_event_rows(config)
++    workflow_actions = collect_workflow_actions(events)
+     status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
+     expansion_gate = build_expansion_gate(status, radar_sample_loop, v6)
+     return {
+@@ -914,6 +928,7 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
+         "radar_sample_loop": radar_sample_loop,
+         "expansion_gate": expansion_gate,
+         "morning_ops": morning_ops,
++        "workflow_actions": workflow_actions,
+         "freshness": freshness,
+         "futu_snapshot": futu_snapshot,
+         "target_alerts": alerts,
+@@ -1031,6 +1046,9 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
+     ]
+     lines.extend(render_table(build_top_rows(snapshot), [("name", "position"), ("current_pct", "current"), ("target", "target"), ("action", "action")]))
+ 
++    lines.extend(["", "## Today's Workflow Actions", ""])
++    lines.extend(render_table(build_workflow_display_rows(payload), [("priority", "priority"), ("domain", "domain"), ("item", "item"), ("trigger", "say to AI"), ("reason", "reason")]))
++
+     lines.extend(["", "## Sleeve Risk", ""])
+     lines.extend(render_table(build_sleeve_display_rows(payload), [("sleeve", "sleeve"), ("current_pct", "current"), ("over_count", "over-target"), ("under_count", "under-target"), ("names", "main names")]))
+ 
+@@ -1140,6 +1158,7 @@ def build_html(payload: dict[str, Any]) -> str:
+     event_rows = build_event_display_rows(payload)
+     mapping_rows = build_mapping_display_rows(payload)
+     todo_rows = build_todo_display_rows(payload)
++    workflow_rows = build_workflow_display_rows(payload)
+     portfolio_meta = payload["portfolio_meta"]
+     status_color = {"GREEN": "#16a34a", "YELLOW": "#d97706", "RED": "#dc2626"}.get(payload["status"], "#2563eb")
+     quota = payload.get("morning_ops", {}).get("kline_quota", {}) or {}
+@@ -1281,6 +1300,9 @@ def build_html(payload: dict[str, Any]) -> str:
+       <div class="card"><div class="kicker">Top Theme Weight</div><div class="num">{html.escape(theme_rows[0]['current_pct'] if theme_rows else '—')}</div></div>
+     </div>
+ 
++    <h2>Today's Workflow Actions</h2>
++    {render_html_table(workflow_rows, [('priority', 'priority'), ('domain', 'domain'), ('item', 'item'), ('trigger', 'say to AI'), ('reason', 'reason')])}
++
+     <h2>Top Positions</h2>
+     {render_html_table(top_rows, [('name', 'position'), ('current_pct', 'current'), ('target', 'target'), ('action', 'action')])}
+ 
+diff --git a/composite_backtest.py b/composite_backtest.py
+index 035304c..bb25278 100644
+--- a/composite_backtest.py
++++ b/composite_backtest.py
+@@ -240,6 +240,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
+             past_prices = prices.iloc[max(0, i - 20): i + 1]
+             hv20   = historical_volatility(past_prices, 20)          # 纯HV，用于入场过滤/VIX控制
+             iv_est = hv20 * 1.15                                      # IV估算，用于BS期权定价
++            self._maybe_reset_peak_on_flat()
+ 
+             # 每日更新HV历史（用于IV Rank计算，存纯HV）
+             self._hv_history.append(hv20)
+@@ -251,7 +252,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
+                     pnl = self._close_position_with_slippage(
+                         pos, S, iv_est, current_date,
+                         extra_slip=SLIP_HARD_STOP)
+-                    self.cash += pnl
++                    self._apply_realized_pnl(pnl)
+                     self.trades.append({
+                         "date": str(current_date), "action": "VIX_HARD_STOP",
+                         "pnl": round(pnl, 2), "hv20": round(hv20, 3),
+@@ -331,7 +332,6 @@ class EnhancedICBacktester(USIronCondorBacktester):
+                                     slip = self._get_dynamic_slippage(hv20)  # 滑点基于纯HV regime
+                                     entry_credit = net_credit * (1 - slip)
+                                     for _ in range(actual_groups):
+-                                        self.cash += entry_credit
+                                         self.positions.append(IronCondorPosition(
+                                             sell_put_k=sp_k, buy_put_k=bp_k,
+                                             sell_call_k=sc_k, buy_call_k=bc_k,
+@@ -343,26 +343,12 @@ class EnhancedICBacktester(USIronCondorBacktester):
+             remaining = []
+             for pos in self.positions:
+                 days_to_exp = (pos.expiration - current_date).days
+-                position_mv = self._estimate_position_value(pos, S, iv_est, current_date)
+-                total_value = self.cash + position_mv
++                position_pnl = self._estimate_position_value(pos, S, iv_est, current_date)
++                total_value = self._current_equity(position_pnl)
+ 
+                 if total_value > self.peak_value:
+                     self.peak_value = total_value
+ 
+-                current_dd = (total_value - self.peak_value) / self.peak_value
+-
+-                # 普通回撤止损
+-                if current_dd <= -self.stop_loss_pct and not self.stopped:
+-                    self.stopped = True
+-                    self._stop_date = current_date
+-                    pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
+-                    self.cash += pnl
+-                    self.trades.append({
+-                        "date": str(current_date), "action": "STOP_LOSS",
+-                        "pnl": round(pnl, 2),
+-                    })
+-                    continue
+-
+                 # 价格触及止损线
+                 put_w = pos.sell_put_k - pos.buy_put_k
+                 call_w = pos.buy_call_k - pos.sell_call_k
+@@ -377,6 +363,18 @@ class EnhancedICBacktester(USIronCondorBacktester):
+                 elif days_to_exp <= self.early_close_days:
+                     should_close = True
+                     close_reason = "EXPIRY"
++                else:
++                    current_dd = (total_value - self.peak_value) / self.peak_value
++                    if current_dd <= -self.stop_loss_pct and not self.stopped:
++                        self.stopped = True
++                        self._stop_date = current_date
++                        pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
++                        self._apply_realized_pnl(pnl)
++                        self.trades.append({
++                            "date": str(current_date), "action": "STOP_LOSS",
++                            "pnl": round(pnl, 2),
++                        })
++                        continue
+ 
+                 # 50%止盈（与实盘对齐：持仓浮盈 >= 50% 入场权利金时提前平仓）
+                 if not should_close and self.profit_target_pct > 0:
+@@ -388,7 +386,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
+ 
+                 if should_close:
+                     pnl = self._close_position_with_slippage(pos, S, iv_est, current_date)
+-                    self.cash += pnl
++                    self._apply_realized_pnl(pnl)
+                     self._last_close_date = current_date
+                     self.trades.append({
+                         "date": str(current_date), "action": "CLOSE_IC",
+@@ -402,7 +400,7 @@ class EnhancedICBacktester(USIronCondorBacktester):
+             # 日记录（sigma字段保留，记录纯HV供外部分析）
+             pos_mv = sum(self._estimate_position_value(p, S, iv_est, current_date)
+                          for p in self.positions)
+-            total_v = self.cash + pos_mv
++            total_v = self._current_equity(pos_mv)
+             self.daily_records.append({
+                 "date": current_date,
+                 "total_value": total_v,
+@@ -688,7 +686,7 @@ def run_composite(leverage: float = 1.25,
+             dte=45,                             # Scenario C 最优: DTE=45
+             max_groups=a["max_groups"],
+             cooldown_days=5,
+-            stop_loss_pct=0.05,
++            stop_loss_pct=0.15,
+             stop_loss_buffer=1.5,
+             early_close_days=2,
+             entry_mode="pre_expiry",
+diff --git a/dynamic_composite_backtest.py b/dynamic_composite_backtest.py
+index 9990e34..b8bf7a3 100644
+--- a/dynamic_composite_backtest.py
++++ b/dynamic_composite_backtest.py
+@@ -52,7 +52,7 @@ IC_PARAMS = dict(
+     otm_distance=0.05,               # 父类兼容（不实际使用，被 put/call_otm 覆盖）
+     wing_width=0.09,
+     dte=45,
+-    stop_loss_pct=0.05,
++    stop_loss_pct=0.15,
+     stop_loss_buffer=1.5,
+     early_close_days=2,
+     entry_mode="pre_expiry",
+@@ -62,6 +62,8 @@ IC_PARAMS = dict(
+     vix_cooldown_hv=VIX_COOLDOWN_HV,      # 0.28
+     vix_deleverage_hv=0.22,               # 去杠杆阈值
+     profit_target_pct=0.50,               # 50%止盈（与实盘对齐）
++    reset_peak_on_flat=True,              # 平仓后重置峰值，避免旧仓峰值串到新仓
++    group_scale_mode="static",            # 当前实盘不按权益曲线自动扩组，固定 base groups
+ )
+ 
+ # 场景：动态扩仓上限倍数
+diff --git a/investment_company_dashboard.py b/investment_company_dashboard.py
+index 5177d55..dd68c30 100644
+--- a/investment_company_dashboard.py
++++ b/investment_company_dashboard.py
+@@ -2,6 +2,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import csv
+ import html
+ import json
+ import shutil
+@@ -29,6 +30,8 @@ SOURCES = {
+     "radar_sample_loop": ROOT / "backtest_results" / "radar_sample_loop" / "latest.json",
+ }
+ 
++RADAR_VALUATION_SEED = DESKTOP_DIR / "系统优化升级依据" / "radar_order_valuation_seed.csv"
++
+ CURRENT_OPERATING_BACKLOG = [
+     {
+         "priority": "P0",
+@@ -66,6 +69,8 @@ DESKTOP_LINKS = {
+     "central_risk": "中央风控看板_CENTRAL_RISK_BOARD_LATEST.html",
+     "performance": "绩效归因看板_PERFORMANCE_ATTRIBUTION_LATEST.html",
+     "overlay": "Radar_Overlay_Journal_LATEST.html",
++    "options_manual": "AI个人投资公司_期权操作手册_v1.md",
++    "option_expression_template": "系统优化升级依据/标的操作策略_期权表达评估模板_v1.md",
+     "monthly": "Monthly_Research_Review_LATEST.html",
+     "v6a_cutover_card": "2026-05-26_V6A_balanced_cutover_执行检查卡_v1.md",
+     "v6b_card": "6月1日_V6B_执行卡.md",
+@@ -73,6 +78,11 @@ DESKTOP_LINKS = {
+     "theme_rotation": "Radar_主线扩散自动扫描_LATEST.md",
+     "external_short_network": "外部短线网络样本复盘_EXTERNAL_SHORT_NETWORK_LATEST.md",
+     "radar_sample_loop": "Radar_样本闭环表_LATEST.md",
++    "radar_order_valuation": "系统优化升级依据/Radar_Order_to_Valuation_Reality_Check_v1.md",
++    "radar_guidance_roadmap": "系统优化升级依据/Radar_操作指导自动化补足路线图_v1.md",
++    "radar_weekly_review_template": "系统优化升级依据/Radar_每周人工复盘模板_v1.md",
++    "earnings_update_template": "系统优化升级依据/主要持仓财报更新模板_v1.md",
++    "system_improvement_review": "系统优化升级依据/系统改进增益评估卡_v1.md",
+     "v6a_continuity_update": "2026-05-15_v6a_balanced_cutover_continuity_update_v1.md",
+     "overview": "投资系统全景图_SYSTEM_OVERVIEW.html",
+     "plan": "26年阶段性组合策略计划.html",
+@@ -108,6 +118,12 @@ def fmt_momentum(value: float | int | None) -> str:
+     return f"{float(value) * 100:.1f}%"
+ 
+ 
++def fmt_price(value: float | int | None) -> str:
++    if value is None:
++        return "—"
++    return f"{float(value):.2f}"
++
++
+ def first_line_from_md(path: Path) -> str:
+     if not path.exists():
+         return ""
+@@ -127,16 +143,133 @@ def compact_radar_rows(rows: list[dict[str, Any]], limit: int = 5) -> list[dict[
+                 "theme": row.get("theme_label") or row.get("theme") or row.get("theme_id"),
+                 "layer": row.get("layer_label") or row.get("buckets") or row.get("bucket_id"),
+                 "score": row.get("score"),
++                "price": row.get("close") or row.get("price_at_signal"),
+                 "mom20": row.get("mom20"),
+                 "mom60": row.get("mom60"),
++                "ma50": row.get("ma50"),
++                "ma200": row.get("ma200"),
++                "low20": row.get("low20"),
++                "low60": row.get("low60"),
++                "high20": row.get("high20"),
++                "high63": row.get("high63"),
++                "drawdown63": row.get("drawdown63") if row.get("drawdown63") is not None else row.get("drawdown_from_high63"),
++                "above_ma50": row.get("above_ma50"),
++                "above_ma200": row.get("above_ma200"),
+                 "chase_risk": row.get("chase_risk") or "待补",
+                 "trade_posture": row.get("trade_posture") or row.get("action") or "待复核",
+                 "entry_note": row.get("entry_note") or row.get("gap_attribution") or "",
++                "valuation_verdict": row.get("valuation_verdict") or row.get("valuation_reality_verdict") or "待补",
++                "valuation_reality_score": row.get("valuation_reality_score"),
+             }
+         )
+     return compact
+ 
+ 
++def read_radar_valuation_seed() -> dict[str, dict[str, str]]:
++    if not RADAR_VALUATION_SEED.exists():
++        return {}
++    out: dict[str, dict[str, str]] = {}
++    with RADAR_VALUATION_SEED.open("r", encoding="utf-8") as f:
++        reader = csv.DictReader(f)
++        for row in reader:
++            ticker = str(row.get("ticker") or "").strip().upper()
++            if ticker:
++                out[ticker] = row
++    return out
++
++
++def apply_valuation_seed(rows: list[dict[str, Any]], seed: dict[str, dict[str, str]]) -> list[dict[str, Any]]:
++    updated: list[dict[str, Any]] = []
++    for row in rows:
++        copied = dict(row)
++        ticker = str(copied.get("ticker") or "").upper()
++        valuation = seed.get(ticker)
++        if valuation:
++            copied["valuation_verdict"] = valuation.get("valuation_verdict") or copied.get("valuation_verdict")
++            copied["valuation_reality_score"] = valuation.get("valuation_reality_score") or copied.get("valuation_reality_score")
++            copied["valuation_note"] = valuation.get("source_note") or ""
++            copied["valuation_trade_posture"] = valuation.get("trade_posture_override") or ""
++        updated.append(copied)
++    return updated
++
++
++def derive_radar_trade_guidance(row: dict[str, Any]) -> dict[str, str]:
++    ticker = str(row.get("ticker") or "—")
++    posture = str(row.get("trade_posture") or "待复核")
++    chase = str(row.get("chase_risk") or "待补")
++    price = row.get("price")
++    valuation = str(row.get("valuation_verdict") or "待补")
++    note = str(row.get("entry_note") or "")
++
++    if price is not None:
++        p = float(price)
++        ma50 = row.get("ma50")
++        low20 = row.get("low20")
++        low60 = row.get("low60")
++        drawdown63 = row.get("drawdown63")
++        support_candidates = [float(x) for x in (ma50, low20, p * 0.85) if x not in (None, "")]
++        pullback_2 = max(support_candidates) if support_candidates else p * 0.85
++        pullback_1 = max(pullback_2, p * 0.92)
++        stop_1 = pullback_2 * 0.97 if pullback_2 > 0 else p * 0.88
++        quick_take = p * 1.25
++        range_low = min(pullback_1, pullback_2)
++        range_high = max(pullback_1, pullback_2)
++        if drawdown63 is not None and float(drawdown63) > -0.03:
++            location_note = "当前仍接近阶段高位"
++        else:
++            location_note = "已从阶段高位回落"
++        entry_wait = f"不追；{location_note}，优先等 {range_low:.2f}-{range_high:.2f} 支撑区止跌，或横盘后重新放量突破"
++        entry_review = f"若回踩不破 {pullback_1:.2f} 附近并重新收强，可进入正式复核"
++        fail = f"跌破 {stop_1:.2f} 且 2-3 日不能收回，或订单/估值结论降级"
++        sell = f"快速冲至约 {quick_take:.2f}+ 且订单未上修，分批止盈；若估值进入 bull case，降级"
++    else:
++        entry_wait = "不追；等回撤、盘整或重新放量突破后再复核"
++        entry_review = "买点需重新确认支撑、趋势和订单/估值现实检查"
++        fail = "跌破关键支撑或订单/估值结论降级"
++        sell = "快速上涨但订单未上修时分批止盈；估值进入 bull case 时降级"
++
++    if "禁止" in posture or chase == "高":
++        buy_point = entry_wait
++        action = "等待 / 禁止追高"
++        entry_type = "NO_CHASE"
++    elif "小仓" in posture or chase == "中高":
++        buy_point = entry_review
++        action = "只允许小仓试错"
++        entry_type = "PULLBACK_REVIEW"
++    elif "正式复核" in posture:
++        buy_point = entry_review
++        action = "可进入正式复核"
++        entry_type = "FORMAL_REVIEW"
++    else:
++        buy_point = "观察；等待主线、买点、估值三者同时通过"
++        action = "观察"
++        entry_type = "WATCH_ONLY"
++
++    if valuation in {"PRICED_FOR_BULL_CASE", "TOO_MUCH_NARRATIVE_NOT_ENOUGH_NUMBERS"}:
++        action = "研究 / 不交易"
++        buy_point = "估值现实检查未通过；除非订单或 ARR 明确上修，否则不买"
++        entry_type = "VALUATION_BLOCKED"
++    elif valuation == "UNDERPRICED_WITH_VISIBLE_ORDERS":
++        if "禁止" not in posture and chase != "高":
++            action = "可进入正式复核"
++            entry_type = "VALUATION_SUPPORTED_REVIEW"
++
++    support_reason = note or "主线/动能/趋势来自 Radar 自动扫描；仍需订单估值现实检查确认。"
++    valuation_note = str(row.get("valuation_note") or "")
++    if valuation_note:
++        support_reason = f"{support_reason} 估值现实：{valuation_note}"
++    return {
++        "ticker": ticker,
++        "action": action,
++        "entry_type": entry_type,
++        "buy_point": buy_point,
++        "sell_rule": sell,
++        "fail_rule": fail,
++        "support_reason": support_reason,
++        "valuation": valuation,
++    }
++
++
+ def build_payload() -> dict[str, Any]:
+     central = read_json(SOURCES["central_risk"])
+     performance = read_json(SOURCES["performance"])
+@@ -148,6 +281,7 @@ def build_payload() -> dict[str, Any]:
+     missing_opportunity = read_json(SOURCES["missing_opportunity"])
+     external_short_network = read_json(SOURCES["external_short_network"])
+     radar_sample_loop = read_json(SOURCES["radar_sample_loop"])
++    valuation_seed = read_radar_valuation_seed()
+     portfolio_meta = extract_portfolio_meta()
+ 
+     coverage = performance.get("coverage", {}) if isinstance(performance.get("coverage"), dict) else {}
+@@ -192,12 +326,17 @@ def build_payload() -> dict[str, Any]:
+             "external_sample_review_count": (theme_rotation.get("summary", {}) or {}).get("external_sample_review_count")
+             or external_short_network.get("sample_count"),
+             "missing_opportunity_count": (missing_opportunity.get("summary", {}) or {}).get("critical_miss_count"),
+-            "independent_discovery": compact_radar_rows(theme_rotation.get("candidates", []) if isinstance(theme_rotation.get("candidates"), list) else []),
+-            "external_sample_review": compact_radar_rows(
+-                theme_rotation.get("external_sample_review", []) if isinstance(theme_rotation.get("external_sample_review"), list) else []
++            "independent_discovery": apply_valuation_seed(
++                compact_radar_rows(theme_rotation.get("candidates", []) if isinstance(theme_rotation.get("candidates"), list) else []),
++                valuation_seed,
++            ),
++            "external_sample_review": apply_valuation_seed(
++                compact_radar_rows(theme_rotation.get("external_sample_review", []) if isinstance(theme_rotation.get("external_sample_review"), list) else []),
++                valuation_seed,
+             ),
+-            "missing_opportunity_review": compact_radar_rows(
+-                missing_opportunity.get("critical_misses", []) if isinstance(missing_opportunity.get("critical_misses"), list) else []
++            "missing_opportunity_review": apply_valuation_seed(
++                compact_radar_rows(missing_opportunity.get("critical_misses", []) if isinstance(missing_opportunity.get("critical_misses"), list) else []),
++                valuation_seed,
+             ),
+             "sample_loop_count": radar_sample_loop.get("sample_count"),
+         },
+@@ -340,6 +479,37 @@ def build_html(payload: dict[str, Any]) -> str:
+             )
+     radar_table_body = "".join(radar_rows) or "<tr><td colspan='9'>暂无 Radar 数据</td></tr>"
+ 
++    guidance_source: list[dict[str, Any]] = []
++    for key in ("independent_discovery", "missing_opportunity_review", "external_sample_review"):
++        rows = radar.get(key, [])
++        if isinstance(rows, list):
++            guidance_source.extend(rows)
++    guidance_rows: list[str] = []
++    seen_tickers: set[str] = set()
++    for row in guidance_source:
++        ticker = str(row.get("ticker") or "")
++        if not ticker or ticker in seen_tickers:
++            continue
++        seen_tickers.add(ticker)
++        guide = derive_radar_trade_guidance(row)
++        guidance_rows.append(
++            "<tr>"
++            f"<td>{html.escape(guide['ticker'])}</td>"
++            f"<td>{html.escape(fmt_price(row.get('price')))}</td>"
++            f"<td>{html.escape(str(row.get('theme') or '—'))}</td>"
++            f"<td>{html.escape(guide['action'])}</td>"
++            f"<td>{html.escape(guide['entry_type'])}</td>"
++            f"<td>{html.escape(guide['buy_point'])}</td>"
++            f"<td>{html.escape(guide['sell_rule'])}</td>"
++            f"<td>{html.escape(guide['fail_rule'])}</td>"
++            f"<td>{html.escape(guide['valuation'])}</td>"
++            f"<td>{html.escape(guide['support_reason'])}</td>"
++            "</tr>"
++        )
++        if len(guidance_rows) >= 8:
++            break
++    guidance_table_body = "".join(guidance_rows) or "<tr><td colspan='10'>当前没有可生成操作指导的 Radar 候选</td></tr>"
++
+     return f"""<!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+@@ -468,12 +638,19 @@ def build_html(payload: dict[str, Any]) -> str:
+         <a href="{DESKTOP_LINKS['performance']}">绩效归因</a>
+         <a href="{DESKTOP_LINKS['monthly']}">月度复盘</a>
+         <a href="{DESKTOP_LINKS['overlay']}">Overlay</a>
++        <a href="{DESKTOP_LINKS['options_manual']}">期权手册</a>
++        <a href="{DESKTOP_LINKS['option_expression_template']}">期权评估模板</a>
+         <a href="{DESKTOP_LINKS['v6a_cutover_card']}">5月26日 V6-A 执行卡</a>
+         <a href="{DESKTOP_LINKS['v6b_card']}">6月1日执行卡</a>
+         <a href="{DESKTOP_LINKS['v6b_preflight']}">V6-B 预检</a>
+         <a href="{DESKTOP_LINKS['theme_rotation']}">Radar 主线扫描</a>
+         <a href="{DESKTOP_LINKS['external_short_network']}">外部样本复盘</a>
+         <a href="{DESKTOP_LINKS['radar_sample_loop']}">Radar 样本闭环</a>
++        <a href="{DESKTOP_LINKS['radar_order_valuation']}">订单估值检查</a>
++        <a href="{DESKTOP_LINKS['radar_guidance_roadmap']}">Radar补足路线</a>
++        <a href="{DESKTOP_LINKS['radar_weekly_review_template']}">Radar周复盘模板</a>
++        <a href="{DESKTOP_LINKS['earnings_update_template']}">持仓财报模板</a>
++        <a href="{DESKTOP_LINKS['system_improvement_review']}">改进评估卡</a>
+         <a href="{DESKTOP_LINKS['v6a_continuity_update']}">V6-A cutover 连续性更新</a>
+       </div>
+     </header>
+@@ -505,6 +682,15 @@ def build_html(payload: dict[str, Any]) -> str:
+       </table>
+     </section>
+ 
++    <section class="panel">
++      <h2>Radar 操作指导候选</h2>
++      <div class="muted">这张表用于日报/周报决策准备，不是自动下单清单。真正交易前仍需通过 Central Risk Board、订单估值现实检查、期权表达评估和人工确认。</div>
++      <table>
++        <thead><tr><th>标的</th><th>参考价</th><th>主线</th><th>当前动作</th><th>买点类型</th><th>买点</th><th>卖点/止盈</th><th>失效位</th><th>估值现实</th><th>支撑原因</th></tr></thead>
++        <tbody>{guidance_table_body}</tbody>
++      </table>
++    </section>
++
+     <section class="panel">
+       <h2>今日动作区</h2>
+       <div class="action-grid">{action_columns}</div>
+diff --git a/investment_screener/earnings_tracker.py b/investment_screener/earnings_tracker.py
+index f742f6f..28c8f2d 100644
+--- a/investment_screener/earnings_tracker.py
++++ b/investment_screener/earnings_tracker.py
+@@ -440,8 +440,7 @@ def main():
+         send_email(html, subject, cfg)
+     elif upcoming and not args.no_email:
+         logging.info(f"有财报即将发布但超过{alert_days}天预警窗口，不发送邮件")
+-    elif args.summary:
+-        # Summary mode always sends
++    elif args.summary and not args.no_email:
+         prefix = cfg.get("email", {}).get("subject_prefix", "[投资预警]")
+         send_email(html, f"{prefix} 📆 季报日历汇总 {date.today().isoformat()}", cfg)
+ 
+diff --git a/iron_condor_us.py b/iron_condor_us.py
+index a77f589..39b4d67 100644
+--- a/iron_condor_us.py
++++ b/iron_condor_us.py
+@@ -136,10 +136,13 @@ class USIronCondorBacktester:
+                  dynamic_otm: bool = False,
+                  dynamic_sizing: bool = False,
+                  groups_cap: int = 200,
++                 reset_peak_on_flat: bool = False,
++                 group_scale_mode: str = "equity",
+                  ):
+         self.ticker = ticker
+         self.initial_capital = initial_capital
+         self.cash = initial_capital
++        self.realized_pnl = 0.0
+         self.wing_width = wing_width
+         self.otm_distance = otm_distance
+         self.dte = dte
+@@ -155,6 +158,8 @@ class USIronCondorBacktester:
+         self.dynamic_otm = dynamic_otm
+         self.dynamic_sizing = dynamic_sizing
+         self.groups_cap = groups_cap
++        self.reset_peak_on_flat = reset_peak_on_flat
++        self.group_scale_mode = group_scale_mode
+         
+         dyn_tag = " [动态OTM]" if dynamic_otm else ""
+         self.label = label or f"US Iron Condor {otm_distance:.0%}±{wing_width:.0%} DTE={dte} ×{max_groups}组{dyn_tag}"
+@@ -174,6 +179,20 @@ class USIronCondorBacktester:
+         self._stop_date: Optional[date] = None
+         self._days_in_stop_zone: Dict[int, int] = {}
+         self._expiry_calendar: List[date] = []
++
++    def _baseline_equity(self) -> float:
++        return self.initial_capital + self.realized_pnl
++
++    def _current_equity(self, unrealized_pnl: float = 0.0) -> float:
++        return self._baseline_equity() + unrealized_pnl
++
++    def _apply_realized_pnl(self, pnl: float) -> None:
++        self.realized_pnl += pnl
++        self.cash = self._baseline_equity()
++
++    def _maybe_reset_peak_on_flat(self) -> None:
++        if self.reset_peak_on_flat and not self.positions:
++            self.peak_value = self._baseline_equity()
+     
+     @property
+     def n_active_positions(self):
+@@ -326,7 +345,7 @@ class USIronCondorBacktester:
+         kelly_f = max(0, min(kelly_f, 0.5))
+         adjusted_kelly = kelly_f * self.kelly_fraction
+         
+-        available_capital = self.cash + self.initial_capital * 0.5
++        available_capital = self._baseline_equity() + self.initial_capital * 0.5
+         margin_per_group = max_loss * 0.5
+         max_by_capital = int(available_capital / max(margin_per_group, 1))
+         
+@@ -347,9 +366,11 @@ class USIronCondorBacktester:
+           净值 $150K → 40组
+           净值 $500K → 133组（受 groups_cap 限制）
+ 
+-        注：current_equity 用 self.cash 近似（开仓前持仓市值未结算）。
++        注：默认按已实现净值扩仓；`static` 模式下固定为 base groups（与当前实盘一致）。
+         """
+-        scale = self.cash / max(self.initial_capital, 1)
++        if self.group_scale_mode == "static":
++            return min(max(self.max_groups, 1), self.groups_cap)
++        scale = self._baseline_equity() / max(self.initial_capital, 1)
+         raw_groups = max(1, int(self.max_groups * scale))
+         return min(raw_groups, self.groups_cap)
+ 
+@@ -384,6 +405,8 @@ class USIronCondorBacktester:
+                     print(f"  ✅ [{current_date}] 冷却期结束（已过{days_since_stop}天），恢复交易")
+                     self.stopped = False
+                     self._stop_date = None
++
++            self._maybe_reset_peak_on_flat()
+             
+             # ── 空仓 → 开仓 ─────────────────────
+             if len(self.positions) == 0 and not self.stopped:
+@@ -434,7 +457,7 @@ class USIronCondorBacktester:
+                                     sp_k > 0 and bp_k > 0 and sc_k > 0 and bc_k > 0):
+                                 # 单笔最大亏损 = 翼宽 × 100股
+                                 max_loss = (sp_k - bp_k) * self.LOT_SIZE
+-                                loss_pct = max_loss / max(self.cash + self.initial_capital, 1)
++                                loss_pct = max_loss / max(self._baseline_equity() + self.initial_capital, 1)
+                                 
+                                 # 动态/凯利组数计算
+                                 if self.dynamic_sizing:
+@@ -455,7 +478,6 @@ class USIronCondorBacktester:
+                                         self._last_trade_month = current_date.strftime("%Y-%m")
+                                         
+                                         for g in range(actual_groups):
+-                                            self.cash += net_credit
+                                             self.positions.append(IronCondorPosition(
+                                                 sell_put_k=sp_k,
+                                                 buy_put_k=bp_k,
+@@ -489,29 +511,12 @@ class USIronCondorBacktester:
+             if self.positions:
+                 remaining_positions = []
+                 for pos in self.positions:
+-                    position_mv = self._estimate_position_value(pos, S, sigma, current_date)
+-                    total_value = self.cash + position_mv
++                    position_pnl = self._estimate_position_value(pos, S, sigma, current_date)
++                    total_value = self._current_equity(position_pnl)
+                     
+                     if total_value > self.peak_value:
+                         self.peak_value = total_value
+                     
+-                    # 总回撤止损
+-                    current_dd = (total_value - self.peak_value) / self.peak_value
+-                    if current_dd <= -self.stop_loss_pct and not self.stopped:
+-                        print(f"  🛑 [{current_date}] 总回撤{current_dd*100:.1f}%，暂停{self.cooldown_days}天")
+-                        self.stopped = True
+-                        self._stop_date = current_date
+-                        # 止损平仓
+-                        stop_loss = self._estimate_position_value(pos, S, sigma, current_date)
+-                        self.cash -= abs(stop_loss)
+-                        self.trades.append({
+-                            "date": str(current_date),
+-                            "action": "STOP_LOSS",
+-                            "result": f"总回撤{int(self.stop_loss_pct*100)}%_暂停{self.cooldown_days}天",
+-                            "pnl": round(-abs(stop_loss), 2),
+-                        })
+-                        continue
+-                    
+                     # 提前平仓 / 止损检查
+                     days_to_expire = (pos.expiration - current_date).days
+                     
+@@ -543,15 +548,29 @@ class USIronCondorBacktester:
+                     elif days_to_expire <= self.early_close_days:
+                         should_close = True
+                         close_reason = f"到期前{self.early_close_days}天"
++                    else:
++                        current_dd = (total_value - self.peak_value) / self.peak_value
++                        if current_dd <= -self.stop_loss_pct and not self.stopped:
++                            print(f"  🛑 [{current_date}] 总回撤{current_dd*100:.1f}%，暂停{self.cooldown_days}天")
++                            self.stopped = True
++                            self._stop_date = current_date
++                            pnl = self._estimate_position_value(pos, S, sigma, current_date)
++                            self._apply_realized_pnl(pnl)
++                            self.trades.append({
++                                "date": str(current_date),
++                                "action": "STOP_LOSS",
++                                "result": f"总回撤{int(self.stop_loss_pct*100)}%_暂停{self.cooldown_days}天",
++                                "pnl": round(pnl, 2),
++                            })
++                            continue
+                     
+                     if should_close:
+                         self._last_close_date = current_date
+                         
+                         if S <= stop_put or S >= stop_call:
+                             # 破位止损
+-                            loss_val = self._estimate_position_value(pos, S, sigma, current_date)
+-                            self.cash += loss_val  # loss_val 是负数
+-                            pnl = loss_val
++                            pnl = self._estimate_position_value(pos, S, sigma, current_date)
++                            self._apply_realized_pnl(pnl)
+                             self.trades.append({
+                                 "date": str(current_date),
+                                 "action": "EARLY_CLOSE",
+@@ -563,7 +582,7 @@ class USIronCondorBacktester:
+                         else:
+                             # 正常提前平仓
+                             early_credit = pos.net_credit * self._time_value_ratio(days_to_expire)
+-                            self.cash += early_credit
++                            self._apply_realized_pnl(early_credit)
+                             self.trades.append({
+                                 "date": str(current_date),
+                                 "action": "EARLY_CLOSE",
+@@ -592,7 +611,7 @@ class USIronCondorBacktester:
+                             pnl = pos.net_credit
+                             result = "盈利"
+                         
+-                        self.cash += pnl
++                        self._apply_realized_pnl(pnl)
+                         self.trades.append({
+                             "date": str(current_date),
+                             "action": "IC_EXPIRED",
+@@ -609,11 +628,11 @@ class USIronCondorBacktester:
+                 self.positions = remaining_positions
+             
+             # ── 每日记录 ───────────────────────
+-            position_total_mv = 0.0
++            position_total_pnl = 0.0
+             if self.positions:
+                 for pos in self.positions:
+-                    position_total_mv += self._estimate_position_value(pos, S, sigma, current_date)
+-            total_value = self.cash + position_total_mv
++                    position_total_pnl += self._estimate_position_value(pos, S, sigma, current_date)
++            total_value = self._current_equity(position_total_pnl)
+             ret_pct = (total_value - self.initial_capital) / self.initial_capital * 100
+             
+             self.daily_records.append({
+diff --git a/live_cost_validation.py b/live_cost_validation.py
+index e2601b2..f0832f2 100644
+--- a/live_cost_validation.py
++++ b/live_cost_validation.py
+@@ -43,9 +43,7 @@ CONTRACTS_PER_GROUP = 4
+ DELEVERAGE_HV = 0.22
+ 
+ COMPARE_SCENARIOS = [
+-    {"id": "D", "label": "D 动态10x", "cap_mult": 10},
+-    {"id": "E", "label": "E 动态15x", "cap_mult": 15},
+-    {"id": "F", "label": "F 动态20x（当前实盘）", "cap_mult": 20},
++    {"id": "LIVE", "label": "当前实盘（live-aligned）", "cap_mult": 20},
+ ]
+ 
+ CANDIDATE_YEARS = [
+@@ -429,7 +427,7 @@ def main():
+     print("=" * 116)
+     print("  🚀 实盘成本口径参数验证")
+     print("  参数固定: P3.0% / C6.0% / Wing9% / DTE45")
+-    print("  比较对象: D=10x / E=15x / F=20x")
++    print("  口径: 当前实盘（live-aligned）")
+     print("  数据来源: Futu / OpenD")
+     print("=" * 116)
+ 
+diff --git a/main_ic_us.py b/main_ic_us.py
+index 41be27c..2de95ef 100644
+--- a/main_ic_us.py
++++ b/main_ic_us.py
+@@ -12,7 +12,7 @@
+   HV20开仓阈值: QQQ≤25%, IWM≤25%, GLD≤18%（纯HV口径）
+ 
+ 回测基准（2010-2025，16年，$15k实际资本）：
+-  当前实盘基准：动态组数 Config F=20x → 年化 +38.99%，最大回撤 -12.0%，夏普 2.64
++  当前实盘口径：固定 base groups + 价格止损优先 + 15%策略级权益保护
+   固定组数基线：年化 +30.49%，最大回撤 -6.49%，夏普 2.63
+   HV说明：历史波动率使用纯HV20；BS定价时 IV 估算 = HV20 × 1.15
+ """
+@@ -120,6 +120,31 @@ def _save_asset_risk_state(state: Dict):
+     )
+ 
+ 
++def _clear_asset_risk_state(asset_name: str):
++    """清除单标的权益峰值状态；平仓后下一笔交易重新建峰值。"""
++    state = _load_asset_risk_state()
++    if asset_name in state:
++        state.pop(asset_name, None)
++        _save_asset_risk_state(state)
++
++
++def _reset_asset_peak_equity(asset_name: str, baseline_equity: float) -> Dict:
++    """
++    以当前基线权益重置峰值。
++    用于新开仓时开始一笔新的风险跟踪，避免把旧仓峰值带入新仓。
++    """
++    state = _load_asset_risk_state()
++    asset_state = {
++        "peak_equity": round(float(baseline_equity or 0.0), 2),
++        "last_equity": round(float(baseline_equity or 0.0), 2),
++        "baseline_equity": round(float(baseline_equity or 0.0), 2),
++        "updated_at": datetime.now().isoformat(timespec="seconds"),
++    }
++    state[asset_name] = asset_state
++    _save_asset_risk_state(state)
++    return asset_state
++
++
+ def _load_execution_guard_state() -> Dict:
+     """读取执行巡检状态，用于日报展示。"""
+     try:
+@@ -771,10 +796,10 @@ logging.basicConfig(
+ )
+ logger = logging.getLogger(__name__)
+ 
+-# ============ 多标的配置（当前实盘：非对称铁鹰 P3.0%/C6.0% + 2x杠杆 + 动态组数 Config F=20x）============
++# ============ 多标的配置（当前实盘：非对称铁鹰 P3.0%/C6.0% + 2x杠杆 + 固定 base groups）============
+ # 三标的相关性：QQQ-IWM 0.634，QQQ-GLD 0.248，IWM-GLD 0.342
+ # 分散效果：GLD 最佳对冲（与股票低相关），IWM 提供小盘分散
+-# 当前实盘基准（2010-2025，16年）：动态Config F=20x → 年化+38.99%，最大回撤-12.0%，夏普2.64
++# 当前实盘口径：固定 base groups，不按权益曲线自动扩组
+ # 固定组数基线：年化+30.49%，最大回撤-6.49%，夏普2.63
+ # 2x杠杆实现：名义$30k（QQQ $18k / IWM $6k / GLD $6k），实际本金$15k + 融资$15k
+ # HV20阈值说明：使用纯HV20（与Finviz/富途口径一致，无×1.15通胀）
+@@ -802,6 +827,7 @@ IC_CONFIG = {
+     "min_premium": 30,                 # 最低权利金（IWM/GLD权利金较小，调低门槛）
+     "estimated_credit_per_group": 100, # 每组估算权利金（三标的均值）
+     "profit_target_pct": 0.50,         # 50%止盈目标
++    "stop_loss_pct": 0.15,             # 策略级权益回撤止损：15%（价格止损为主，权益止损仅作灾难保护）
+     "hv20_threshold": 0.25,            # HV20上限（fallback；实际由ASSETS[x]["hv20_threshold"]覆盖）
+     "slow_bear_threshold_20d": -0.07,  # 慢熊检测
+     "slow_bear_defense": "increase_otm",
+@@ -900,7 +926,7 @@ class EmailNotifier:
+ <tr><td><b>HV20降杠杆阈值</b></td><td>HV20 &gt; 22%：仅在允许开仓时，max_groups 减半</td></tr>
+ <tr><td><b>HV20硬止损阈值</b></td><td>HV20 ≥ 39%：强平所有持仓；HV20 &lt; 28%：恢复开仓</td></tr>
+ <tr><td><b>价格止损</b></td><td>标的穿入翼宽50%（short strike ± 0.5×wing）</td></tr>
+-<tr><td><b>资金止损</b></td><td>单标的策略权益相对峰值回撤 &gt; 5%</td></tr>
++<tr><td><b>资金止损</b></td><td>单标的策略权益相对本轮峰值回撤 &gt; 15%</td></tr>
+ </table>
+ <p><b>启动时间</b>: {self._ts()}</p>
+ """
+@@ -1506,6 +1532,56 @@ class IronCondorTraderUS:
+             "is_active": not is_inactive,
+         }
+ 
++    def _query_live_position_qty_map(self, trade_ctx, codes: List[str], trd_env, acc_id: int) -> Dict[str, Dict[str, float]]:
++        """
++        读取账户真实持仓数量，用于和订单状态交叉校验，避免补腿时重复下单。
++        返回: {code: {"qty": int, "cost_price": float}}
++        """
++        from futu import RET_OK
++
++        if not codes:
++            return {}
++
++        ret, pos_data = trade_ctx.position_list_query(
++            trd_env=trd_env,
++            acc_id=acc_id,
++            refresh_cache=True,
++        )
++        if ret != RET_OK or pos_data is None or pos_data.empty:
++            return {}
++
++        code_set = set(codes)
++        matched = pos_data[pos_data["code"].isin(code_set)]
++        result: Dict[str, Dict[str, float]] = {}
++        for _, row in matched.iterrows():
++            qty = abs(int(row.get("qty", 0) or 0))
++            if qty <= 0:
++                continue
++            result[str(row["code"])] = {
++                "qty": qty,
++                "cost_price": float(row.get("cost_price", 0) or 0.0),
++            }
++        return result
++
++    def _sync_tracker_fills_from_positions(self, trade_ctx, trackers: List[Dict], trd_env, acc_id: int):
++        """用真实持仓修正 filled_qty，避免订单状态滞后导致的重复补腿。"""
++        qty_map = self._query_live_position_qty_map(
++            trade_ctx,
++            [tracker["code"] for tracker in trackers],
++            trd_env,
++            acc_id,
++        )
++        for tracker in trackers:
++            actual = qty_map.get(tracker["code"], {})
++            actual_qty = int(actual.get("qty", 0) or 0)
++            filled_qty = int(tracker.get("filled_qty", 0) or 0)
++            if actual_qty <= filled_qty:
++                continue
++            delta_qty = actual_qty - filled_qty
++            actual_price = float(actual.get("cost_price", tracker.get("last_price", 0.0)) or 0.0)
++            tracker["filled_qty"] = actual_qty
++            tracker["filled_notional"] += delta_qty * actual_price
++
+     def _cancel_order_with_retry(self, cancel_ctx, order_id, code: str, trd_env, acc_id: int) -> bool:
+         from futu import ModifyOrderOp, RET_OK
+ 
+@@ -1577,6 +1653,8 @@ class IronCondorTraderUS:
+                     self._cancel_order_with_retry(cancel_ctx, order_id, tracker["code"], trd_env, acc_id)
+                 self._clear_tracker_order(tracker)
+ 
++            self._sync_tracker_fills_from_positions(query_ctx, trackers, trd_env, acc_id)
++
+             for tracker in trackers:
+                 while self._remaining_qty(tracker) > 0:
+                     remaining_qty = self._remaining_qty(tracker)
+@@ -1623,6 +1701,8 @@ class IronCondorTraderUS:
+                             tracker["filled_qty"] += dealt_qty
+                             tracker["filled_notional"] += dealt_qty * avg_price
+ 
++                        self._sync_tracker_fills_from_positions(query_ctx, [tracker], trd_env, acc_id)
++
+                         if self._remaining_qty(tracker) <= 0:
+                             logger.info(f"   ✅ {tracker['code']} 已补齐")
+                             self._clear_tracker_order(tracker)
+@@ -1888,8 +1968,8 @@ class IronCondorTraderUS:
+         if not total_risk_info:
+             return {"triggered": False, "action": "HOLD", "reason": ""}
+ 
+-        # ── 单标的权益峰值回撤止损（与回测 stop_loss_pct=0.05 对齐）─────
+-        stop_loss_pct  = self.config.get("stop_loss_pct", 0.05)   # 5%，与回测一致
++        # ── 单标的权益峰值回撤止损（价格止损为主；权益止损仅作灾难保护）─────
++        stop_loss_pct  = self.config.get("stop_loss_pct", 0.15)
+         asset_capital  = self.config.get("capital", INITIAL_CAPITAL / len(ASSETS))
+         total_unrealized_pl = sum(p.get("unrealized_pl", 0) for p in positions)
+         asset_name = self.stock["name"]
+@@ -2277,14 +2357,16 @@ class IronCondorTraderUS:
+                 "success": True,
+                 "batch_results": batch_results,
+                 "net_premium": total_net_premium,
++                "groups_filled": sum(int(r.get("groups_filled", 0) or 0) for r in batch_results),
+                 "repair_summary": "；".join(repair_notes) if repair_notes else "",
+             }
+             if result.get("success"):
++                opened_groups = int(result.get("groups_filled", groups_to_open) or groups_to_open)
+                 self.notifier.send_open(
+                     expiry=str(target_expiry),
+                     strikes=strikes,
+                     net_premium=result.get("net_premium", 0),
+-                    groups=groups_to_open,
++                    groups=opened_groups,
+                     hv20=market_cond.get("hv20", 0.0),
+                     asset=self.stock.get("name", ""),
+                     current_price=price,
+@@ -2298,7 +2380,7 @@ class IronCondorTraderUS:
+                     "sell_call": strikes.get("sell_call_k", 0),
+                     "buy_put":   strikes.get("buy_put_k", 0),
+                     "buy_call":  strikes.get("buy_call_k", 0),
+-                    "groups":    groups_to_open,
++                    "groups":    opened_groups,
+                     "net_credit": result.get("net_premium", 0),
+                 })
+                 _append_trade_history({
+@@ -2311,7 +2393,7 @@ class IronCondorTraderUS:
+                     "sell_call": strikes.get("sell_call_k", 0),
+                     "buy_put":   strikes.get("buy_put_k", 0),
+                     "buy_call":  strikes.get("buy_call_k", 0),
+-                    "groups":    groups_to_open,
++                    "groups":    opened_groups,
+                     "net_premium": result.get("net_premium", 0),
+                     "days_held": 0,
+                     "realized_pnl": "",
+@@ -2322,11 +2404,7 @@ class IronCondorTraderUS:
+                     asset_capital=self.config.get("capital", INITIAL_CAPITAL / len(ASSETS)),
+                     unrealized_pl=0.0,
+                 )
+-                _update_asset_peak_equity(
+-                    asset_name=asset_name,
+-                    baseline_equity=equity_info["baseline_equity"],
+-                    current_equity=equity_info["current_equity"],
+-                )
++                _reset_asset_peak_equity(asset_name, equity_info["baseline_equity"])
+                 logger.info(f"📝 [{asset_name}] 开仓记录已写入 trade_history.csv")
+             return result
+ 
+@@ -2469,6 +2547,10 @@ class IronCondorTraderUS:
+                         self._clear_tracker_order(tracker)
+                     round_pending.append(tracker)
+ 
++                self._sync_tracker_fills_from_positions(monitor_ctx, round_pending, trd_env, acc_id)
++                filled_count = sum(1 for tracker in trackers if self._remaining_qty(tracker) <= 0)
++                round_pending = [tracker for tracker in round_pending if self._remaining_qty(tracker) > 0]
++
+                 if filled_count == len(trackers):
+                     pending = []
+                     break
+@@ -2494,7 +2576,11 @@ class IronCondorTraderUS:
+         logger.info("✅ 4条腿全部成交！铁鹰策略建仓成功")
+         submitted_results = []
+         net_premium = 0.0
++        filled_groups = None
+         for tracker in trackers:
++            executed_qty = int(tracker.get("filled_qty", 0) or 0)
++            if executed_qty <= 0:
++                executed_qty = int(tracker["qty"])
+             avg_price = (
+                 tracker["filled_notional"] / tracker["filled_qty"]
+                 if tracker["filled_qty"] > 0 else tracker.get("last_price", 0.0)
+@@ -2504,14 +2590,15 @@ class IronCondorTraderUS:
+                 "order_id": tracker.get("order_id"),
+                 "price": avg_price,
+                 "success": True,
+-                "qty": tracker["qty"],
++                "qty": executed_qty,
+                 "side": tracker["side"],
+             })
+             logger.info(f"   📊 {tracker['code']} @ ${avg_price:.2f}")
+             if tracker["side"] == "sell":
+-                net_premium += avg_price * 100 * tracker["qty"]
++                net_premium += avg_price * 100 * executed_qty
+             else:
+-                net_premium -= avg_price * 100 * tracker["qty"]
++                net_premium -= avg_price * 100 * executed_qty
++            filled_groups = executed_qty if filled_groups is None else min(filled_groups, executed_qty)
+ 
+         opened_codes = [tracker["code"] for tracker in trackers]
+         _add_ic_codes(opened_codes)
+@@ -2521,6 +2608,7 @@ class IronCondorTraderUS:
+             "success": True,
+             "legs": submitted_results,
+             "net_premium": net_premium,
++            "groups_filled": int(filled_groups or groups_to_open),
+             "expiry": legs[0].get("expiry", "unknown"),
+             "repair_summary": repair_summary,
+         }
+@@ -3060,6 +3148,13 @@ class IronCondorTraderUS:
+         if closed > 0:
+             asset_name = self.stock["name"]
+             open_trade = _load_open_trade(asset_name)
++            actual_groups = 0
++            if positions:
++                actual_groups = min(
++                    abs(int(p.get("qty", 0) or 0))
++                    for p in positions
++                    if int(p.get("qty", 0) or 0) != 0
++                )
+             entry_date_str = open_trade.get("entry_date", "")
+             days_held = 0
+             if entry_date_str:
+@@ -3077,7 +3172,7 @@ class IronCondorTraderUS:
+                 "sell_call":    open_trade.get("sell_call", ""),
+                 "buy_put":      open_trade.get("buy_put", ""),
+                 "buy_call":     open_trade.get("buy_call", ""),
+-                "groups":       open_trade.get("groups", ""),
++                "groups":       actual_groups or open_trade.get("groups", ""),
+                 "net_premium":  open_trade.get("net_credit", ""),
+                 "days_held":    days_held,
+                 "realized_pnl": round(pre_close_pnl, 2),
+@@ -3085,16 +3180,7 @@ class IronCondorTraderUS:
+             })
+             _clear_open_trade(asset_name)
+             logger.info(f"📝 [{asset_name}] 平仓记录已写入 trade_history.csv  realized_pnl=${pre_close_pnl:+,.2f}")
+-            equity_info = _compute_asset_strategy_equity(
+-                asset_name=asset_name,
+-                asset_capital=self.config.get("capital", INITIAL_CAPITAL / len(ASSETS)),
+-                unrealized_pl=0.0,
+-            )
+-            _update_asset_peak_equity(
+-                asset_name=asset_name,
+-                baseline_equity=equity_info["baseline_equity"],
+-                current_equity=equity_info["current_equity"],
+-            )
++            _clear_asset_risk_state(asset_name)
+ 
+         # 平仓成功后记录冷却期开始日期（匹配回测 cooldown_days=5）
+         if closed > 0:
+@@ -3323,7 +3409,7 @@ class IronCondorTraderUS:
+             return close_result
+ 
+         # 注意：不再调用 _check_stop_loss()（使用估算权利金$100，易误触发）
+-        # _evaluate_risk() 已实现：价格穿越止损（翼宽50%）+ 单标的权益峰值回撤5%，与回测一致
++        # _evaluate_risk() 已实现：价格穿越止损（翼宽50%）+ 单标的本轮权益峰值回撤15%
+ 
+         # ── 到期平仓检查 ──────────────────────────────
+         if self._should_close_today():
+diff --git a/profit_taking_exit_validation.py b/profit_taking_exit_validation.py
+index 3d991a9..6a6c32c 100644
+--- a/profit_taking_exit_validation.py
++++ b/profit_taking_exit_validation.py
+@@ -171,7 +171,7 @@ class PartialExitICBacktester(EnhancedICBacktester):
+             profit_ratio = (entry_credit - close_cost) / entry_credit
+             if profit_ratio >= self.partial_target_pct:
+                 pnl = entry_credit - close_cost
+-                self.cash += pnl
++                self._apply_realized_pnl(pnl)
+                 pos.closed[key] = True
+                 self.partial_exit_count += 1
+                 events.append({
+@@ -192,7 +192,7 @@ class PartialExitICBacktester(EnhancedICBacktester):
+             profit_ratio = (entry_credit - close_cost) / entry_credit
+             if profit_ratio >= self.partial_target_pct:
+                 pnl = entry_credit - close_cost
+-                self.cash += pnl
++                self._apply_realized_pnl(pnl)
+                 pos.closed[short_key] = True
+                 pos.closed[long_key] = True
+                 self.partial_exit_count += 1
+@@ -240,7 +240,7 @@ class PartialExitICBacktester(EnhancedICBacktester):
+             actual_groups = self._calc_kelly_groups(net_credit, max_loss)
+ 
+         required_margin = max_loss * 0.5 * actual_groups
+-        available_margin = self.cash if self.dynamic_sizing else (self.cash + self.initial_capital * 0.5)
++        available_margin = self._baseline_equity() if self.dynamic_sizing else (self._baseline_equity() + self.initial_capital * 0.5)
+         if available_margin < required_margin or self._last_opened_expiry == str(exp_date):
+             return
+ 
+@@ -259,7 +259,6 @@ class PartialExitICBacktester(EnhancedICBacktester):
+         self._last_opened_expiry = str(exp_date)
+         self._last_open_date = current_date
+         for _ in range(actual_groups):
+-            self.cash += entry_credit
+             self.positions.append(PartialICPosition(
+                 sell_put_k=sp_k,
+                 buy_put_k=bp_k,
+@@ -291,11 +290,12 @@ class PartialExitICBacktester(EnhancedICBacktester):
+             hv20 = historical_volatility(past_prices, 20)
+             iv_est = hv20 * 1.15
+             self._hv_history.append(hv20)
++            self._maybe_reset_peak_on_flat()
+ 
+             if not self._hard_stopped and hv20 >= self.vix_hard_stop_hv and self.positions:
+                 for pos in self.positions:
+                     pnl = self._close_active_position_with_slippage(pos, S, iv_est, current_date, extra_slip=SLIP_HARD_STOP)
+-                    self.cash += pnl
++                    self._apply_realized_pnl(pnl)
+                     self.trades.append({"date": str(current_date), "action": "VIX_HARD_STOP", "pnl": round(pnl, 2), "hv20": round(hv20, 3)})
+                 self.positions = []
+                 self._hard_stopped = True
+@@ -339,18 +339,9 @@ class PartialExitICBacktester(EnhancedICBacktester):
+             for pos in self.positions:
+                 days_to_exp = (pos.expiration - current_date).days
+                 position_mv = self._estimate_position_value(pos, S, iv_est, current_date)
+-                total_value = self.cash + position_mv
++                total_value = self._current_equity(position_mv)
+                 if total_value > self.peak_value:
+                     self.peak_value = total_value
+-                current_dd = (total_value - self.peak_value) / self.peak_value
+-
+-                if current_dd <= -self.stop_loss_pct and not self.stopped:
+-                    self.stopped = True
+-                    self._stop_date = current_date
+-                    pnl = self._close_active_position_with_slippage(pos, S, iv_est, current_date)
+-                    self.cash += pnl
+-                    self.trades.append({"date": str(current_date), "action": "STOP_LOSS", "pnl": round(pnl, 2)})
+-                    continue
+ 
+                 for event in self._maybe_partial_take_profit(pos, S, iv_est, current_date):
+                     self.trades.append(event)
+@@ -371,10 +362,19 @@ class PartialExitICBacktester(EnhancedICBacktester):
+                 elif days_to_exp <= self.early_close_days:
+                     should_close = True
+                     close_reason = "EXPIRY"
++                else:
++                    current_dd = (total_value - self.peak_value) / self.peak_value
++                    if current_dd <= -self.stop_loss_pct and not self.stopped:
++                        self.stopped = True
++                        self._stop_date = current_date
++                        pnl = self._close_active_position_with_slippage(pos, S, iv_est, current_date)
++                        self._apply_realized_pnl(pnl)
++                        self.trades.append({"date": str(current_date), "action": "STOP_LOSS", "pnl": round(pnl, 2)})
++                        continue
+ 
+                 if should_close:
+                     pnl = self._close_active_position_with_slippage(pos, S, iv_est, current_date)
+-                    self.cash += pnl
++                    self._apply_realized_pnl(pnl)
+                     self._last_close_date = current_date
+                     self.trades.append({"date": str(current_date), "action": "CLOSE_IC", "pnl": round(pnl, 2), "reason": close_reason})
+                 else:
+@@ -382,7 +382,7 @@ class PartialExitICBacktester(EnhancedICBacktester):
+ 
+             self.positions = remaining
+             pos_mv = sum(self._estimate_position_value(p, S, iv_est, current_date) for p in self.positions)
+-            self.daily_records.append({"date": current_date, "total_value": self.cash + pos_mv, "sigma": round(hv20, 4)})
++            self.daily_records.append({"date": current_date, "total_value": self._current_equity(pos_mv), "sigma": round(hv20, 4)})
+ 
+         final_v = self.daily_records[-1]["total_value"] if self.daily_records else self.initial_capital
+         years = (df["date"].iloc[-1] - df["date"].iloc[0]).days / 365.0 if hasattr(df["date"].iloc[-1], "__sub__") else 16.0
+diff --git a/radar_sample_loop.py b/radar_sample_loop.py
+index 019f06a..e70b339 100644
+--- a/radar_sample_loop.py
++++ b/radar_sample_loop.py
+@@ -19,6 +19,7 @@ PRICE_CACHE_DIRS = [
+     ROOT / "backtest_results" / "price_cache",
+     ROOT / "backtest_results" / "v6b_rough_test" / "price_cache",
+ ]
++VALUATION_SEED = DESKTOP_DIR / "系统优化升级依据" / "radar_order_valuation_seed.csv"
+ 
+ FIELDS = [
+     "sample_id",
+@@ -36,6 +37,11 @@ FIELDS = [
+     "chase_risk",
+     "trade_posture",
+     "entry_note",
++    "valuation_reality_score",
++    "valuation_verdict",
++    "buy_zone",
++    "sell_rule",
++    "invalidation_level",
+     "fwd_5d",
+     "fwd_10d",
+     "fwd_20d",
+@@ -86,6 +92,43 @@ def default_decision(chase_risk: str, trade_posture: str) -> str:
+     return "观察"
+ 
+ 
++def read_valuation_seed() -> dict[str, dict[str, str]]:
++    if not VALUATION_SEED.exists():
++        return {}
++    out: dict[str, dict[str, str]] = {}
++    with VALUATION_SEED.open("r", encoding="utf-8") as f:
++        reader = csv.DictReader(f)
++        for row in reader:
++            ticker = normalize_ticker(str(row.get("ticker") or ""))
++            if ticker:
++                out[ticker] = row
++    return out
++
++
++def derive_guidance(row: dict[str, Any]) -> dict[str, str]:
++    try:
++        p = float(row.get("close"))
++    except (TypeError, ValueError):
++        return {"buy_zone": "", "sell_rule": "", "invalidation_level": ""}
++
++    def as_float(value: Any) -> float | None:
++        try:
++            if value in (None, ""):
++                return None
++            return float(value)
++        except (TypeError, ValueError):
++            return None
++
++    supports = [v for v in (as_float(row.get("ma50")), as_float(row.get("low20")), p * 0.85) if v is not None]
++    low = max(supports) if supports else p * 0.85
++    high = max(low, p * 0.92)
++    return {
++        "buy_zone": f"{min(low, high):.2f}-{max(low, high):.2f}",
++        "sell_rule": f"快速上涨至 {p * 1.25:.2f}+ 且订单未上修时分批止盈",
++        "invalidation_level": f"{low * 0.97:.2f}",
++    }
++
++
+ def price_cache_paths(ticker: str) -> list[Path]:
+     normalized = normalize_ticker(ticker).replace(".", "_")
+     plain = normalize_ticker(ticker).replace("US.", "").replace(".", "_")
+@@ -160,10 +203,18 @@ def max_drawdown_after_signal(ticker: str, as_of: str, horizon: int = 60) -> str
+     return f"{max_dd:.6f}"
+ 
+ 
+-def build_row(as_of: str, source_channel: str, row: dict[str, Any], stage: str = "") -> dict[str, Any]:
++def build_row(
++    as_of: str,
++    source_channel: str,
++    row: dict[str, Any],
++    stage: str = "",
++    valuation_seed: dict[str, dict[str, str]] | None = None,
++) -> dict[str, Any]:
+     ticker = normalize_ticker(str(row.get("ticker") or ""))
+     chase_risk = str(row.get("chase_risk") or "待补")
+     trade_posture = str(row.get("trade_posture") or row.get("action") or "待复核")
++    valuation = (valuation_seed or {}).get(ticker, {})
++    guidance = derive_guidance(row)
+     out = {
+         "sample_id": sample_id(as_of, source_channel, ticker),
+         "as_of": as_of,
+@@ -180,6 +231,11 @@ def build_row(as_of: str, source_channel: str, row: dict[str, Any], stage: str =
+         "chase_risk": chase_risk,
+         "trade_posture": trade_posture,
+         "entry_note": row.get("entry_note") or row.get("gap_attribution") or "",
++        "valuation_reality_score": valuation.get("valuation_reality_score") or row.get("valuation_reality_score") or "",
++        "valuation_verdict": valuation.get("valuation_verdict") or row.get("valuation_verdict") or "",
++        "buy_zone": guidance["buy_zone"],
++        "sell_rule": guidance["sell_rule"],
++        "invalidation_level": guidance["invalidation_level"],
+         "fwd_5d": forward_return(ticker, as_of, 5),
+         "fwd_10d": forward_return(ticker, as_of, 10),
+         "fwd_20d": forward_return(ticker, as_of, 20),
+@@ -198,12 +254,13 @@ def build_rows() -> list[dict[str, Any]]:
+     as_of = str(theme_scan.get("as_of") or missing.get("as_of") or datetime.now().date())
+     stage = str((theme_scan.get("summary", {}) or {}).get("top_theme_stage") or "")
+     rows: list[dict[str, Any]] = []
++    valuation_seed = read_valuation_seed()
+     for row in theme_scan.get("candidates", []) if isinstance(theme_scan.get("candidates"), list) else []:
+-        rows.append(build_row(as_of, "independent_discovery", row, stage))
++        rows.append(build_row(as_of, "independent_discovery", row, stage, valuation_seed))
+     for row in theme_scan.get("external_sample_review", []) if isinstance(theme_scan.get("external_sample_review"), list) else []:
+-        rows.append(build_row(as_of, "external_sample_review", row, stage))
++        rows.append(build_row(as_of, "external_sample_review", row, stage, valuation_seed))
+     for row in missing.get("critical_misses", []) if isinstance(missing.get("critical_misses"), list) else []:
+-        rows.append(build_row(as_of, "missing_opportunity_review", row, stage))
++        rows.append(build_row(as_of, "missing_opportunity_review", row, stage, valuation_seed))
+     dedup: dict[str, dict[str, Any]] = {}
+     for row in rows:
+         dedup[row["sample_id"]] = row
+@@ -240,13 +297,14 @@ def write_md(path: Path, rows: list[dict[str, Any]], tag: str) -> None:
+         "",
+         "## 样本预览",
+         "",
+-        "| 来源 | 标的 | 主线 | 层级 | 信号价 | 分数 | 追高风险 | 交易姿态 | 复盘结论 |",
+-        "| --- | --- | --- | --- | ---: | ---: | --- | --- | --- |",
++        "| 来源 | 标的 | 主线 | 层级 | 信号价 | 分数 | 估值现实 | 买点区间 | 追高风险 | 交易姿态 | 复盘结论 |",
++        "| --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |",
+     ]
+     for row in rows[:30]:
+         lines.append(
+             f"| {row['source_channel']} | `{row['ticker']}` | {row['theme_label'] or row['theme_id']} | "
+-            f"{row['layer']} | {row['price_at_signal']} | {row['score']} | {row['chase_risk']} | "
++            f"{row['layer']} | {row['price_at_signal']} | {row['score']} | {row['valuation_verdict']} | "
++            f"{row['buy_zone']} | {row['chase_risk']} | "
+             f"{row['trade_posture']} | {row['review_verdict']} |"
+         )
+     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+@@ -290,4 +348,3 @@ def main() -> None:
+ 
+ if __name__ == "__main__":
+     main()
+-
+diff --git a/radar_theme_rotation_scanner.py b/radar_theme_rotation_scanner.py
+index a8e8dcd..a7dcd2f 100644
+--- a/radar_theme_rotation_scanner.py
++++ b/radar_theme_rotation_scanner.py
+@@ -161,6 +161,9 @@ def compute_ticker_metrics(
+     ma200 = float(history.tail(200).mean()) if len(history) >= 200 else float(history.mean())
+     high63 = float(history.tail(63).max())
+     high252 = float(history.tail(252).max()) if len(history) >= 252 else float(history.max())
++    low20 = float(history.tail(20).min())
++    low60 = float(history.tail(60).min())
++    high20 = float(history.tail(20).max())
+ 
+     mom20 = pct_change(history, 20)
+     mom60 = pct_change(history, 60)
+@@ -212,6 +215,12 @@ def compute_ticker_metrics(
+         "rel120_vs_spy": rel120,
+         "above_ma50": close_px > ma50,
+         "above_ma200": close_px > ma200,
++        "ma50": ma50,
++        "ma200": ma200,
++        "low20": low20,
++        "low60": low60,
++        "high20": high20,
++        "high63": high63,
+         "trend_gap": trend_gap,
+         "drawdown63": drawdown63,
+         "drawdown252": drawdown252,
+@@ -658,15 +667,16 @@ def main() -> None:
+     parser.add_argument("--as-of", default="")
+     parser.add_argument("--tag", default=datetime.now().strftime("%Y%m%d_%H%M%S"))
+     parser.add_argument("--sync-desktop", action="store_true")
+-    parser.add_argument("--exclude-external-samples", action="store_true", help="Exclude friend/external short-network samples to test independent discovery alpha.")
++    parser.add_argument("--exclude-external-samples", action="store_true", help="Exclude friend/external short-network samples to test independent discovery alpha. Kept for backward compatibility; this is now the default.")
++    parser.add_argument("--include-external-samples", action="store_true", help="Include friend/external short-network samples in the full universe scan. Use only for attribution, not independent alpha.")
+     parser.add_argument("--exclude-ticker", action="append", default=[], help="Additional ticker to exclude from independent discovery, e.g. US.AAOI. Can be repeated.")
+     args = parser.parse_args()
+ 
+     config = read_json(Path(args.config))
+-    exclude_tickers = load_external_sample_tickers() if args.exclude_external_samples else set()
++    exclude_tickers = set() if args.include_external_samples else load_external_sample_tickers()
+     exclude_tickers.update(normalize_ticker(ticker) for ticker in args.exclude_ticker if normalize_ticker(ticker))
+     scan = build_scan(config, args.start, args.end, args.as_of, exclude_tickers=exclude_tickers)
+-    scan["mode"] = "independent_discovery" if args.exclude_external_samples else "full_universe_scan"
++    scan["mode"] = "full_universe_scan" if args.include_external_samples else "independent_discovery"
+     scan["journal"] = update_journal(scan, args.end)
+ 
+     OUT_DIR.mkdir(parents=True, exist_ok=True)
