@@ -1,0 +1,261 @@
+{
+  "status": "research_synthetic_historical",
+  "policy_id": "V6B_CROSS_THEME_PIT_PRICE_ONLY_V0",
+  "rules": {
+    "no_lookahead_price_signals": true,
+    "price_only_generator": true,
+    "not_for_live_trading": true
+  },
+  "as_of": "2024-11-29",
+  "entry_count": 23,
+  "track_counts": {
+    "semis_ai": 3,
+    "technology": 3,
+    "healthcare_biotech": 2,
+    "energy_resources": 3,
+    "precious_metals": 3,
+    "financials": 3,
+    "utilities_power": 3,
+    "consumer_discretionary": 3
+  },
+  "selected": {
+    "semis_ai": [
+      "US.AAOI",
+      "US.LITE",
+      "US.VRT"
+    ],
+    "technology": [
+      "US.APP",
+      "US.PLTR",
+      "US.DDOG"
+    ],
+    "healthcare_biotech": [
+      "US.ALNY",
+      "US.ISRG"
+    ],
+    "energy_resources": [
+      "US.WMB",
+      "US.BKR",
+      "US.LNG"
+    ],
+    "precious_metals": [
+      "US.AEM",
+      "US.CDE",
+      "US.WPM"
+    ],
+    "financials": [
+      "US.KKR",
+      "US.MS",
+      "US.GS"
+    ],
+    "utilities_power": [
+      "US.VST",
+      "US.GEV",
+      "US.TLN"
+    ],
+    "consumer_discretionary": [
+      "US.TSLA",
+      "US.RCL",
+      "US.DASH"
+    ]
+  },
+  "detail": {
+    "semis_ai": {
+      "label": "AI compute / data center",
+      "source_theme_id": "ai_compute_and_data_center",
+      "benchmark": "US.SMH",
+      "selected": [
+        "US.AAOI",
+        "US.LITE",
+        "US.VRT"
+      ],
+      "candidate_count": 8,
+      "blocked": [
+        {
+          "ticker": "US.AVGO",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.AMD",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.MU",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.WDC",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "technology": {
+      "label": "Software / internet",
+      "source_theme_id": "software_and_internet",
+      "benchmark": "US.IGV",
+      "selected": [
+        "US.APP",
+        "US.PLTR",
+        "US.DDOG"
+      ],
+      "candidate_count": 8,
+      "blocked": [
+        {
+          "ticker": "US.MSFT",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.GOOGL",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "healthcare_biotech": {
+      "label": "Healthcare / biotech / medtech",
+      "source_theme_id": "healthcare_and_biotech",
+      "benchmark": "US.XLV",
+      "selected": [
+        "US.ALNY",
+        "US.ISRG"
+      ],
+      "candidate_count": 2,
+      "blocked": [
+        {
+          "ticker": "US.LLY",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.NVO",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.MRNA",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.DXCM",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.IDXX",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.VRTX",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.REGN",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "energy_resources": {
+      "label": "Energy / commodities",
+      "source_theme_id": "energy_and_commodities",
+      "benchmark": "US.XLE",
+      "selected": [
+        "US.WMB",
+        "US.BKR",
+        "US.LNG"
+      ],
+      "candidate_count": 5,
+      "blocked": [
+        {
+          "ticker": "US.DVN",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.OXY",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.FANG",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.MPC",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.VLO",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "precious_metals": {
+      "label": "Gold / precious metals miners",
+      "source_theme_id": "gold_and_precious_metals",
+      "benchmark": "US.GLD",
+      "selected": [
+        "US.AEM",
+        "US.CDE",
+        "US.WPM"
+      ],
+      "candidate_count": 3,
+      "blocked": [
+        {
+          "ticker": "US.GOLD",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.NEM",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.FNV",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.SBSW",
+          "reason": "weak_trend"
+        },
+        {
+          "ticker": "US.AG",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "financials": {
+      "label": "Financials / capital markets",
+      "source_theme_id": "financials_and_capital_markets",
+      "benchmark": "US.XLF",
+      "selected": [
+        "US.KKR",
+        "US.MS",
+        "US.GS"
+      ],
+      "candidate_count": 10,
+      "blocked": []
+    },
+    "utilities_power": {
+      "label": "Utilities / power / grid",
+      "source_theme_id": "utilities_power_and_infrastructure",
+      "benchmark": "US.XLU",
+      "selected": [
+        "US.VST",
+        "US.GEV",
+        "US.TLN"
+      ],
+      "candidate_count": 7,
+      "blocked": [
+        {
+          "ticker": "US.NEE",
+          "reason": "weak_trend"
+        }
+      ]
+    },
+    "consumer_discretionary": {
+      "label": "Consumer discretionary / travel / leisure",
+      "source_theme_id": "consumer_discretionary",
+      "benchmark": "US.XLY",
+      "selected": [
+        "US.TSLA",
+        "US.RCL",
+        "US.DASH"
+      ],
+      "candidate_count": 7,
+      "blocked": []
+    }
+  }
+}

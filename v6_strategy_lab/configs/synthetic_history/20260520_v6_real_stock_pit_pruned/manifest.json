@@ -1,0 +1,5775 @@
+{
+  "generated_at": "2026-05-20T22:21:57",
+  "policy_id": "V6B_CROSS_THEME_PIT_PRICE_ONLY_V0",
+  "source_universe": "v6_strategy_lab/configs/v6b_real_stock_theme_universe_v2.json",
+  "start": "2018-01-01",
+  "end": "2026-05-19",
+  "max_per_theme": 3,
+  "rules": {
+    "no_lookahead_price_signals": true,
+    "price_only_generator": true,
+    "current_watch_universe_boundary": true,
+    "not_for_live_trading": true
+  },
+  "snapshot_count": 101,
+  "snapshots": [
+    {
+      "as_of": "2018-01-31",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-02-28",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-03-29",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-03-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-04-30",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-05-31",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-05-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-06-29",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-06-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-07-31",
+      "entry_count": 0,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 0,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-08-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.TSM",
+          "US.COHR"
+        ],
+        "technology": [
+          "US.AMZN",
+          "US.MSFT",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.LNG",
+          "US.MPC"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.KKR",
+          "US.SPGI",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.NEE",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-08-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-09-28",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.NVDA",
+          "US.COHR"
+        ],
+        "technology": [
+          "US.AMZN",
+          "US.MSFT",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.MPC",
+          "US.FANG"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.KKR",
+          "US.ARES",
+          "US.C"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN",
+          "US.RCL",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-09-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-10-31",
+      "entry_count": 6,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 2,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [
+          "US.NEE",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-11-30",
+      "entry_count": 11,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 1,
+        "healthcare_biotech": 2,
+        "energy_resources": 0,
+        "precious_metals": 1,
+        "financials": 1,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.VRTX"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.FNV"
+        ],
+        "financials": [
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.NEE",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.TSLA"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-11-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2018-12-31",
+      "entry_count": 9,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 0,
+        "healthcare_biotech": 1,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 0,
+        "utilities_power": 2,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.LLY"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.FNV"
+        ],
+        "financials": [],
+        "utilities_power": [
+          "US.NRG",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.TSLA"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2018-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-01-31",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 2,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.AVGO",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.NFLX",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.REGN",
+          "US.LLY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.FNV",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.SPGI",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.VST",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-02-28",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO",
+          "US.ANET",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.NFLX",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.REGN",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.CVX",
+          "US.XOM",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AG",
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.NRG",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-03-29",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.ANET",
+          "US.AVGO",
+          "US.LITE"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.NFLX",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.ALNY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.LNG",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.AMZN",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-03-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-04-30",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 2,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.TSM",
+          "US.MRVL",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.MSFT",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX",
+          "US.NVO",
+          "US.ALNY"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.XOM",
+          "US.CVX"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AG"
+        ],
+        "financials": [
+          "US.MCO",
+          "US.BLK",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.AMZN",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-05-31",
+      "entry_count": 17,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 1,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 1,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.MRVL",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.MSFT",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.WPM",
+          "US.GOLD",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.SPGI",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-05-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-06-28",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.MRVL",
+          "US.AMD",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.META",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.VLO",
+          "US.CVX",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.AEM",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-06-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-07-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.MRVL",
+          "US.AMD"
+        ],
+        "technology": [
+          "US.MSFT",
+          "US.NOW",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.CVX",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.WPM",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-08-30",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.MU",
+          "US.TSM",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.MSFT",
+          "US.META",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.IDXX",
+          "US.NVO"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.AG",
+          "US.CDE",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.SPGI",
+          "US.ARES",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-08-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-09-30",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 2,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.MRVL",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.MSFT",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.NVO",
+          "US.ALNY"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.FNV",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.JPM",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.VST",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.BKNG",
+          "US.TSLA"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-10-31",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.TSM",
+          "US.AMD"
+        ],
+        "technology": [
+          "US.MSFT",
+          "US.GOOGL",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.ALNY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AG",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.JPM",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.VST",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-11-29",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.TSM",
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.MSFT",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.DXCM",
+          "US.MRNA"
+        ],
+        "energy_resources": [
+          "US.VLO",
+          "US.MPC"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AG",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.ARES",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-11-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2019-12-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.AMD",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.MSFT",
+          "US.GOOGL",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.DXCM",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.VLO",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AG",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.SCHW",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.NEE",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2019-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-01-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.AMD",
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.NOW",
+          "US.MSFT",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.MRNA",
+          "US.ALNY"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.FNV",
+          "US.NEM",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.MCO",
+          "US.KKR",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-02-28",
+      "entry_count": 18,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 2,
+        "utilities_power": 1,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.NFLX",
+          "US.NOW",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.REGN"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.NEM",
+          "US.FNV",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-03-31",
+      "entry_count": 10,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 2,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 2,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.NFLX",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.REGN",
+          "US.DXCM"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.GOLD",
+          "US.NEM"
+        ],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-04-30",
+      "entry_count": 12,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 2,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.AMZN",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.REGN"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.GOLD",
+          "US.NEM",
+          "US.WPM"
+        ],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": [
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-05-29",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 1,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 1,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.NVDA",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.WPM",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.SPGI",
+          "US.ARES",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-05-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-06-30",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.NVDA",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.WPM",
+          "US.NEM"
+        ],
+        "financials": [
+          "US.SPGI",
+          "US.ARES",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-06-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-07-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.TSM",
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.CDE",
+          "US.AG"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.SPGI",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-08-31",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.NVDA",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.AMZN",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.GOLD",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.SPGI",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-08-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-09-30",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 1,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.IDXX",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.CDE",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.SPGI",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-10-30",
+      "entry_count": 17,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 1,
+        "energy_resources": 0,
+        "precious_metals": 2,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.TSM",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.NET",
+          "US.NOW",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.GOLD",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.BLK",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-10-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-11-30",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 2,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.TSM",
+          "US.MU"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.IDXX",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.BKR",
+          "US.OXY"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.MS",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.UBER",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-11-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2020-12-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.MU",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.NET",
+          "US.NOW",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX",
+          "US.MRNA",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.BKR",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.CDE",
+          "US.AG"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.MS",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.UBER",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2020-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-01-29",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.MU",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.OXY",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.SBSW",
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.GS",
+          "US.MS",
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.UBER",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-01-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-02-26",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.MU",
+          "US.COHR",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.MSFT",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.FANG",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.SBSW",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.GS",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-02-26_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-03-31",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.MU",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.META",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.FANG",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.GOLD",
+          "US.AG"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.C",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.RCL",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-04-30",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.MU",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.NET",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.ISRG",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.DVN",
+          "US.OXY"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.GOLD",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.GS",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.BKNG",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-05-28",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.ANET",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.META",
+          "US.GOOGL",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.IDXX",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.LNG",
+          "US.MPC"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.NEM",
+          "US.AG"
+        ],
+        "financials": [
+          "US.GS",
+          "US.BLK",
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-05-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-06-30",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.VRT",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.NET",
+          "US.GOOGL",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.DVN",
+          "US.OXY"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.FNV",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.ARES",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-06-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-07-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.FNV",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.KKR",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.NRG",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.SBUX",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-07-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-08-31",
+      "entry_count": 18,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.ALNY"
+        ],
+        "energy_resources": [],
+        "precious_metals": [],
+        "financials": [
+          "US.ARES",
+          "US.KKR",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.ETN",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.TSLA",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-08-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-09-30",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.NVDA",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NET",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.DXCM",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.LNG",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MS",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.TSLA",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-10-29",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.MRVL",
+          "US.AMD"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.NVO",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.FANG",
+          "US.OXY"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.KKR",
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.VST",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.DASH",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-10-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-11-30",
+      "entry_count": 19,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.NVDA",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.FANG",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.ARES",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.NEE",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-11-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2021-12-31",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 2,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.ANET",
+          "US.MRVL",
+          "US.AMD"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.APP",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.LLY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.CVX",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.NEM",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.ARES",
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.NEE",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2021-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-01-31",
+      "entry_count": 13,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 0,
+        "healthcare_biotech": 1,
+        "energy_resources": 3,
+        "precious_metals": 2,
+        "financials": 2,
+        "utilities_power": 1,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.AVGO",
+          "US.MU"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.FANG",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.NEM",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-02-28",
+      "entry_count": 14,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 0,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 2,
+        "utilities_power": 1,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [
+          "US.COHR",
+          "US.ANET",
+          "US.LITE"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.VRTX",
+          "US.LLY"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.OXY",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.GOLD",
+          "US.NEM"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.VST"
+        ],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-03-31",
+      "entry_count": 14,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 0,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 1,
+        "utilities_power": 2,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.ANET"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.VRTX",
+          "US.REGN",
+          "US.LLY"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.BKR",
+          "US.CVX"
+        ],
+        "precious_metals": [
+          "US.NEM",
+          "US.GOLD",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-04-29",
+      "entry_count": 12,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 0,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 0,
+        "utilities_power": 2,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.VRTX",
+          "US.LLY",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.VLO",
+          "US.CVX"
+        ],
+        "precious_metals": [
+          "US.NEM",
+          "US.GOLD",
+          "US.AEM"
+        ],
+        "financials": [],
+        "utilities_power": [
+          "US.VST",
+          "US.PWR"
+        ],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-04-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-05-31",
+      "entry_count": 11,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 0,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 1,
+        "financials": 0,
+        "utilities_power": 3,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.VRTX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.VLO",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [],
+        "utilities_power": [
+          "US.NRG",
+          "US.VST",
+          "US.PWR"
+        ],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-05-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-06-30",
+      "entry_count": 5,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 0,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 0,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.VLO",
+          "US.XOM"
+        ],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-06-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-07-29",
+      "entry_count": 17,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 1,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.NVO",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.LNG",
+          "US.XOM"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.ARES",
+          "US.GS",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-07-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-08-31",
+      "entry_count": 13,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 0,
+        "healthcare_biotech": 2,
+        "energy_resources": 2,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.ANET",
+          "US.VRT"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.OXY"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.ARES",
+          "US.GS",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-08-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-09-30",
+      "entry_count": 10,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 1,
+        "healthcare_biotech": 2,
+        "energy_resources": 2,
+        "precious_metals": 0,
+        "financials": 1,
+        "utilities_power": 1,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.MPC"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-10-31",
+      "entry_count": 19,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 1,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 2,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.VRT",
+          "US.AAOI"
+        ],
+        "technology": [
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.DVN",
+          "US.FANG",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AG"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.ARES",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.CEG",
+          "US.NRG",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-11-30",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 2,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.ANET",
+          "US.VRT",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.NFLX",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.MRNA",
+          "US.ALNY"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.LNG",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.AG",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.GS",
+          "US.SCHW",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.CEG",
+          "US.ETN",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.SBUX",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-11-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2022-12-30",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 1,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.VRT",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.DXCM",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.CVX",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.AEM",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.BLK",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.BKNG",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2022-12-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-01-31",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.TSM",
+          "US.NVDA",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.NFLX",
+          "US.META",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.IDXX",
+          "US.NVO",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.BKR",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.NEM"
+        ],
+        "financials": [
+          "US.MCO",
+          "US.MS",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.BKNG",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-02-28",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.VRT",
+          "US.AAOI"
+        ],
+        "technology": [
+          "US.META",
+          "US.NFLX",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.IDXX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.MPC"
+        ],
+        "precious_metals": [
+          "US.WPM"
+        ],
+        "financials": [
+          "US.JPM",
+          "US.KKR",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.BKNG",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-03-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.META",
+          "US.NFLX",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.IDXX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.CDE",
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.BKNG",
+          "US.RCL",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-04-28",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 1,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.ANET",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.META",
+          "US.MSFT",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.ISRG",
+          "US.LLY"
+        ],
+        "energy_resources": [
+          "US.XOM",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.BKNG",
+          "US.SBUX",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-04-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-05-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 0,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.APP",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.ISRG",
+          "US.NVO"
+        ],
+        "energy_resources": [],
+        "precious_metals": [
+          "US.WPM",
+          "US.GOLD",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN",
+          "US.RCL",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-05-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-06-30",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.NVDA",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.APP",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.ISRG",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.MCO",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.ETN",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-06-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-07-31",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 1,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.NVDA",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.APP",
+          "US.DDOG"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.IDXX",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.MPC",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.ARES",
+          "US.JPM",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.VST",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.TSLA",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-08-31",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.VRT",
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.APP",
+          "US.META",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.NVO",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.BKR",
+          "US.WMB"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.ARES",
+          "US.KKR",
+          "US.SPGI"
+        ],
+        "utilities_power": [
+          "US.ETN",
+          "US.VST",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.UBER",
+          "US.TSLA"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-08-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-09-29",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.VRT",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.NVO",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO",
+          "US.FANG"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.ARES",
+          "US.KKR",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.CEG",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.BKNG",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-09-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-10-31",
+      "entry_count": 14,
+      "track_counts": {
+        "semis_ai": 2,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 0,
+        "utilities_power": 3,
+        "consumer_discretionary": 0
+      },
+      "selected": {
+        "semis_ai": [
+          "US.VRT",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.APP",
+          "US.NOW",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.NVO",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.FANG",
+          "US.WMB"
+        ],
+        "precious_metals": [],
+        "financials": [],
+        "utilities_power": [
+          "US.NRG",
+          "US.CEG",
+          "US.VST"
+        ],
+        "consumer_discretionary": []
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-11-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.VRT",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.DDOG",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.NVO",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.WMB",
+          "US.MPC"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.WPM",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.ARES",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.VST",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.DASH",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-11-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2023-12-29",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.VRT",
+          "US.AMD"
+        ],
+        "technology": [
+          "US.NET",
+          "US.DDOG",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.NVO",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.FANG",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.WPM",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.SCHW",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.VST",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.UBER",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2023-12-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-01-31",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.AMD",
+          "US.AAOI"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.NFLX",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.ISRG",
+          "US.VRTX",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.C",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.VST",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.RCL",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-02-29",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.AMD",
+          "US.COHR"
+        ],
+        "technology": [
+          "US.META",
+          "US.APP",
+          "US.PLTR"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.ISRG",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.MPC",
+          "US.VLO"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.KKR",
+          "US.C",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.CEG",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.DASH",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-02-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-03-28",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.VRT",
+          "US.NVDA",
+          "US.COHR"
+        ],
+        "technology": [
+          "US.APP",
+          "US.META",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AEM",
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.C",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.CEG",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.UBER",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-03-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-04-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.VRT",
+          "US.WDC",
+          "US.NVDA"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY",
+          "US.NVO"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.DVN",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.GOLD",
+          "US.AG"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.C",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.NRG",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.DASH",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-05-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.VRT",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.APP",
+          "US.GOOGL",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.NVO",
+          "US.LLY"
+        ],
+        "energy_resources": [
+          "US.FANG",
+          "US.WMB",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.GOLD",
+          "US.AG"
+        ],
+        "financials": [
+          "US.GS",
+          "US.MS",
+          "US.KKR"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.CEG",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.BKNG",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-05-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-06-28",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.COHR",
+          "US.TSM"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.GOOGL"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.LNG",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AEM",
+          "US.NEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.GS",
+          "US.MCO"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.TLN",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.AMZN",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-06-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-07-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.NVDA",
+          "US.ANET",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.VRTX",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.WMB",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AEM",
+          "US.NEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.GS",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.NEE",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-08-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.COHR",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.APP",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.LNG",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.NEM",
+          "US.AEM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.MCO",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.NRG",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-08-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-09-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.COHR",
+          "US.LITE"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NOW"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.ISRG",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.LNG",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.NEM",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.BLK",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.VST",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-10-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.COHR",
+          "US.LITE"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.ISRG",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.BKR",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.AEM",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.MS",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.VST",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.TSLA",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-11-29",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.LITE",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.DDOG"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.BKR",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.AEM",
+          "US.CDE",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.KKR",
+          "US.MS",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.GEV",
+          "US.TLN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-11-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2024-12-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.MRVL",
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.ISRG",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.WMB",
+          "US.BKR"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.KKR",
+          "US.MS",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.TLN",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2024-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-01-31",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.LITE",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.ISRG",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.AEM",
+          "US.CDE",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.C",
+          "US.KKR",
+          "US.ARES"
+        ],
+        "utilities_power": [
+          "US.VST",
+          "US.GEV",
+          "US.TLN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.RCL",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-01-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-02-28",
+      "entry_count": 21,
+      "track_counts": {
+        "semis_ai": 1,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.NET",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.DXCM",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.WMB",
+          "US.BKR",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.FNV",
+          "US.AEM",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.C",
+          "US.MS",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.RCL",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-02-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-03-31",
+      "entry_count": 14,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 2,
+        "healthcare_biotech": 2,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 2,
+        "utilities_power": 0,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [
+          "US.PLTR",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.VRTX",
+          "US.ALNY"
+        ],
+        "energy_resources": [
+          "US.CVX",
+          "US.WMB",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.AEM",
+          "US.WPM",
+          "US.FNV"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.JPM"
+        ],
+        "utilities_power": [],
+        "consumer_discretionary": [
+          "US.DASH",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-04-30",
+      "entry_count": 14,
+      "track_counts": {
+        "semis_ai": 0,
+        "technology": 2,
+        "healthcare_biotech": 2,
+        "energy_resources": 2,
+        "precious_metals": 3,
+        "financials": 0,
+        "utilities_power": 2,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [],
+        "technology": [
+          "US.PLTR",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.VRTX"
+        ],
+        "energy_resources": [
+          "US.LNG",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.WPM",
+          "US.AEM",
+          "US.FNV"
+        ],
+        "financials": [],
+        "utilities_power": [
+          "US.NRG",
+          "US.GEV"
+        ],
+        "consumer_discretionary": [
+          "US.UBER",
+          "US.DASH",
+          "US.BKNG"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-05-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO",
+          "US.NVDA",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.PLTR",
+          "US.NET",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.WMB",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.CDE",
+          "US.WPM"
+        ],
+        "financials": [
+          "US.SCHW",
+          "US.JPM",
+          "US.C"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.GEV",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.UBER",
+          "US.DASH"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-05-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-06-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AVGO",
+          "US.MU",
+          "US.VRT"
+        ],
+        "technology": [
+          "US.NET",
+          "US.PLTR",
+          "US.NFLX"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.WMB",
+          "US.LNG"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.CDE",
+          "US.AG"
+        ],
+        "financials": [
+          "US.GS",
+          "US.C",
+          "US.JPM"
+        ],
+        "utilities_power": [
+          "US.NRG",
+          "US.GEV",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.DASH",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-06-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-07-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AMD",
+          "US.WDC",
+          "US.LITE"
+        ],
+        "technology": [
+          "US.NET",
+          "US.PLTR",
+          "US.MSFT"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.IDXX",
+          "US.DXCM"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.BKR",
+          "US.VLO"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.CDE",
+          "US.AG"
+        ],
+        "financials": [
+          "US.C",
+          "US.GS",
+          "US.SCHW"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.TLN",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.DASH",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-07-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-08-29",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.WDC",
+          "US.ANET"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.IDXX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.MPC",
+          "US.VLO",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.NEM",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.C",
+          "US.GS",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.GEV",
+          "US.VST"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.DASH",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-08-29_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-09-30",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.LITE",
+          "US.MU"
+        ],
+        "technology": [
+          "US.APP",
+          "US.PLTR",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.IDXX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.VLO",
+          "US.MPC",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.SBSW",
+          "US.AG"
+        ],
+        "financials": [
+          "US.C",
+          "US.GS",
+          "US.MS"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.GEV",
+          "US.NRG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.DASH",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-09-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-10-31",
+      "entry_count": 24,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 3
+      },
+      "selected": {
+        "semis_ai": [
+          "US.WDC",
+          "US.LITE",
+          "US.MU"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.APP",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.ALNY",
+          "US.LLY",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.VLO",
+          "US.MPC",
+          "US.BKR"
+        ],
+        "precious_metals": [
+          "US.CDE",
+          "US.AG",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.MS",
+          "US.C",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.TLN",
+          "US.PWR",
+          "US.CEG"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.AMZN",
+          "US.UBER"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-10-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-11-28",
+      "entry_count": 23,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.WDC",
+          "US.MU"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.APP",
+          "US.DDOG"
+        ],
+        "healthcare_biotech": [
+          "US.LLY",
+          "US.REGN",
+          "US.IDXX"
+        ],
+        "energy_resources": [
+          "US.VLO",
+          "US.BKR",
+          "US.MPC"
+        ],
+        "precious_metals": [
+          "US.SBSW",
+          "US.AG",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.GS",
+          "US.MS",
+          "US.C"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.NEE",
+          "US.TLN"
+        ],
+        "consumer_discretionary": [
+          "US.TSLA",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-11-28_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2025-12-31",
+      "entry_count": 20,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 1,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.WDC",
+          "US.MU"
+        ],
+        "technology": [
+          "US.APP",
+          "US.GOOGL",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [
+          "US.REGN",
+          "US.LLY",
+          "US.ISRG"
+        ],
+        "energy_resources": [
+          "US.XOM",
+          "US.DVN",
+          "US.FANG"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.SBSW",
+          "US.GOLD"
+        ],
+        "financials": [
+          "US.C",
+          "US.MS",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.GEV"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2025-12-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2026-01-30",
+      "entry_count": 22,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 2,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.MU",
+          "US.LITE",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.META"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.LLY",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.XOM",
+          "US.BKR",
+          "US.DVN"
+        ],
+        "precious_metals": [
+          "US.GOLD",
+          "US.AG",
+          "US.SBSW"
+        ],
+        "financials": [
+          "US.GS",
+          "US.MS",
+          "US.C"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.NEE",
+          "US.PWR"
+        ],
+        "consumer_discretionary": [
+          "US.RCL",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2026-01-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2026-02-27",
+      "entry_count": 19,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 0,
+        "healthcare_biotech": 3,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 2,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.LITE",
+          "US.MU"
+        ],
+        "technology": [],
+        "healthcare_biotech": [
+          "US.MRNA",
+          "US.VRTX",
+          "US.REGN"
+        ],
+        "energy_resources": [
+          "US.BKR",
+          "US.XOM",
+          "US.WMB"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.GOLD",
+          "US.CDE"
+        ],
+        "financials": [
+          "US.C",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.RCL"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2026-02-27_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2026-03-31",
+      "entry_count": 15,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 1,
+        "healthcare_biotech": 1,
+        "energy_resources": 3,
+        "precious_metals": 3,
+        "financials": 0,
+        "utilities_power": 3,
+        "consumer_discretionary": 1
+      },
+      "selected": {
+        "semis_ai": [
+          "US.LITE",
+          "US.AAOI",
+          "US.WDC"
+        ],
+        "technology": [
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.VLO",
+          "US.XOM"
+        ],
+        "precious_metals": [
+          "US.AG",
+          "US.GOLD",
+          "US.AEM"
+        ],
+        "financials": [],
+        "utilities_power": [
+          "US.GEV",
+          "US.PWR",
+          "US.NEE"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2026-03-31_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2026-04-30",
+      "entry_count": 18,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 1,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.LITE",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.GOOGL",
+          "US.AMZN",
+          "US.NET"
+        ],
+        "healthcare_biotech": [
+          "US.MRNA"
+        ],
+        "energy_resources": [
+          "US.OXY",
+          "US.DVN",
+          "US.VLO"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.C",
+          "US.MS",
+          "US.BLK"
+        ],
+        "utilities_power": [
+          "US.GEV",
+          "US.PWR",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.SBUX",
+          "US.AMZN"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2026-04-30_v6b_cross_theme_universe.json"
+    },
+    {
+      "as_of": "2026-05-19",
+      "entry_count": 17,
+      "track_counts": {
+        "semis_ai": 3,
+        "technology": 3,
+        "healthcare_biotech": 0,
+        "energy_resources": 3,
+        "precious_metals": 0,
+        "financials": 3,
+        "utilities_power": 3,
+        "consumer_discretionary": 2
+      },
+      "selected": {
+        "semis_ai": [
+          "US.AAOI",
+          "US.MU",
+          "US.MRVL"
+        ],
+        "technology": [
+          "US.DDOG",
+          "US.GOOGL",
+          "US.AMZN"
+        ],
+        "healthcare_biotech": [],
+        "energy_resources": [
+          "US.VLO",
+          "US.MPC",
+          "US.FANG"
+        ],
+        "precious_metals": [],
+        "financials": [
+          "US.MS",
+          "US.C",
+          "US.GS"
+        ],
+        "utilities_power": [
+          "US.PWR",
+          "US.GEV",
+          "US.ETN"
+        ],
+        "consumer_discretionary": [
+          "US.AMZN",
+          "US.SBUX"
+        ]
+      },
+      "path": "v6_strategy_lab/configs/synthetic_history/20260520_v6_real_stock_pit_pruned/snapshots/2026-05-19_v6b_cross_theme_universe.json"
+    }
+  ],
+  "selection_counts": [
+    {
+      "ticker": "US.RCL",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 46,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.ARES",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 44,
+      "first_selected": "2018-09-28",
+      "last_selected": "2025-01-31"
+    },
+    {
+      "ticker": "US.PWR",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 44,
+      "first_selected": "2019-03-29",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.AMZN",
+      "themes": [
+        "consumer_discretionary",
+        "technology"
+      ],
+      "selected_months": 43,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.VST",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 40,
+      "first_selected": "2018-09-28",
+      "last_selected": "2025-08-29"
+    },
+    {
+      "ticker": "US.LLY",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 39,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-01-30"
+    },
+    {
+      "ticker": "US.GOLD",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 39,
+      "first_selected": "2019-01-31",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.SBUX",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 38,
+      "first_selected": "2018-09-28",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.TSLA",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 38,
+      "first_selected": "2018-11-30",
+      "last_selected": "2025-11-28"
+    },
+    {
+      "ticker": "US.NEE",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 37,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.KKR",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 36,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-01-31"
+    },
+    {
+      "ticker": "US.ETN",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 36,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.NVDA",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 35,
+      "first_selected": "2018-09-28",
+      "last_selected": "2025-05-30"
+    },
+    {
+      "ticker": "US.NRG",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 34,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-09-30"
+    },
+    {
+      "ticker": "US.DXCM",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 33,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-07-31"
+    },
+    {
+      "ticker": "US.WPM",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 32,
+      "first_selected": "2018-12-31",
+      "last_selected": "2025-05-30"
+    },
+    {
+      "ticker": "US.CDE",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 32,
+      "first_selected": "2019-08-30",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.NET",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 31,
+      "first_selected": "2020-05-29",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.LNG",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 30,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-06-30"
+    },
+    {
+      "ticker": "US.MPC",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 30,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.WMB",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 29,
+      "first_selected": "2019-01-31",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.AG",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 29,
+      "first_selected": "2019-02-28",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.IDXX",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 29,
+      "first_selected": "2019-04-30",
+      "last_selected": "2025-11-28"
+    },
+    {
+      "ticker": "US.NVO",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 28,
+      "first_selected": "2019-02-28",
+      "last_selected": "2024-05-31"
+    },
+    {
+      "ticker": "US.MRNA",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 28,
+      "first_selected": "2019-11-29",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.REGN",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 27,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.BKR",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 27,
+      "first_selected": "2019-07-31",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.AMD",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 26,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-07-31"
+    },
+    {
+      "ticker": "US.AEM",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 26,
+      "first_selected": "2018-12-31",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.VRT",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 26,
+      "first_selected": "2019-05-31",
+      "last_selected": "2025-06-30"
+    },
+    {
+      "ticker": "US.UBER",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 26,
+      "first_selected": "2020-01-31",
+      "last_selected": "2025-10-31"
+    },
+    {
+      "ticker": "US.DASH",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 26,
+      "first_selected": "2021-07-30",
+      "last_selected": "2025-09-30"
+    },
+    {
+      "ticker": "US.NOW",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 25,
+      "first_selected": "2018-08-31",
+      "last_selected": "2024-09-30"
+    },
+    {
+      "ticker": "US.FANG",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 25,
+      "first_selected": "2018-09-28",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.NFLX",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 25,
+      "first_selected": "2019-01-31",
+      "last_selected": "2025-06-30"
+    },
+    {
+      "ticker": "US.ALNY",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 25,
+      "first_selected": "2019-03-29",
+      "last_selected": "2025-10-31"
+    },
+    {
+      "ticker": "US.VLO",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 25,
+      "first_selected": "2019-06-28",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.GOOGL",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 25,
+      "first_selected": "2019-07-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.GS",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 25,
+      "first_selected": "2020-12-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.MSFT",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 24,
+      "first_selected": "2018-08-31",
+      "last_selected": "2025-07-31"
+    },
+    {
+      "ticker": "US.ISRG",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 24,
+      "first_selected": "2018-09-28",
+      "last_selected": "2025-12-31"
+    },
+    {
+      "ticker": "US.META",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 24,
+      "first_selected": "2019-01-31",
+      "last_selected": "2026-01-30"
+    },
+    {
+      "ticker": "US.APP",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 24,
+      "first_selected": "2021-12-31",
+      "last_selected": "2025-12-31"
+    },
+    {
+      "ticker": "US.DVN",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 23,
+      "first_selected": "2018-08-31",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.BKNG",
+      "themes": [
+        "consumer_discretionary"
+      ],
+      "selected_months": 23,
+      "first_selected": "2019-07-31",
+      "last_selected": "2025-04-30"
+    },
+    {
+      "ticker": "US.SCHW",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 23,
+      "first_selected": "2019-11-29",
+      "last_selected": "2025-07-31"
+    },
+    {
+      "ticker": "US.MS",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 23,
+      "first_selected": "2019-12-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.PLTR",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 23,
+      "first_selected": "2023-05-31",
+      "last_selected": "2025-09-30"
+    },
+    {
+      "ticker": "US.WDC",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 22,
+      "first_selected": "2019-02-28",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.LITE",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 21,
+      "first_selected": "2019-03-29",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.SPGI",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 20,
+      "first_selected": "2018-08-31",
+      "last_selected": "2023-08-31"
+    },
+    {
+      "ticker": "US.MCO",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 20,
+      "first_selected": "2018-08-31",
+      "last_selected": "2024-08-30"
+    },
+    {
+      "ticker": "US.C",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 20,
+      "first_selected": "2018-09-28",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.VRTX",
+      "themes": [
+        "healthcare_biotech"
+      ],
+      "selected_months": 20,
+      "first_selected": "2018-11-30",
+      "last_selected": "2026-02-27"
+    },
+    {
+      "ticker": "US.FNV",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 20,
+      "first_selected": "2018-11-30",
+      "last_selected": "2025-04-30"
+    },
+    {
+      "ticker": "US.ANET",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 20,
+      "first_selected": "2019-02-28",
+      "last_selected": "2025-08-29"
+    },
+    {
+      "ticker": "US.DDOG",
+      "themes": [
+        "technology"
+      ],
+      "selected_months": 20,
+      "first_selected": "2020-05-29",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.SBSW",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 19,
+      "first_selected": "2020-10-30",
+      "last_selected": "2026-01-30"
+    },
+    {
+      "ticker": "US.AAOI",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 19,
+      "first_selected": "2022-09-30",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.MRVL",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 18,
+      "first_selected": "2019-01-31",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.CEG",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 18,
+      "first_selected": "2022-09-30",
+      "last_selected": "2025-10-31"
+    },
+    {
+      "ticker": "US.NEM",
+      "themes": [
+        "precious_metals"
+      ],
+      "selected_months": 17,
+      "first_selected": "2020-01-31",
+      "last_selected": "2025-08-29"
+    },
+    {
+      "ticker": "US.TSM",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 16,
+      "first_selected": "2018-08-31",
+      "last_selected": "2024-06-28"
+    },
+    {
+      "ticker": "US.AVGO",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 16,
+      "first_selected": "2018-11-30",
+      "last_selected": "2025-06-30"
+    },
+    {
+      "ticker": "US.MU",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 16,
+      "first_selected": "2019-08-30",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.JPM",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 16,
+      "first_selected": "2019-09-30",
+      "last_selected": "2025-06-30"
+    },
+    {
+      "ticker": "US.OXY",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 16,
+      "first_selected": "2020-11-30",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.GEV",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 16,
+      "first_selected": "2024-11-29",
+      "last_selected": "2026-05-19"
+    },
+    {
+      "ticker": "US.COHR",
+      "themes": [
+        "semis_ai"
+      ],
+      "selected_months": 15,
+      "first_selected": "2018-08-31",
+      "last_selected": "2024-10-31"
+    },
+    {
+      "ticker": "US.XOM",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 14,
+      "first_selected": "2019-02-28",
+      "last_selected": "2026-03-31"
+    },
+    {
+      "ticker": "US.TLN",
+      "themes": [
+        "utilities_power"
+      ],
+      "selected_months": 13,
+      "first_selected": "2024-06-28",
+      "last_selected": "2025-11-28"
+    },
+    {
+      "ticker": "US.BLK",
+      "themes": [
+        "financials"
+      ],
+      "selected_months": 11,
+      "first_selected": "2019-04-30",
+      "last_selected": "2026-04-30"
+    },
+    {
+      "ticker": "US.CVX",
+      "themes": [
+        "energy_resources"
+      ],
+      "selected_months": 9,
+      "first_selected": "2019-02-28",
+      "last_selected": "2025-03-31"
+    }
+  ]
+}

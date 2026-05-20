@@ -16,6 +16,25 @@ from v6b_theme_rotation_backtest import INITIAL_CAPITAL, build_price_matrix, run
 ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "v6ab_candidate_quick_compare"
 DEFAULT_V6A_DAILY = ROOT / "backtest_results" / "attack_engine_replay" / "attack_replay_daily_20260520_live_refreshed.csv"
+DEFAULT_CROSS_THEME_PIT_MAP = {
+    "semis_ai": ["semis_ai"],
+    "technology": ["technology"],
+    "healthcare_biotech": ["healthcare_biotech"],
+    "energy_resources": ["energy_resources"],
+    "precious_metals": ["precious_metals"],
+    "financials": ["financials"],
+    "industrials_infra": ["industrials_infra"],
+    "utilities_power": ["utilities_power"],
+    "consumer_discretionary": ["consumer_discretionary"],
+}
+DEFAULT_GAP_FILL_PIT_MAP = {
+    "healthcare_biotech": ["healthcare_biotech"],
+    "energy_resources": ["energy_resources"],
+    "precious_metals": ["precious_metals"],
+    "financials": ["financials"],
+    "industrials_infra": ["industrials_infra"],
+    "utilities_power": ["utilities_power"],
+}
 
 
 def config_tickers(config_names: list[str]) -> list[str]:
@@ -88,6 +107,36 @@ def config_tickers(config_names: list[str]) -> list[str]:
     return sorted(tickers)
 
 
+def build_configs(extra_manifest: str = "") -> dict[str, dict[str, Any]]:
+    configs = dict(V6B_CONFIGS)
+    if extra_manifest:
+        configs["v6b_extra_real_stock_pit_guarded_top3_90"] = {
+            "top_n": 3,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 2,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+        }
+        configs["v6b_extra_real_stock_hybrid_gap_pit_guarded_top3_90"] = {
+            "top_n": 3,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 2,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_GAP_FILL_PIT_MAP,
+        }
+    return configs
+
+
 def period_stats(eq: pd.Series, start: str, end: str) -> dict[str, Any]:
     seg = eq[(eq.index >= pd.Timestamp(start)) & (eq.index <= pd.Timestamp(end))]
     if len(seg) < 30:
@@ -98,6 +147,7 @@ def period_stats(eq: pd.Series, start: str, end: str) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Quick compare V6AB candidates without broad static/overlay grid search.")
     parser.add_argument("--configs", default="v6b_guarded_top3_90,v6b_pit_guarded_top3_90,v6b_real_stock_pit_guarded_top3_90,v6b_real_stock_hybrid_gap_pit_guarded_top3_90")
+    parser.add_argument("--extra-manifest", default="")
     parser.add_argument("--start", default="2012-05-21")
     parser.add_argument("--end", default="2026-05-19")
     parser.add_argument("--v6a-daily", default=str(DEFAULT_V6A_DAILY))
@@ -105,6 +155,10 @@ def main() -> None:
     args = parser.parse_args()
 
     config_names = [name.strip() for name in args.configs.split(",") if name.strip()]
+    configs = build_configs(args.extra_manifest)
+    old_configs = V6B_CONFIGS.copy()
+    V6B_CONFIGS.clear()
+    V6B_CONFIGS.update(configs)
     prices = build_price_matrix(config_tickers(config_names), args.start, args.end).ffill(limit=3)
     v6a = load_v6a_composite(Path(args.v6a_daily))
     curves: dict[str, pd.Series] = {
@@ -116,7 +170,7 @@ def main() -> None:
     }
     decisions: dict[str, list[dict[str, Any]]] = {}
     for name in config_names:
-        eq, rows = run_strategy(prices, **V6B_CONFIGS[name])
+        eq, rows = run_strategy(prices, **configs[name])
         curves[name] = eq
         decisions[name] = rows[-12:]
 
@@ -165,6 +219,8 @@ def main() -> None:
     json_path = OUT_DIR / f"v6ab_candidate_quick_compare_{args.tag}.json"
     pd.DataFrame(rows).sort_values(["mode", "sharpe", "ann_ret"], ascending=[True, False, False]).to_csv(csv_path, index=False)
     json_path.write_text(json.dumps({"generated_at": datetime.now().isoformat(timespec="seconds"), "rows": rows, "recent_decisions": decisions}, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
+    V6B_CONFIGS.clear()
+    V6B_CONFIGS.update(old_configs)
     print(f"CSV: {csv_path}")
     print(f"JSON: {json_path}")
 
