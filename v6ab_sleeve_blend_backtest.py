@@ -79,6 +79,76 @@ def blend_equity(curves: dict[str, pd.Series], weights: dict[str, float], start:
     return eq
 
 
+def dynamic_overlay_equity(
+    curves: dict[str, pd.Series],
+    *,
+    base_weights: dict[str, float],
+    hedge_max: float,
+    vol_threshold: float,
+    corr_threshold: float,
+    dd_threshold: float,
+    start: str,
+    end: str,
+) -> tuple[pd.Series, pd.DataFrame]:
+    frame = pd.DataFrame(curves).sort_index().ffill().dropna()
+    frame = frame[(frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))]
+    rets = frame.pct_change().fillna(0.0)
+    base_total = sum(base_weights.values())
+    if base_total <= 0:
+        raise ValueError("base weights must be positive")
+    base_norm = {key: value / base_total for key, value in base_weights.items()}
+    base_ret = sum(rets[key] * base_norm.get(key, 0.0) for key in base_norm)
+    base_eq = (1.0 + base_ret).cumprod()
+    base_dd = base_eq / base_eq.cummax() - 1.0
+
+    spy_ma = frame["SPY"].rolling(200).mean()
+    qqq_ma = frame["QQQ"].rolling(200).mean()
+    gld_ma = frame["GLD"].rolling(126).mean()
+    base_vol = base_ret.rolling(63).std() * np.sqrt(252)
+    ab_corr = rets["V6A"].rolling(63).corr(rets[[key for key in base_norm if key != "V6A"][0]])
+
+    equity = INITIAL_CAPITAL
+    rows: list[dict[str, Any]] = []
+    records: list[tuple[pd.Timestamp, float]] = []
+    for i, dt in enumerate(frame.index):
+        if i == 0:
+            weights = {**base_norm, "GLD": 0.0, "BIL": 0.0}
+        else:
+            prev = frame.index[i - 1]
+            market_bad = (
+                pd.notna(spy_ma.loc[prev])
+                and pd.notna(qqq_ma.loc[prev])
+                and (frame.loc[prev, "SPY"] < spy_ma.loc[prev] or frame.loc[prev, "QQQ"] < qqq_ma.loc[prev])
+            )
+            drawdown_bad = bool(pd.notna(base_dd.loc[prev]) and base_dd.loc[prev] <= dd_threshold)
+            vol_bad = bool(pd.notna(base_vol.loc[prev]) and base_vol.loc[prev] >= vol_threshold)
+            corr_bad = bool(pd.notna(ab_corr.loc[prev]) and ab_corr.loc[prev] >= corr_threshold)
+            trigger_count = sum([market_bad, drawdown_bad, vol_bad, corr_bad and market_bad])
+            hedge_weight = 0.0
+            if trigger_count >= 2:
+                hedge_weight = hedge_max
+            elif trigger_count == 1:
+                hedge_weight = hedge_max * 0.5
+
+            hedge_asset = "GLD" if pd.notna(gld_ma.loc[prev]) and frame.loc[prev, "GLD"] >= gld_ma.loc[prev] else "BIL"
+            risky_scale = 1.0 - hedge_weight
+            weights = {key: value * risky_scale for key, value in base_norm.items()}
+            weights["GLD"] = hedge_weight if hedge_asset == "GLD" else 0.0
+            weights["BIL"] = hedge_weight if hedge_asset == "BIL" else 0.0
+
+        day_ret = sum(float(rets.loc[dt, key]) * weight for key, weight in weights.items() if key in rets.columns)
+        equity *= 1.0 + day_ret
+        records.append((dt, equity))
+        rows.append(
+            {
+                "date": str(dt.date()),
+                "equity": round(float(equity), 2),
+                "weights": json.dumps({key: round(float(value), 6) for key, value in weights.items() if value > 1e-9}, sort_keys=True),
+            }
+        )
+    return pd.Series([value for _, value in records], index=[dt for dt, _ in records]), pd.DataFrame(rows)
+
+
 def max_corr(curves: dict[str, pd.Series], start: str, end: str) -> pd.DataFrame:
     frame = pd.DataFrame(curves).sort_index().ffill().dropna()
     frame = frame[(frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))]
@@ -105,7 +175,7 @@ def write_report(
         "",
         f"- Generated: `{datetime.now().isoformat(timespec='seconds')}`",
         f"- Window: `{start}` to `{end}`",
-        "- Purpose: test whether V6-A stability plus V6-B theme rotation plus GLD/IEF/BIL hedges can raise portfolio Sharpe.",
+        "- Purpose: test whether V6-A stability plus V6-B theme rotation plus dynamic Hedge/Cash Overlay can raise portfolio Sharpe.",
         "- V6-A source: `attack_replay_daily_20260520_live_refreshed.csv` equal replay composite.",
         "- V6-B source: dynamic `ETF theme discovery -> theme-to-stock expression` rerun from local cache.",
         "",
@@ -130,7 +200,8 @@ def write_report(
             "## Interpretation",
             "",
             "- This is a research blend, not a live allocation change.",
-            "- A blend is only interesting if Sharpe improves versus both V6-A and V6-B alone while max drawdown remains controlled.",
+        "- A blend is only interesting if Sharpe improves versus both V6-A and V6-B alone while max drawdown remains controlled.",
+        "- Dynamic overlay rows use GLD/BIL only when risk triggers fire; GLD is not treated as a fixed permanent sleeve.",
             "- Next production step is sleeve sizing with explicit capital caps and live execution constraints.",
         ]
     )
@@ -236,13 +307,49 @@ def main() -> None:
                         s = stats(eq)
                         if not s:
                             continue
-                        rows.append({"config": b_name, "weights": weights, "stats": s})
+                        rows.append({"mode": "static", "config": b_name, "weights": weights, "stats": s})
+
+        for a_w in [0.55, 0.60, 0.65, 0.70, 0.75]:
+            for b_w in [0.25, 0.30, 0.35, 0.40]:
+                if a_w + b_w <= 0 or a_w + b_w > 1.0:
+                    continue
+                for hedge_max in [0.10, 0.15, 0.20, 0.25]:
+                    for vol_threshold in [0.22, 0.28, 0.34]:
+                        weights = {"V6A": a_w, b_name: b_w}
+                        eq, overlay_log = dynamic_overlay_equity(
+                            {key: curves[key] for key in ["V6A", b_name, "GLD", "BIL", "SPY", "QQQ"]},
+                            base_weights=weights,
+                            hedge_max=hedge_max,
+                            vol_threshold=vol_threshold,
+                            corr_threshold=0.65,
+                            dd_threshold=-0.10,
+                            start=args.start,
+                            end=args.end,
+                        )
+                        s = stats(eq)
+                        if not s:
+                            continue
+                        rows.append(
+                            {
+                                "mode": "dynamic_overlay",
+                                "config": b_name,
+                                "weights": {
+                                    **weights,
+                                    "hedge_max": hedge_max,
+                                    "vol_trigger": vol_threshold,
+                                    "corr_trigger": 0.65,
+                                    "dd_trigger": -0.10,
+                                },
+                                "stats": s,
+                                "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
+                            }
+                        )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.json"
     md_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.md"
     csv_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.csv"
-    pd.DataFrame([{**{"config": row["config"]}, **row["weights"], **row["stats"]} for row in rows]).sort_values(["sharpe", "ann_ret"], ascending=False).to_csv(csv_path, index=False)
+    pd.DataFrame([{**{"mode": row["mode"], "config": row["config"], "overlay_days": row.get("overlay_days", "")}, **row["weights"], **row["stats"]} for row in rows]).sort_values(["sharpe", "ann_ret"], ascending=False).to_csv(csv_path, index=False)
     payload = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "start": args.start,

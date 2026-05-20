@@ -28,7 +28,7 @@ This is a research blend only. It does not change live V6-A execution.
 
 ## Best Blend
 
-Best risk-adjusted blend:
+Best risk-adjusted static blend:
 
 - `V6A`: `60%`
 - `V6B guarded theme-to-stock`: `30%`
@@ -47,6 +47,45 @@ It also lowers drawdown versus V6-A:
 
 - V6-A max drawdown: `-21.1%`
 - Best blend max drawdown: `-17.9%`
+
+## Dynamic Hedge/Cash Overlay Follow-Up
+
+After reviewing the system architecture, fixed `10% GLD` should not be treated as the default V6 design because V6-A already has defensive behavior inside the strategy. GLD / BIL should instead be a portfolio-level risk adjustment tool.
+
+A dynamic overlay test was added:
+
+- Base sleeve is only `V6-A + V6-B`.
+- GLD / BIL is added only when market trend, base sleeve drawdown, volatility, or A/B correlation risk triggers fire.
+- If GLD is above its 126-day moving average, the overlay uses GLD; otherwise it uses BIL.
+- Report: `backtest_results/v6ab_sleeve_blend/v6ab_sleeve_blend_20260520_dynamic_overlay_v1.md`
+
+Best dynamic overlay result:
+
+- Base: `70% V6-A / 30% V6-B guarded`
+- Max overlay: `25%`
+- Vol trigger: `28%`
+- Corr trigger: `65%`
+- Drawdown trigger: `-10%`
+- Annualized return: `+28.9%`
+- Max drawdown: `-17.6%`
+- Sharpe: `1.12`
+
+Overlay usage:
+
+- Total trading days: `3520`
+- Any GLD/BIL overlay: `1427` days, about `40.5%`
+- GLD overlay: `1065` days, about `30.3%`
+- BIL overlay: `362` days, about `10.3%`
+- Latest `2026-05-19` weights: `70% V6-A / 30% V6-B guarded`, no GLD/BIL overlay.
+
+This is materially better than fixed GLD:
+
+- Static best Sharpe: `1.06`
+- Dynamic overlay best Sharpe: `1.12`
+- Static best annualized return: `+26.2%`
+- Dynamic overlay best annualized return: `+28.9%`
+- Static best max drawdown: `-17.9%`
+- Dynamic overlay best max drawdown: `-17.6%`
 
 ## Higher Return Blend
 
@@ -80,11 +119,15 @@ Interpretation:
 
 The intended architecture is validated at first-pass research level:
 
-`V6-A stability + V6-B dynamic main-theme rotation + GLD hedge sleeve`
+`V6-A stability + V6-B dynamic main-theme rotation + dynamic Hedge/Cash Overlay`
 
-The best first-pass allocation is:
+The best first-pass static allocation is:
 
 `60% V6-A / 30% V6-B guarded / 10% GLD`
+
+But the better system-level candidate is now:
+
+`70% V6-A / 30% V6-B guarded`, with GLD/BIL used only by dynamic overlay triggers.
 
 This is not yet a production allocation. Before live allocation changes, the next required checks are:
 
@@ -93,4 +136,3 @@ This is not yet a production allocation. Before live allocation changes, the nex
 3. Crisis-window attribution for 2018Q4, 2020, 2022, and 2025.
 4. Capital cap mapping from research weights to the current real-account V6-A pilot size.
 5. Explicit rule for when V6-B sleeve is disabled or cut in half.
-
