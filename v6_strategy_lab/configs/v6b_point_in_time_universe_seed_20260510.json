@@ -101,6 +101,16 @@
       "reason": "Edge AI IP small-cap candidate; optionality but limited immediate proof.",
       "anti_thesis": "IP licensing cycle remains slow or market ignores the theme.",
       "status": "active_research"
+    },
+    {
+      "ticker": "US.COHR",
+      "entry_date": "2026-05-20",
+      "exit_date": null,
+      "track": "optics_and_interconnect",
+      "source": "2026-05-20 Radar independent discovery + Missing Opportunity Review using 2026-05-19 data",
+      "reason": "AI optics / interconnect diffusion leader with independent Radar score 93.1 and Missing Opportunity Review score 90.2; promoted to active research because it closes a verified V6-B blind spot.",
+      "anti_thesis": "Optical demand momentum fades, AI interconnect orders fail to translate into earnings, or the post-run setup breaks trend with valuation/crowding risk unresolved.",
+      "status": "active_research"
     }
   ]
 }

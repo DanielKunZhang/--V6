@@ -96,10 +96,10 @@
       "ticker": "US.COHR",
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "optics_and_interconnect",
-      "registry_status": "watch_add_candidate",
+      "registry_status": "active_research",
       "data_status": "local_cache_available",
       "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
-      "reason": "High-priority optics / interconnect add candidate if point-in-time review validates."
+      "reason": "Promoted on 2026-05-20 after Radar independent discovery and Missing Opportunity Review both flagged COHR as a high-score AI optics/interconnect diffusion leader; active research only, no live allocation approval."
     },
     {
       "ticker": "US.ASX",
@@ -114,11 +114,11 @@
       "ticker": "US.AAOI",
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "optics_and_interconnect",
-      "registry_status": "observe_only",
+      "registry_status": "watch_add_candidate",
       "data_status": "local_cache_available",
       "external_sample": true,
       "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
-      "reason": "Theme-relevant optics candidate and 2026-05-14 user short-term network miss sample; use for external sample attribution, not independent alpha."
+      "reason": "Upgraded on 2026-05-20 from observe_only to watch_add_candidate after Missing Opportunity Review flagged a critical miss; still external-sample tainted and high-volatility, so no direct chase or active universe promotion yet."
     },
     {
       "ticker": "US.LITE",
@@ -134,20 +134,20 @@
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "core_reacceleration",
       "registry_status": "watch_add_candidate",
-      "data_status": "needs_price_cache",
+      "data_status": "local_cache_stale_needs_refresh",
       "external_sample": true,
       "source": "2026-05-14 user short-term network: strong MRVL move flagged by external trader",
-      "reason": "AI data-center silicon / networking candidate; should be reviewed as a potential V6-B re-acceleration name after price cache refresh."
+      "reason": "AI data-center silicon / networking candidate; 2026-05-20 Missing Opportunity Review shows strong critical-miss score but Radar marks high chase risk, so keep watch-add pending fresh cache and valuation/overheat review."
     },
     {
       "ticker": "US.NOK",
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "optics_and_interconnect",
       "registry_status": "observe_only",
-      "data_status": "needs_price_cache",
+      "data_status": "local_cache_stale_needs_refresh",
       "external_sample": true,
       "source": "2026-05-14 user short-term network: strong NOK move flagged by external trader",
-      "reason": "Telecom / optical-network infrastructure adjacency; keep as observe-only until Radar can distinguish theme diffusion from single-day speculative flow."
+      "reason": "Telecom / optical-network infrastructure adjacency; despite 2026-05-20 critical-miss score, remains observe-only because attribution is external-sample driven and chase risk is high."
     },
     {
       "ticker": "US.AVGO",

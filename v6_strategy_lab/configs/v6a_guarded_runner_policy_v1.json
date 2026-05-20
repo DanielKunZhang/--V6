@@ -11,9 +11,9 @@
     "min_order_value_usd": 25
   },
   "data": {
-    "daily_replay_csv": "backtest_results/attack_engine_replay/attack_replay_daily_20260506_live_refreshed.csv",
-    "replay_composite_csv": "backtest_results/attack_engine_replay/attack_replay_composite_20260506_live_refreshed.csv",
-    "replay_summary_csv": "backtest_results/attack_engine_replay/attack_replay_summary_20260506_live_refreshed.csv",
+    "daily_replay_csv": "backtest_results/attack_engine_replay/attack_replay_daily_20260520_live_refreshed.csv",
+    "replay_composite_csv": "backtest_results/attack_engine_replay/attack_replay_composite_20260520_live_refreshed.csv",
+    "replay_summary_csv": "backtest_results/attack_engine_replay/attack_replay_summary_20260520_live_refreshed.csv",
     "max_signal_age_days": 7,
     "max_quote_age_minutes": 20
   },
