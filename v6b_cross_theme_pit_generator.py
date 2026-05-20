@@ -167,6 +167,7 @@ def build_snapshots(universe: dict[str, Any], prices: pd.DataFrame, start: str, 
 
 
 def write_outputs(out_dir: Path, payload: dict[str, Any], summary: dict[str, Any]) -> None:
+    out_dir = out_dir.resolve()
     snapshot_dir = out_dir / "snapshots"
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     manifest_rows = []

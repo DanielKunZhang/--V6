@@ -1,0 +1,96 @@
+{
+  "universe_id": "V6B_REAL_STOCK_THEME_UNIVERSE_V1",
+  "version": "2026-05-20",
+  "status": "research",
+  "description": "V6-B cross-theme real-stock universe. ETFs are benchmarks only; candidate expression should use liquid stocks/ADRs with enough theme beta.",
+  "rules": {
+    "etfs_are_benchmarks_only": true,
+    "not_live_order_universe": true,
+    "requires_price_cache_validation": true,
+    "promotion_requires_v2_benchmark_comparison": true
+  },
+  "market_benchmarks": ["US.SPY", "US.QQQ"],
+  "themes": [
+    {
+      "theme_id": "ai_compute_and_data_center",
+      "label": "AI compute / data center",
+      "benchmarks": ["US.SMH", "US.SOXX", "US.XLK"],
+      "leader_layer": ["US.NVDA", "US.AVGO", "US.AMD"],
+      "first_order_beneficiaries": ["US.ANET", "US.TSM", "US.MRVL"],
+      "second_order_infrastructure": ["US.MU", "US.WDC", "US.AMKR", "US.COHR", "US.VRT"],
+      "third_order_high_beta": ["US.AAOI", "US.LITE", "US.NOK"]
+    },
+    {
+      "theme_id": "software_and_internet",
+      "label": "Software / internet",
+      "benchmarks": ["US.IGV", "US.FDN", "US.XLK"],
+      "leader_layer": ["US.MSFT", "US.GOOGL", "US.META"],
+      "first_order_beneficiaries": ["US.AMZN", "US.NFLX", "US.CRM", "US.NOW", "US.PLTR"],
+      "second_order_infrastructure": ["US.SNOW", "US.DDOG", "US.NET"],
+      "third_order_high_beta": ["US.APP", "US.U", "US.PATH"]
+    },
+    {
+      "theme_id": "healthcare_and_biotech",
+      "label": "Healthcare / biotech / medtech",
+      "benchmarks": ["US.XLV", "US.XBI"],
+      "leader_layer": ["US.LLY", "US.NVO", "US.UNH", "US.ABBV"],
+      "first_order_beneficiaries": ["US.AMGN", "US.VRTX", "US.REGN", "US.ISRG", "US.BSY"],
+      "second_order_infrastructure": ["US.TMO", "US.DHR", "US.IDXX", "US.DXCM"],
+      "third_order_high_beta": ["US.MRNA", "US.BIIB", "US.ALNY"]
+    },
+    {
+      "theme_id": "energy_and_commodities",
+      "label": "Energy / commodities",
+      "benchmarks": ["US.XLE", "US.XOP", "US.DBC"],
+      "leader_layer": ["US.XOM", "US.CVX", "US.COP"],
+      "first_order_beneficiaries": ["US.EOG", "US.SLB", "US.HAL", "US.BKR"],
+      "second_order_infrastructure": ["US.LNG", "US.WMB", "US.KMI"],
+      "third_order_high_beta": ["US.OXY", "US.FANG", "US.DVN", "US.MPC", "US.VLO"]
+    },
+    {
+      "theme_id": "gold_and_precious_metals",
+      "label": "Gold / precious metals miners",
+      "benchmarks": ["US.GLD", "US.SLV", "US.GDX"],
+      "leader_layer": ["US.NEM", "US.GOLD", "US.AEM"],
+      "first_order_beneficiaries": ["US.FNV", "US.WPM", "US.RGLD"],
+      "second_order_infrastructure": ["US.PAAS", "US.AG"],
+      "third_order_high_beta": ["US.HMY", "US.SBSW", "US.CDE"]
+    },
+    {
+      "theme_id": "financials_and_capital_markets",
+      "label": "Financials / capital markets",
+      "benchmarks": ["US.XLF", "US.KRE"],
+      "leader_layer": ["US.JPM", "US.BRK.B", "US.BAC"],
+      "first_order_beneficiaries": ["US.GS", "US.MS", "US.SCHW", "US.BLK"],
+      "second_order_infrastructure": ["US.CME", "US.ICE", "US.SPGI", "US.MCO"],
+      "third_order_high_beta": ["US.C", "US.KKR", "US.ARES", "US.TFC"]
+    },
+    {
+      "theme_id": "industrials_infra",
+      "label": "Industrials / infrastructure / automation",
+      "benchmarks": ["US.XLI"],
+      "leader_layer": ["US.CAT", "US.GE", "US.HON"],
+      "first_order_beneficiaries": ["US.ETN", "US.EMR", "US.PH", "US.IR"],
+      "second_order_infrastructure": ["US.ROK", "US.TER", "US.PWR", "US.JCI"],
+      "third_order_high_beta": ["US.TSLA", "US.DE", "US.SYM"]
+    },
+    {
+      "theme_id": "utilities_power_and_infrastructure",
+      "label": "Utilities / power / grid",
+      "benchmarks": ["US.XLU", "US.XLI"],
+      "leader_layer": ["US.NEE", "US.CEG", "US.SO", "US.DUK"],
+      "first_order_beneficiaries": ["US.VST", "US.PEG", "US.EXC", "US.AEP"],
+      "second_order_infrastructure": ["US.ETN", "US.PWR", "US.GEV"],
+      "third_order_high_beta": ["US.NRG", "US.TLN"]
+    },
+    {
+      "theme_id": "consumer_discretionary",
+      "label": "Consumer discretionary / travel / leisure",
+      "benchmarks": ["US.XLY"],
+      "leader_layer": ["US.AMZN", "US.TSLA", "US.HD"],
+      "first_order_beneficiaries": ["US.BKNG", "US.MCD", "US.SBUX", "US.NKE"],
+      "second_order_infrastructure": ["US.MAR", "US.HLT", "US.RCL", "US.CCL"],
+      "third_order_high_beta": ["US.DASH", "US.UBER", "US.ABNB"]
+    }
+  ]
+}
