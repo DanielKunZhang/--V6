@@ -45,6 +45,8 @@ SA_TRIAL_SPEC         = ROOT / "SEEKING_ALPHA_INPUT_TRIAL.md"
 SA_TRIAL_CSV          = ROOT / "backtest_results" / "external_signal_trials" / "seeking_alpha_trial.csv"
 US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
 US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_input" / "latest.json"
+VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
+COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -545,6 +547,73 @@ def _read_csv_rows(path: Path) -> list[dict]:
         return []
 
 
+def _known_valuation_tickers() -> set[str]:
+    config = read_json(VALUATION_ROUTER_CONFIG)
+    tickers = set(config.get("ticker_overrides", {}).keys())
+    tickers.update({"PDD", "NU", "AAPL", "MCO", "SPGI", "AAOI", "COHR", "LITE", "MU", "VECO", "ASX"})
+    return {t.upper().replace("US.", "") for t in tickers}
+
+
+def _extract_known_tickers(text: str, known: set[str]) -> set[str]:
+    upper = str(text or "").upper()
+    found: set[str] = set()
+    for ticker in known:
+        if re.search(rf"(?<![A-Z0-9.])(?:US\.)?{re.escape(ticker)}(?![A-Z0-9])", upper):
+            found.add(ticker)
+    return found
+
+
+def _recent_research_tickers(today: date, known: set[str], lookback_days: int = 7) -> set[str]:
+    if not COMPANY_RESEARCH_DIR.exists():
+        return set()
+    cutoff = today - timedelta(days=lookback_days)
+    tickers: set[str] = set()
+    for path in COMPANY_RESEARCH_DIR.glob("*/*.md"):
+        try:
+            if datetime.fromtimestamp(path.stat().st_mtime).date() < cutoff:
+                continue
+        except OSError:
+            continue
+        tickers.update(_extract_known_tickers(f"{path.parent.name} {path.name}", known))
+    return tickers
+
+
+def collect_valuation_sop_actions(today: date, events: list[dict]) -> list[dict]:
+    """
+    Surface valuation framework routing only when a ticker is already active in
+    the research/event flow. This turns the SOP choice into a system input while
+    avoiding a daily checklist of every configured ticker.
+    """
+    try:
+        router = importlib.import_module("valuation_sop_router")
+    except Exception:
+        return []
+
+    config = read_json(VALUATION_ROUTER_CONFIG)
+    known = _known_valuation_tickers()
+    active_tickers: set[str] = set()
+    for event in events:
+        active_tickers.update(_extract_known_tickers(f"{event.get('text', '')} {event.get('action', '')}", known))
+    active_tickers.update(_recent_research_tickers(today, known))
+
+    actions: list[dict] = []
+    for ticker in sorted(active_tickers):
+        selected = router.select_framework(ticker, [], config)
+        framework_key = selected.get("framework_key", "SOP_v2.5")
+        framework_name = selected.get("framework_name", framework_key)
+        priority = "HIGH" if framework_key == "AI_Infrastructure_SOP_v2.7" else "MED"
+        actions.append({
+            "priority": priority,
+            "item": f"{ticker} 估值体系自动选择：{framework_name}",
+            "trigger": f"估值 {ticker}",
+            "reason": (
+                f"valuation_sop_router：{selected.get('why_this_framework', '')}；"
+                f"先选框架再估值，输出需回写 {', '.join(selected.get('system_feedback_targets', []))}"
+            ),
+        })
+    return actions
+
+
 def _date_from_decision(row: dict) -> date | None:
     decision_id = row.get("decision_id", "")
     m = re.match(r"(\d{8})", decision_id)
@@ -712,6 +781,15 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         add(
             row["priority"],
             "13F系统输入",
+            row["item"],
+            row["trigger"],
+            row["reason"],
+        )
+
+    for row in collect_valuation_sop_actions(today, events):
+        add(
+            row["priority"],
+            "估值",
             row["item"],
             row["trigger"],
             row["reason"],

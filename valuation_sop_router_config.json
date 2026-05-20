@@ -1,0 +1,57 @@
+{
+  "version": "valuation_sop_router_v1",
+  "updated_at": "2026-05-20",
+  "default_framework": "SOP_v2.5",
+  "frameworks": {
+    "SOP_v2.5": {
+      "name": "Traditional SOP v2.5",
+      "path": "/Users/zhangkun/Desktop/AI个人投资公司/config文件/AI投资助手SOP_优化版.md",
+      "use_for": ["ordinary_quality_compounder", "consumer", "platform_non_ai", "traditional_manufacturing", "financial_with_special_module"]
+    },
+    "AI_Core_SOP_v2.6": {
+      "name": "AI-Core SOP v2.6",
+      "path": "/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/AI核心候选估值框架_SOP_v2.6.md",
+      "use_for": ["ai_platform", "ai_software", "ai_semiconductor", "ai_core_compounder"]
+    },
+    "AI_Infrastructure_SOP_v2.7": {
+      "name": "AI Infrastructure SOP v2.7",
+      "path": "/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/AI基础设施估值框架_SOP_v2.7.md",
+      "use_for": ["ai_power_infra", "data_center_infra", "grid_electrification", "power_equipment", "cooling", "miner_to_compute", "regulated_utility_ai_load"]
+    },
+    "Radar_Reality_Check": {
+      "name": "Radar valuation reality check",
+      "path": "/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/Radar_Order_to_Valuation_Reality_Check_v1.md",
+      "use_for": ["high_vol_right_tail", "theme_stock_no_stable_cashflow", "early_radar_candidate"]
+    }
+  },
+  "ticker_overrides": {
+    "NEE": {
+      "framework": "AI_Infrastructure_SOP_v2.7",
+      "reason": "AI power infrastructure anchor: regulated utility plus AI data center load growth and Dominion/Virginia exposure.",
+      "system_feedback_targets": ["radar_order_valuation_seed.csv", "watchlist.json", "events_calendar.json"]
+    },
+    "CEG": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "VST": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "GEV": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "ETN": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "XEL": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "SO": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "DUK": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "BE": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "VRT": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "IREN": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "APLD": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "CORZ": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "CRWV": {"framework": "AI_Infrastructure_SOP_v2.7"},
+    "MSFT": {"framework": "AI_Core_SOP_v2.6"},
+    "GOOGL": {"framework": "AI_Core_SOP_v2.6"},
+    "AMZN": {"framework": "AI_Core_SOP_v2.6"},
+    "NVDA": {"framework": "AI_Core_SOP_v2.6"},
+    "META": {"framework": "AI_Core_SOP_v2.6"},
+    "ADBE": {"framework": "AI_Core_SOP_v2.6"},
+    "AVGO": {"framework": "AI_Core_SOP_v2.6"},
+    "TSM": {"framework": "AI_Core_SOP_v2.6"},
+    "ASML": {"framework": "AI_Core_SOP_v2.6"}
+  },
+  "system_feedback_targets_default": ["watchlist.json", "radar_order_valuation_seed.csv", "events_calendar.json"]
+}
