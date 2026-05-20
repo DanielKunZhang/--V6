@@ -384,6 +384,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "v6b": summarize_v6b(scorecard_path, live_forward_path),
         "allocator": run_allocator(allocator_policy_path, allocator_metrics_path),
         "reminders": policy.get("reminders", {}),
+        "mainline_intelligence": policy.get("mainline_intelligence", {}),
         "boundaries": policy.get("boundaries", []),
     }
     payload["weekly_action"] = decide_action(payload)
@@ -404,6 +405,14 @@ def render_markdown(payload: dict[str, Any]) -> str:
     managed = v6a.get("managed_state", {})
     allocator = payload["allocator"]
     v6b = payload["v6b"]
+    mainline = payload.get("mainline_intelligence", {})
+    mainline_focus = mainline.get("daily_user_focus", []) if isinstance(mainline, dict) else []
+    mainline_md_rows = [
+        [row.get("source", ""), row.get("ask", ""), row.get("system_use", "")]
+        for row in mainline_focus
+        if isinstance(row, dict)
+    ] or [["-", "-", "-"]]
+    automation_targets = mainline.get("automation_targets", []) if isinstance(mainline, dict) else []
 
     top_rows = [
         [row.get("ticker", ""), row.get("score", ""), zh_status(row.get("status", "")), row.get("theme", "")]
@@ -494,6 +503,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"- 说明：{zh_note(v6b.get('live_forward_note', ''))}",
             "",
             md_table(["标的", "评分", "状态", "主题"], top_rows),
+            "",
+            "## V6-B 主线情报采集",
+            "",
+            f"- 目的：{mainline.get('purpose', 'Feed V6-B mainline classifier.') if isinstance(mainline, dict) else 'Feed V6-B mainline classifier.'}",
+            f"- 输出规则：{mainline.get('daily_output_rule', 'No non-price source may directly trigger trades.') if isinstance(mainline, dict) else 'No non-price source may directly trigger trades.'}",
+            "",
+            "### 今日人工 triage",
+            "",
+            md_table(["来源", "你需要补充什么", "系统如何使用"], mainline_md_rows),
+            "",
+            "### 自动化采集目标",
+            "",
+            "\n".join(f"- {item}" for item in automation_targets) if automation_targets else "- -",
             "",
             "## Allocator / 资金分配",
             "",
@@ -633,6 +655,7 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     managed = v6a.get("managed_state", {})
     v6b = payload["v6b"]
     allocator = payload["allocator"]
+    mainline = payload.get("mainline_intelligence", {})
     weights = allocator.get("weights", {})
     action = str(payload.get("weekly_action", ""))
     action_tone = "bad" if action.startswith("禁止") else "warn" if "需要用户确认" in action else "good"
@@ -665,6 +688,21 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     boundary_items = "".join(
         f'<li style="margin:6px 0;color:#374151;line-height:1.45;">{html_escape(item)}</li>'
         for item in payload.get("boundaries", [])
+    )
+    mainline_focus = mainline.get("daily_user_focus", []) if isinstance(mainline, dict) else []
+    mainline_rows = [
+        [
+            f'<strong>{html_escape(row.get("source", ""))}</strong>',
+            row.get("ask", ""),
+            row.get("system_use", ""),
+        ]
+        for row in mainline_focus
+        if isinstance(row, dict)
+    ] or [["-", "-", "-"]]
+    automation_targets = mainline.get("automation_targets", []) if isinstance(mainline, dict) else []
+    automation_items = "".join(
+        f'<li style="margin:6px 0;color:#374151;line-height:1.45;">{html_escape(item)}</li>'
+        for item in automation_targets
     )
     notes = "; ".join(str(item) for item in allocator.get("notes", []))
     stale_block = _stale_data_html(gate)
@@ -723,6 +761,17 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     <h2 style="font-size:18px;margin:0 0 6px;color:#111827;">V6-B 动态候选池</h2>
     <p style="font-size:14px;color:#4b5563;line-height:1.55;margin:0 0 14px;">V6-B 当前仍是仅研究/模拟。它的任务是成为未来动态候选池来源，不是直接下单策略。</p>
     {html_table(["标的", "评分", "状态", "主题"], candidate_rows)}
+  </div>
+
+  <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
+    <h2 style="font-size:18px;margin:0 0 6px;color:#111827;">V6-B 主线情报采集</h2>
+    <p style="font-size:14px;color:#4b5563;line-height:1.55;margin:0 0 10px;">{html_escape(mainline.get("purpose", "Feed V6-B mainline classifier.") if isinstance(mainline, dict) else "Feed V6-B mainline classifier.")}</p>
+    <p style="font-size:13px;color:#92400e;line-height:1.5;margin:0 0 14px;">{html_escape(mainline.get("daily_output_rule", "No non-price source may directly trigger trades.") if isinstance(mainline, dict) else "No non-price source may directly trigger trades.")}</p>
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">今日人工 triage</h3>
+    {html_table(["来源", "你需要补充什么", "系统如何使用"], mainline_rows)}
+    <div style="height:12px;"></div>
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">自动化采集目标</h3>
+    <ul style="padding-left:20px;margin:0;">{automation_items}</ul>
   </div>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">

@@ -36,6 +36,34 @@
       "任何生产级修改都必须同步更新 V6_STRATEGY_LAB.md、AI Wiki 和 SYSTEM_OVERVIEW。"
     ]
   },
+  "mainline_intelligence": {
+    "purpose": "Feed V6-B mainline_classifier. Automation should collect repeatable evidence; user review should focus on high-context items that are hard to scrape reliably.",
+    "automation_first": true,
+    "daily_user_focus": [
+      {
+        "source": "X Radar",
+        "ask": "补充今天新增或明显升温的主题、产业链扩散、关键催化、被反复提到的 ticker。",
+        "system_use": "Narrative evidence: add candidate themes, update theme breadth notes, and explain why a theme may deserve starter-stage monitoring."
+      },
+      {
+        "source": "Seeking Alpha / earnings notes",
+        "ask": "记录主线候选里的业绩上修、订单/capex、指引变化、分析师分歧明显的文章或财报线索。",
+        "system_use": "Fundamental evidence: raise/lower theme quality and stock-pool priority; never trade from article sentiment alone."
+      },
+      {
+        "source": "13F / institution flow",
+        "ask": "季度窗口只复核高质量机构是否持续加仓同一主线及其核心表达，不做短线开关。",
+        "system_use": "Institutional evidence: slow confirmation layer for theme persistence and stock-pool weighting."
+      }
+    ],
+    "automation_targets": [
+      "Market evidence: 3/6/12m relative strength, theme ETF trend, breadth, drawdown and leadership versus SPY/QQQ.",
+      "Narrative evidence: X Radar theme mentions, new links in the value chain, repeated catalyst/ticker references.",
+      "Fundamental evidence: revisions, guidance, capex/order comments, earnings-driven theme confirmation.",
+      "Institutional evidence: 13F concentration and sustained high-quality holder accumulation, only as delayed confirmation."
+    ],
+    "daily_output_rule": "Daily email should state what automation can collect and what the user should manually triage today. No non-price source may directly trigger trades."
+  },
   "boundaries": [
     "报告系统只读，不能下单。",
     "邮件只是提醒，不能作为自动交易触发器。",
