@@ -57,6 +57,12 @@
     "action": "触发：汇总本周每日记录的 SA 公开信号，检查样本数、quality_score>=4 数量、是否进入美股Radar / V6-B / 主仓反证；不自动爬取，不绕paywall。"
   },
   {
+    "date": "2026-05-27",
+    "domain": "估值",
+    "text": "NEE AI Infrastructure v2.7 估值后续：Dominion审批与AI电力横向比较",
+    "action": "触发：估值 NEE；检查Dominion审批路径、large-load tariff、Virginia数据中心负荷、rate base/capex recovery，并横向比较CEG/VST/GEV/ETN/XEL/SO/DUK。当前结论Research/不买。"
+  },
+  {
     "date": "2026-06-01",
     "domain": "Radar",
     "text": "Futu历史K线额度月度刷新（估计）",

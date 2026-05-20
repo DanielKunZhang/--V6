@@ -1,0 +1,72 @@
+{
+  "_comment": "Watchlist of stocks with completed SOP DCF valuations. Add entries after each /估值 analysis.",
+  "_schema": {
+    "v_base": "DCF Base case intrinsic value (per share/ADS, in local currency)",
+    "v_base_geo_adjusted": "v_base after geopolitical discount (China stocks -20~40%)",
+    "floor": "Max(Liquidation Value, DCF Bear) — absolute downside floor",
+    "ceiling": "DCF Bull case",
+    "alert_threshold": "Price / v_base_geo_adjusted ratio to trigger alert (default 0.60 = 40% MoS)",
+    "currency": "Price currency (USD/HKD/CNY)"
+  },
+  "stocks": {
+    "600036.SH": {
+      "company": "招商银行",
+      "exchange": "SSE",
+      "currency": "CNY",
+      "v_base": 52.2,
+      "v_base_geo_adjusted": 52.2,
+      "floor": 33.7,
+      "ceiling": 71.8,
+      "alert_threshold": 0.60,
+      "last_price_at_analysis": 38.36,
+      "last_analysis_date": "2026-04-29",
+      "next_earnings": "",
+      "sector": "Banking / Financial Services",
+      "wacc": 8.5,
+      "tgr": 3.5,
+      "geo_discount_pct": 0,
+      "kelly_position_pct": 13.5,
+      "notes": "26Q1后V_base小幅上修；净息差与零售/信用卡风险仍压制重估，组合内更像RMB停泊仓而非优先升级席位。"
+    },
+    "PDD": {
+      "company": "PDD Holdings Inc. (拼多多/Temu母公司)",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "v_base": 181.0,
+      "v_base_geo_adjusted": 127.0,
+      "floor": 50.2,
+      "ceiling": 289.0,
+      "alert_threshold": 0.60,
+      "last_price_at_analysis": 99.54,
+      "last_analysis_date": "2026-04-09",
+      "next_earnings": "2026-05-27",
+      "sector": "Consumer Cyclical / E-commerce",
+      "wacc": 11.5,
+      "tgr": 2.5,
+      "geo_discount_pct": 30,
+      "kelly_position_pct": 7.5,
+      "notes": "Temu美国关税风险，地缘折价30%，赔率3.84:1，当前MoS(geo-adj)=21.6%，逐步建仓区",
+      "wheel_strike": 90.0,
+      "wheel_expiry": "2026-06-20"
+    },
+    "NEE": {
+      "company": "NextEra Energy, Inc.",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "v_base": 88.0,
+      "v_base_geo_adjusted": 88.0,
+      "floor": 62.0,
+      "ceiling": 120.0,
+      "alert_threshold": 0.85,
+      "last_price_at_analysis": 90.06,
+      "last_analysis_date": "2026-05-20",
+      "next_earnings": "",
+      "sector": "Utilities / AI Power Infrastructure",
+      "wacc": 8.0,
+      "tgr": 4.75,
+      "geo_discount_pct": 0,
+      "kelly_position_pct": 0.0,
+      "notes": "AI Infrastructure SOP v2.7；当前为AI电力基础设施行业锚/主题验证器，不是买入信号。Risk-adjusted value约84-96，初始击球区72-78，需Dominion审批、large-load tariff、rate base/capex recovery证据改善。"
+    }
+  }
+}
