@@ -33,6 +33,12 @@
     "action": "触发：复盘 NVDA；更新AI-Core v2.6估值、持仓上限和AI右尾期权观察"
   },
   {
+    "date": "2026-05-22",
+    "domain": "美股Radar",
+    "text": "GOOGL AI Search thesis watch：Google Search AI化纳入长期监控",
+    "action": "触发：复盘 GOOGL；只做thesis watch，不触发买卖。必须回答：AI Search是否提高query engagement、是否稀释广告点击、AI serving cost是否压缩利润率、AI Mode是否强化分发入口或增加监管/内容方冲突。"
+  },
+  {
     "date": "2026-05-21",
     "domain": "美股Radar",
     "text": "X Radar 期权流核查：IREN put sweep 与 Jan 2027 put flow 是否进入 OI",
