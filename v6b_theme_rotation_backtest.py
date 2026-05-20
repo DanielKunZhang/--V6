@@ -124,16 +124,64 @@ def defensive_weights(monthly: pd.DataFrame, date: pd.Timestamp) -> dict[str, fl
     return {winner: 1.0}
 
 
-def pick_weights(monthly: pd.DataFrame, date: pd.Timestamp, top_n: int, min_theme_score: float, risk_weight: float) -> tuple[dict[str, float], list[dict[str, Any]]]:
+def is_overheated(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str) -> bool:
+    one_month = pct_change(monthly, date, ticker, 1)
+    three_month = pct_change(monthly, date, ticker, 3)
+    loc = monthly.index.get_loc(date)
+    if loc < 12 or one_month is None or three_month is None:
+        return False
+    window = monthly[ticker].iloc[loc - 11 : loc + 1].dropna()
+    if window.empty:
+        return False
+    close = float(monthly.loc[date, ticker])
+    high_12m = float(window.max())
+    near_high = high_12m > 0 and close / high_12m > 0.97
+    return near_high and (one_month > 0.18 or three_month > 0.35)
+
+
+def realized_vol(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str, months: int = 6) -> float | None:
+    loc = monthly.index.get_loc(date)
+    if loc < months:
+        return None
+    prices = monthly[ticker].iloc[loc - months : loc + 1].dropna()
+    rets = prices.pct_change().dropna()
+    if rets.empty or rets.std() <= 0:
+        return None
+    return float(rets.std() * np.sqrt(12))
+
+
+def pick_weights(
+    monthly: pd.DataFrame,
+    date: pd.Timestamp,
+    top_n: int,
+    min_theme_score: float,
+    risk_weight: float,
+    *,
+    use_cooldown: bool,
+    vol_target: float | None,
+) -> tuple[dict[str, float], list[dict[str, Any]]]:
     rows = theme_scores(monthly, date)
     if not market_ok(monthly, date):
         return defensive_weights(monthly, date), rows
-    chosen = [row for row in rows if row["theme_score"] >= min_theme_score and row["top_proxy_score"] > 0][:top_n]
+    candidates = [row for row in rows if row["theme_score"] >= min_theme_score and row["top_proxy_score"] > 0]
+    if use_cooldown:
+        cooled = [row for row in candidates if not is_overheated(monthly, date, row["selected_proxy"])]
+        if cooled:
+            candidates = cooled
+    chosen = candidates[:top_n]
     if not chosen:
         return defensive_weights(monthly, date), rows
-    weights = {row["selected_proxy"]: risk_weight / len(chosen) for row in chosen}
-    if risk_weight < 1.0:
-        weights["US.BIL"] = 1.0 - risk_weight
+    effective_risk = risk_weight
+    if vol_target is not None:
+        vols = [realized_vol(monthly, date, row["selected_proxy"]) for row in chosen]
+        vols = [vol for vol in vols if vol is not None and np.isfinite(vol)]
+        if vols:
+            avg_vol = float(np.mean(vols))
+            if avg_vol > 0:
+                effective_risk = min(effective_risk, max(0.35, vol_target / avg_vol))
+    weights = {row["selected_proxy"]: effective_risk / len(chosen) for row in chosen}
+    if effective_risk < 1.0:
+        weights["US.BIL"] = 1.0 - effective_risk
     return weights, rows
 
 
@@ -142,37 +190,42 @@ def month_end_dates(index: pd.DatetimeIndex) -> list[pd.Timestamp]:
     return [pd.Timestamp(value) for value in grouped.tolist()]
 
 
-def run_strategy(prices: pd.DataFrame, top_n: int, min_theme_score: float, risk_weight: float) -> tuple[pd.Series, list[dict[str, Any]]]:
+def run_strategy(
+    prices: pd.DataFrame,
+    top_n: int,
+    min_theme_score: float,
+    risk_weight: float,
+    *,
+    use_cooldown: bool = False,
+    vol_target: float | None = None,
+    dd_brake: bool = False,
+) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
     returns = prices.pct_change().fillna(0.0)
-    weights_by_date: dict[pd.Timestamp, dict[str, float]] = {}
+    rebalance_dates = set(monthly.index)
+    monthly_rows: dict[pd.Timestamp, list[dict[str, Any]]] = {}
     decisions = []
+    preview_weights_by_date: dict[pd.Timestamp, dict[str, float]] = {}
     for dt in monthly.index:
         if monthly.index.get_loc(dt) < 12:
             weights = {"CASH": 1.0}
             rows = []
         else:
-            weights, rows = pick_weights(monthly, pd.Timestamp(dt), top_n, min_theme_score, risk_weight)
-        weights_by_date[pd.Timestamp(dt)] = weights
-        decisions.append(
-            {
-                "date": str(pd.Timestamp(dt).date()),
-                "weights": weights,
-                "top_themes": [
-                    {
-                        "theme_id": row["theme_id"],
-                        "label": row["label"],
-                        "selected_proxy": row["selected_proxy"],
-                        "theme_score": round(float(row["theme_score"]), 6),
-                        "breadth": round(float(row["breadth"]), 6),
-                    }
-                    for row in rows[:5]
-                ],
-            }
-        )
+            weights, rows = pick_weights(
+                monthly,
+                pd.Timestamp(dt),
+                top_n,
+                min_theme_score,
+                risk_weight,
+                use_cooldown=use_cooldown,
+                vol_target=vol_target,
+            )
+        preview_weights_by_date[pd.Timestamp(dt)] = weights
+        monthly_rows[pd.Timestamp(dt)] = rows
 
     equity = INITIAL_CAPITAL
+    peak = equity
     current_weights = {"CASH": 1.0}
     records = []
     for dt in prices.index:
@@ -183,11 +236,42 @@ def run_strategy(prices: pd.DataFrame, top_n: int, min_theme_score: float, risk_
             if ticker in returns.columns and pd.notna(returns.loc[dt, ticker]):
                 day_ret += weight * float(returns.loc[dt, ticker])
         equity = max(equity * (1.0 + day_ret), 0.0)
-        if dt in weights_by_date:
-            new_weights = weights_by_date[dt]
+        peak = max(peak, equity)
+        dd = equity / peak - 1.0
+
+        if dt in rebalance_dates:
+            weights = dict(preview_weights_by_date.get(dt, {"CASH": 1.0}))
+            if dd_brake:
+                if dd <= -0.25:
+                    weights = defensive_weights(monthly, pd.Timestamp(dt))
+                elif dd <= -0.15:
+                    risky = sum(weight for ticker, weight in weights.items() if ticker != "CASH")
+                    if risky > 0:
+                        scale = 0.50
+                        weights = {ticker: weight * scale for ticker, weight in weights.items() if ticker != "CASH"}
+                        weights["US.BIL"] = weights.get("US.BIL", 0.0) + (1.0 - sum(weights.values()))
+            new_weights = weights
             turnover = sum(abs(new_weights.get(k, 0.0) - current_weights.get(k, 0.0)) for k in set(new_weights) | set(current_weights) if k != "CASH")
             equity -= equity * turnover * TX_COST_BPS / 10_000.0
             current_weights = dict(new_weights)
+            rows = monthly_rows.get(pd.Timestamp(dt), [])
+            decisions.append(
+                {
+                    "date": str(pd.Timestamp(dt).date()),
+                    "weights": current_weights,
+                    "drawdown": round(float(dd), 6),
+                    "top_themes": [
+                        {
+                            "theme_id": row["theme_id"],
+                            "label": row["label"],
+                            "selected_proxy": row["selected_proxy"],
+                            "theme_score": round(float(row["theme_score"]), 6),
+                            "breadth": round(float(row["breadth"]), 6),
+                        }
+                        for row in rows[:5]
+                    ],
+                }
+            )
         records.append((dt, equity))
     return pd.Series([value for _, value in records], index=[dt for dt, _ in records]), decisions
 
@@ -266,17 +350,46 @@ def main() -> None:
     required = [ticker for ticker in tickers if ticker in prices.columns]
     prices = prices[required].dropna(axis=1, how="all").ffill(limit=3).dropna(subset=["US.SPY", "US.QQQ", "US.BIL"])
 
-    configs = []
+    configs: list[dict[str, Any]] = []
     for top_n in [1, 2, 3]:
         for min_score in [0.02, 0.05, 0.08]:
             for risk_weight in [0.75, 0.90, 1.0]:
-                configs.append((top_n, min_score, risk_weight))
+                configs.append(
+                    {
+                        "top_n": top_n,
+                        "min_score": min_score,
+                        "risk_weight": risk_weight,
+                        "use_cooldown": False,
+                        "vol_target": None,
+                        "dd_brake": False,
+                        "version": "v0",
+                    }
+                )
+                configs.append(
+                    {
+                        "top_n": top_n,
+                        "min_score": min_score,
+                        "risk_weight": risk_weight,
+                        "use_cooldown": True,
+                        "vol_target": 0.22,
+                        "dd_brake": True,
+                        "version": "v1_guarded",
+                    }
+                )
 
     rows = []
     best_decisions: list[dict[str, Any]] = []
     best_score = -1e9
-    for top_n, min_score, risk_weight in configs:
-        eq, decisions = run_strategy(prices, top_n=top_n, min_theme_score=min_score, risk_weight=risk_weight)
+    for config in configs:
+        eq, decisions = run_strategy(
+            prices,
+            top_n=int(config["top_n"]),
+            min_theme_score=float(config["min_score"]),
+            risk_weight=float(config["risk_weight"]),
+            use_cooldown=bool(config["use_cooldown"]),
+            vol_target=config["vol_target"],
+            dd_brake=bool(config["dd_brake"]),
+        )
         s = stats(eq)
         if not s:
             continue
@@ -285,8 +398,11 @@ def main() -> None:
             "2022": period_stats(eq, "2022-01-01", "2022-12-31"),
             "2024_2025": period_stats(eq, "2024-01-01", "2025-12-31"),
         }
-        label = f"top{top_n}_min{min_score:.2f}_risk{risk_weight:.0%}"
-        row = {"config": label, "top_n": top_n, "min_score": min_score, "risk_weight": risk_weight, "stats": s, "periods": periods}
+        label = (
+            f"{config['version']}_top{config['top_n']}_min{config['min_score']:.2f}_"
+            f"risk{config['risk_weight']:.0%}"
+        )
+        row = {"config": label, **config, "stats": s, "periods": periods}
         rows.append(row)
         score = s["sharpe"] + max(s["max_dd"], -0.40) + s["ann_ret"] * 0.25
         if score > best_score:

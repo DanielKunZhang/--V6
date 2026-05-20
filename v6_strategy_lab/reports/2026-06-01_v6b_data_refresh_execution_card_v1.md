@@ -26,6 +26,18 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - 区间：`2018-01-01` 至 `2025-12-31`
   - 目的：先用 ETF / 行业代理识别当期主线，再进入主题内候选池，避免 V6-B 被固定为 AI infra 子策略。
   - 初步结果：最佳 v0 配置约 `+15.3%` 年化、`-38.8%` 最大回撤、Sharpe `0.49`；2020 和 2024-2025 有主线捕捉能力，但风险控制明显不足，不能作为 allocator 版本。
+- 已试跑 ETF theme rotation `v1_guarded` 风控变体：
+  - 加入 overheat cooldown、vol target、drawdown brake。
+  - 结果不合格：最佳 v1_guarded 约 `+10.5%` 年化、`-30.2%` 最大回撤、Sharpe `0.38`，低于 v0 的收益/Sharpe，且回撤改善不足。
+  - 结论：当前 v1_guarded 不作为候选版本，只保留为反例；下一版应重做主题退潮识别和 sleeve sizing，而不是简单压风险资产权重。
+- 已按“额度应花在提高系统判断力处”的原则，用 OpenD 刷新主题 ETF / 行业代理到 `2026-05-19`：
+  - `US.XLK / US.XBI / US.XLV / US.XLE / US.XOP / US.SLV / US.GDX / US.XLF / US.KRE / US.XLI / US.XLU / US.XLY / US.ARKK / US.IGV / US.FDN / US.IWM / US.IEF / US.DBC`
+  - 报告：`backtest_results/v6b_theme_rotation/v6b_fetch_theme_etf_cache_report_20260520.json`
+  - 使用 18 个标的额度，远低于月度 1000 标的额度。
+- 用最新 ETF 缓存重跑到 `2026-05-19`：
+  - v0 最佳约 `+16.0%` 年化、`-38.8%` 最大回撤、Sharpe `0.51`。
+  - v1_guarded 仍不合格，最佳约 `+10.4%` 年化、`-30.2%` 最大回撤、Sharpe `0.37`。
+  - 近期主题识别显示 `Gold / Precious Metals` 与 `Semis / AI Compute` 持续靠前，2026-05-19 top themes 为 `Semis / AI Compute`、`Energy / Resources`、`Broad Beta`。
 
 ### 部分完成
 
@@ -43,6 +55,11 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - 增加主题退潮识别；
   - 增加“晚确认但不追尾”的 overheat / cooldown 规则；
   - 将通过的 top theme 映射到主题内候选池，而不是直接买 ETF 代理。
+- 不采用 `v1_guarded` 当前实现。下一轮应优先测试：
+  - theme score slope / breadth deterioration 作为退潮信号；
+  - 按主题波动分配 sleeve，而不是全局固定 risk_weight；
+  - theme ETF 只作为入口，实际表达转到主题内候选池；
+  - V6-A + V6-B sleeve 组合层风控，而不是 ETF rotation 单独满仓跑。
 - 重跑 `v6_weekly_review_board.py` 和 `investment_company_dashboard.py`，确认 backlog / 驾驶舱吸收本轮结论。
 - 重新提交 6月1日正式刷新结果。
 
