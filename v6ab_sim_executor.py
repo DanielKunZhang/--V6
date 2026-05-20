@@ -21,8 +21,10 @@ from attack_engine_live_order_preview import (
 )
 from attack_engine_sim_executor import (
     build_transition_orders,
+    check_sim_trade_ready,
     load_managed_state,
     place_sim_orders,
+    resolve_sim_acc_id,
     update_managed_state_with_results,
     validate_sells_against_managed_state,
     write_report,
@@ -35,7 +37,7 @@ ROOT = Path(__file__).resolve().parent
 OUT_DIR = ROOT / "backtest_results" / "v6ab_sim_executor"
 DEFAULT_CONFIG = ROOT / "v6_strategy_lab" / "configs" / "v6ab_sim_candidate_v2.json"
 DEFAULT_V6A_DAILY = ROOT / "backtest_results" / "attack_engine_replay" / "attack_replay_daily_20260520_live_refreshed.csv"
-DEFAULT_STATE = ROOT / "backtest_results" / "v6a_state" / "v6ab_managed_positions_sim_19005590.json"
+DEFAULT_STATE_DIR = ROOT / "backtest_results" / "v6a_state"
 
 
 PRICE_TICKERS = [
@@ -214,11 +216,11 @@ def main() -> None:
     parser.add_argument("--max-order-value", type=float, default=5000.0)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=11111)
-    parser.add_argument("--sim-acc-id", default="19005590")
+    parser.add_argument("--sim-acc-id", default="")
     parser.add_argument("--home-dir", default=str(DEFAULT_FUTU_HOME_DIR))
     parser.add_argument("--quote-timeout-sec", type=float, default=12.0)
     parser.add_argument("--account-timeout-sec", type=float, default=12.0)
-    parser.add_argument("--managed-positions-state", default=str(DEFAULT_STATE))
+    parser.add_argument("--managed-positions-state", default="")
     parser.add_argument("--liquidate-non-target-us-positions", action="store_true")
     parser.add_argument("--execute-sim", action="store_true")
     parser.add_argument("--update-managed-state", action="store_true")
@@ -227,6 +229,18 @@ def main() -> None:
 
     if args.strategy_capital <= 0:
         raise SystemExit("--strategy-capital is required and must be > 0 for V6AB paper sim.")
+
+    sim_acc_id = resolve_sim_acc_id(
+        host=args.host,
+        port=args.port,
+        configured_acc_id=args.sim_acc_id,
+        home_dir=Path(args.home_dir),
+    )
+    managed_state_path = (
+        Path(args.managed_positions_state)
+        if args.managed_positions_state
+        else DEFAULT_STATE_DIR / f"v6ab_managed_positions_sim_{sim_acc_id}.json"
+    )
 
     config = load_config(Path(args.config))
     v6a_signal_date, v6a_weights = latest_v6a_weights(Path(args.v6a_daily))
@@ -245,14 +259,13 @@ def main() -> None:
 
     account = run_worker_with_timeout(
         _account_worker,
-        {"host": args.host, "port": args.port, "acc_id": args.sim_acc_id, "trd_env": "SIMULATE", "home_dir": args.home_dir},
+        {"host": args.host, "port": args.port, "acc_id": sim_acc_id, "trd_env": "SIMULATE", "home_dir": args.home_dir},
         args.account_timeout_sec,
         {"ok": False, "warnings": [f"account_timeout:{args.account_timeout_sec:.0f}s"], "positions": [], "capital": {}, "account": {}},
     )
     if account.get("warnings"):
         raise SystemExit(f"account warnings: {account.get('warnings')}")
 
-    managed_state_path = Path(args.managed_positions_state)
     managed_state = load_managed_state(managed_state_path, strategy_name=str(config["candidate_id"]))
     current_override = {
         normalize_code(code): int(math.floor(as_float(qty, 0.0)))
@@ -270,8 +283,12 @@ def main() -> None:
         current_positions_override=current_override,
     )
     validate_sells_against_managed_state(orders, managed_state)
+    if args.execute_sim:
+        preflight = check_sim_trade_ready(host=args.host, port=args.port, acc_id=sim_acc_id, home_dir=Path(args.home_dir))
+        if not preflight.get("ok"):
+            raise SystemExit(f"sim trade preflight failed: {preflight.get('reason')}")
     results = (
-        place_sim_orders(orders, host=args.host, port=args.port, acc_id=args.sim_acc_id, home_dir=Path(args.home_dir))
+        place_sim_orders(orders, host=args.host, port=args.port, acc_id=sim_acc_id, home_dir=Path(args.home_dir))
         if args.execute_sim
         else []
     )
@@ -306,6 +323,7 @@ def main() -> None:
     write_report(report_path, orders, results, bool(args.execute_sim))
     print("== V6AB Sim Executor ==")
     print(f"Mode:    {'EXECUTE_SIMULATE' if args.execute_sim else 'PLAN_ONLY'}")
+    print(f"Account: {sim_acc_id}")
     print(f"Target:  {target_path}")
     print(f"Orders:  {orders_path}")
     print(f"Results: {results_path}")

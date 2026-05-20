@@ -174,6 +174,66 @@ def build_transition_orders(
     return out
 
 
+def check_sim_trade_ready(*, host: str, port: int, acc_id: str, home_dir: Path) -> Dict[str, Any]:
+    account_mod = load_module("v6_sim_futu_account_snapshot_preflight", V3_REPO / "futu_account_snapshot.py")
+    account_mod.ensure_futu_home(home_dir)
+    from futu import OpenSecTradeContext, RET_OK, TrdEnv
+
+    ctx = OpenSecTradeContext(
+        host=host,
+        port=port,
+        filter_trdmarket="US",
+        security_firm="FUTUSECURITIES",
+    )
+    try:
+        ret, data = ctx.order_list_query(trd_env=TrdEnv.SIMULATE, acc_id=int(acc_id), refresh_cache=True)
+        if ret != RET_OK:
+            return {"ok": False, "reason": str(data)}
+        return {"ok": True, "open_orders": 0 if data is None else int(len(data))}
+    except Exception as exc:
+        return {"ok": False, "reason": f"{type(exc).__name__}: {exc}"}
+    finally:
+        ctx.close()
+
+
+def resolve_sim_acc_id(*, host: str, port: int, configured_acc_id: str, home_dir: Path) -> str:
+    account_mod = load_module("v6_sim_futu_account_snapshot_resolve", V3_REPO / "futu_account_snapshot.py")
+    account_mod.ensure_futu_home(home_dir)
+    from futu import OpenSecTradeContext, RET_OK
+
+    configured = str(configured_acc_id or "").strip()
+    ctx = OpenSecTradeContext(
+        host=host,
+        port=port,
+        filter_trdmarket="US",
+        security_firm="FUTUSECURITIES",
+    )
+    try:
+        ret, data = ctx.get_acc_list()
+        if ret != RET_OK or data is None or data.empty:
+            raise SystemExit(f"get_acc_list failed while resolving sim acc_id: {data}")
+        rows = data.to_dict("records")
+        if configured:
+            for row in rows:
+                if str(row.get("acc_id", "")).strip() == configured:
+                    if str(row.get("trd_env", "")).upper() != "SIMULATE":
+                        raise SystemExit(f"configured acc_id is not SIMULATE: {configured}")
+                    return configured
+            raise SystemExit(f"configured sim acc_id not found in OpenD account list: {configured}")
+        candidates = []
+        for row in rows:
+            trd_env = str(row.get("trd_env", "")).upper()
+            status = str(row.get("acc_status", "")).upper()
+            auth = {str(item).upper() for item in (row.get("trdmarket_auth") or [])}
+            if trd_env == "SIMULATE" and (not status or status == "ACTIVE") and "US" in auth:
+                candidates.append(row)
+        if not candidates:
+            raise SystemExit("no ACTIVE SIMULATE US account found in OpenD account list")
+        return str(candidates[0].get("acc_id", "")).strip()
+    finally:
+        ctx.close()
+
+
 def place_sim_orders(orders: pd.DataFrame, *, host: str, port: int, acc_id: str, home_dir: Path) -> List[Dict[str, Any]]:
     account_mod = load_module("v6_sim_futu_account_snapshot", V3_REPO / "futu_account_snapshot.py")
     account_mod.ensure_futu_home(home_dir)
@@ -311,7 +371,7 @@ def main() -> None:
     parser.add_argument("--max-order-value", type=float, default=5000.0)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=11111)
-    parser.add_argument("--sim-acc-id", default="19005590")
+    parser.add_argument("--sim-acc-id", default="")
     parser.add_argument("--home-dir", default=str(DEFAULT_FUTU_HOME_DIR))
     parser.add_argument("--quote-timeout-sec", type=float, default=12.0)
     parser.add_argument("--account-timeout-sec", type=float, default=12.0)
@@ -323,6 +383,13 @@ def main() -> None:
     parser.add_argument("--execute-sim", action="store_true")
     parser.add_argument("--tag", default="latest")
     args = parser.parse_args()
+
+    sim_acc_id = resolve_sim_acc_id(
+        host=args.host,
+        port=args.port,
+        configured_acc_id=args.sim_acc_id,
+        home_dir=Path(args.home_dir),
+    )
 
     managed_state_path = Path(args.managed_positions_state) if args.managed_positions_state else None
     managed_state = None
@@ -354,7 +421,7 @@ def main() -> None:
         {
             "host": args.host,
             "port": args.port,
-            "acc_id": args.sim_acc_id,
+            "acc_id": sim_acc_id,
             "trd_env": "SIMULATE",
             "home_dir": args.home_dir,
         },
@@ -382,8 +449,12 @@ def main() -> None:
     )
     if managed_state is not None:
         validate_sells_against_managed_state(orders, managed_state)
+    if args.execute_sim:
+        preflight = check_sim_trade_ready(host=args.host, port=args.port, acc_id=sim_acc_id, home_dir=Path(args.home_dir))
+        if not preflight.get("ok"):
+            raise SystemExit(f"sim trade preflight failed: {preflight.get('reason')}")
     results = (
-        place_sim_orders(orders, host=args.host, port=args.port, acc_id=args.sim_acc_id, home_dir=Path(args.home_dir))
+        place_sim_orders(orders, host=args.host, port=args.port, acc_id=sim_acc_id, home_dir=Path(args.home_dir))
         if args.execute_sim
         else []
     )
@@ -405,6 +476,7 @@ def main() -> None:
     write_report(report_path, orders, results, args.execute_sim)
     print("== V6 Sim Executor ==")
     print(f"Mode:    {'EXECUTE_SIMULATE' if args.execute_sim else 'PLAN_ONLY'}")
+    print(f"Account: {sim_acc_id}")
     print(f"Orders:  {orders_path}")
     print(f"Results: {results_path}")
     print(f"Report:  {report_path}")
