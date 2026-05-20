@@ -43,23 +43,36 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - v0 最高收益版本约 `+14.3%` 年化、`-49.7%` 最大回撤、Sharpe `0.43`。
   - v1_guarded 最好约 `+10.9%` 年化、`-28.0%` 最大回撤、Sharpe `0.38`。
   - 结论：ETF 主线层可作为“主题发现雷达”，但不能作为长期独立可用策略；下一步必须进入主题内候选池和组合 sleeve 风控。
+- 已完成第一版 V6-B `theme-to-stock` 动态回测：
+  - 仍由 ETF / 行业代理判断当期主线，再进入对应主题股票池做相对强度 / 趋势选择。
+  - 报告：`backtest_results/v6b_theme_rotation/v6b_theme_rotation_20260520_theme_to_stock_v2.md`
+  - 区间：`2012-01-01` 至 `2026-05-19`
+  - 最佳稳健版：`v1_guarded_top3_min0.08_risk90%_stocks`，约 `+27.1%` 年化、`-24.3%` 最大回撤、Sharpe `0.89`。
+  - 较激进高收益版：`v0_top3_min0.02_risk100%_stocks`，约 `+31.2%` 年化、`-31.6%` 最大回撤、Sharpe `0.86`。
+  - 同期基准：`SPY +14.5% / Sharpe 0.60`，`QQQ +20.2% / Sharpe 0.76`，`BRK.B +13.5% / Sharpe 0.52`，`VTV +12.2% / Sharpe 0.50`。
+  - 结论：V6-B 的主干应该是 `ETF theme discovery -> theme stock expression`，而不是 ETF-only 交易；第一版证据显示它有长期打败宽基和价值代理的潜力，但 Sharpe 仍未过 `1.0`，需要继续做 walk-forward / OOS / 组合 sleeve 风控。
 
 ### 部分完成
 
 - `US.MRVL / US.NOK` 已有本地旧缓存，但未刷新到 `2026-05-19`；当前结论仍然不允许直接追高或主动升 active。
 - robotics 第二批 `US.ROK / US.ETN / US.HON / US.IR / US.TER` 已有部分历史缓存，但尚未完成本卡要求的统一 2026-06-01 刷新与正式 triage。
-- Radar 当前截面扫描可以识别最高主线和二阶扩散，但 V6-B 主干仍需升级为“跨主题 ETF 主线轮动 -> 主题内候选池”的完整系统，避免 AI infra 过期后继续困在 AI 池。
+- Radar 当前截面扫描可以识别最高主线和二阶扩散；V6-B 主干已从 ETF-only 推进到“跨主题 ETF 主线轮动 -> 主题内候选池”的第一版动态验证，但仍需扩大主题股票池并做 walk-forward / OOS 验证。
 
 ### 仍待 6月1日或额度允许时完成
 
 - 刷新第二批 robotics 全量缓存到当日最新日期。
 - 刷新第三批 `US.MRVL / US.NOK` 到当日最新日期，并重跑 `external_short_network_review.py`。
-- 用 ETF / 行业代理先完成 V6-B 第一层历史 theme rotation 验证，再进入各主题候选池；不要再把 AI infra 子模块结果当作完整 V6-B。
-- 改进 ETF theme rotation v0：
-  - 降低 `-38%` 级别回撤；
+- 扩大 V6-B theme-to-stock 的主题候选池：
+  - energy/resources 不能长期只有 ETF fallback；
+  - precious metals 不能长期只有 `GLD / SLV / GDX` proxy；
+  - healthcare/biotech 当前只有 `LLY`，需要补真实主题池；
+  - financials / industrials / consumer 需要从 Radar registry 中补 point-in-time 候选。
+- 改进 theme-to-stock v1：
+  - 增加 walk-forward / OOS 切分；
   - 增加主题退潮识别；
   - 增加“晚确认但不追尾”的 overheat / cooldown 规则；
-  - 将通过的 top theme 映射到主题内候选池，而不是直接买 ETF 代理。
+  - 引入 valuation/catalyst filter，避免纯价格动量追尾；
+  - 将通过版本接入 V6-A + V6-B sleeve sizing，而不是独立满仓跑。
 - 不采用 `v1_guarded` 当前实现。下一轮应优先测试：
   - theme score slope / breadth deterioration 作为退潮信号；
   - 按主题波动分配 sleeve，而不是全局固定 risk_weight；
@@ -67,7 +80,8 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - V6-A + V6-B sleeve 组合层风控，而不是 ETF rotation 单独满仓跑。
 - 长期可用性判断口径：
   - ETF 层如果 Sharpe 长期低于 `0.7` 或最大回撤大于 `30%`，只能做 theme discovery，不可作为独立执行策略；
-  - 只有在主题入口映射到个股候选池后，仍能在长周期维持更好收益/回撤比，才进入 V6-B allocator 讨论。
+  - theme-to-stock 层必须长期跑赢 `SPY / QQQ / BRK.B / VTV`，且最大回撤不高于 `QQQ`，才进入 V6-B allocator 讨论；
+  - Sharpe 未过 `1.0` 前，不允许把它当作大资金全账户核心，只能作为 V6-B sleeve 候选。
 - 重跑 `v6_weekly_review_board.py` 和 `investment_company_dashboard.py`，确认 backlog / 驾驶舱吸收本轮结论。
 - 重新提交 6月1日正式刷新结果。
 

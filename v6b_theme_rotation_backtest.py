@@ -21,20 +21,20 @@ RISK_FREE = 0.05
 TX_COST_BPS = 8.0
 
 THEMES = {
-    "broad_beta": {"label": "Broad Beta", "proxies": ["US.SPY", "US.QQQ", "US.IWM"]},
-    "technology": {"label": "Technology / Software", "proxies": ["US.XLK", "US.IGV", "US.FDN", "US.ARKK"]},
-    "semis_ai": {"label": "Semis / AI Compute", "proxies": ["US.SMH", "US.SOXX"]},
-    "healthcare_biotech": {"label": "Healthcare / Biotech", "proxies": ["US.XLV", "US.XBI"]},
-    "energy_resources": {"label": "Energy / Resources", "proxies": ["US.XLE", "US.XOP", "US.DBC"]},
-    "precious_metals": {"label": "Gold / Precious Metals", "proxies": ["US.GLD", "US.SLV", "US.GDX"]},
-    "financials": {"label": "Financials", "proxies": ["US.XLF", "US.KRE"]},
-    "industrials_infra": {"label": "Industrials / Infrastructure", "proxies": ["US.XLI"]},
-    "utilities_power": {"label": "Utilities / Power", "proxies": ["US.XLU"]},
-    "consumer_discretionary": {"label": "Consumer Discretionary", "proxies": ["US.XLY"]},
+    "broad_beta": {"label": "Broad Beta", "proxies": ["US.SPY", "US.QQQ", "US.IWM"], "stocks": ["US.AMZN", "US.MSFT", "US.GOOGL", "US.META", "US.TSLA"]},
+    "technology": {"label": "Technology / Software", "proxies": ["US.XLK", "US.IGV", "US.FDN", "US.ARKK"], "stocks": ["US.MSFT", "US.GOOGL", "US.META", "US.AMZN", "US.NFLX"]},
+    "semis_ai": {"label": "Semis / AI Compute", "proxies": ["US.SMH", "US.SOXX"], "stocks": ["US.NVDA", "US.AVGO", "US.AMD", "US.ANET", "US.TSM", "US.MU", "US.WDC", "US.AMKR", "US.COHR", "US.AAOI", "US.LITE", "US.MRVL", "US.NOK"]},
+    "healthcare_biotech": {"label": "Healthcare / Biotech", "proxies": ["US.XLV", "US.XBI"], "stocks": ["US.LLY"]},
+    "energy_resources": {"label": "Energy / Resources", "proxies": ["US.XLE", "US.XOP", "US.DBC"], "stocks": []},
+    "precious_metals": {"label": "Gold / Precious Metals", "proxies": ["US.GLD", "US.SLV", "US.GDX"], "stocks": []},
+    "financials": {"label": "Financials", "proxies": ["US.XLF", "US.KRE"], "stocks": ["US.JPM", "US.BRK.B"]},
+    "industrials_infra": {"label": "Industrials / Infrastructure", "proxies": ["US.XLI"], "stocks": ["US.ROK", "US.ETN", "US.HON", "US.IR", "US.TER"]},
+    "utilities_power": {"label": "Utilities / Power", "proxies": ["US.XLU"], "stocks": []},
+    "consumer_discretionary": {"label": "Consumer Discretionary", "proxies": ["US.XLY"], "stocks": ["US.AMZN", "US.TSLA", "US.NFLX"]},
 }
 
 DEFENSIVE = ["US.BIL", "US.IEF", "US.GLD"]
-BENCHMARKS = ["US.SPY", "US.QQQ"]
+BENCHMARKS = ["US.SPY", "US.QQQ", "US.BRK.B", "US.VTV"]
 
 
 def pct_change(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str, months: int) -> float | None:
@@ -150,6 +150,26 @@ def realized_vol(monthly: pd.DataFrame, date: pd.Timestamp, ticker: str, months:
     return float(rets.std() * np.sqrt(12))
 
 
+def stock_candidates_for_theme(theme_id: str) -> list[str]:
+    return list(THEMES.get(theme_id, {}).get("stocks", []))
+
+
+def rank_stock_candidates(monthly: pd.DataFrame, date: pd.Timestamp, theme_id: str, max_names: int) -> list[str]:
+    candidates = []
+    for ticker in stock_candidates_for_theme(theme_id):
+        if ticker not in monthly.columns or pd.isna(monthly.loc[date, ticker]):
+            continue
+        if not above_ma(monthly, date, ticker, 10):
+            continue
+        mom = avg_momentum(monthly, date, ticker, [1, 3, 6])
+        mom_slow = avg_momentum(monthly, date, ticker, [3, 6, 12])
+        if mom is None or mom_slow is None or mom <= 0:
+            continue
+        candidates.append((ticker, mom * 0.65 + mom_slow * 0.35))
+    candidates.sort(key=lambda row: row[1], reverse=True)
+    return [ticker for ticker, _ in candidates[:max_names]]
+
+
 def pick_weights(
     monthly: pd.DataFrame,
     date: pd.Timestamp,
@@ -159,6 +179,8 @@ def pick_weights(
     *,
     use_cooldown: bool,
     vol_target: float | None,
+    expression: str,
+    stock_top_n: int,
 ) -> tuple[dict[str, float], list[dict[str, Any]]]:
     rows = theme_scores(monthly, date)
     if not market_ok(monthly, date):
@@ -179,7 +201,17 @@ def pick_weights(
             avg_vol = float(np.mean(vols))
             if avg_vol > 0:
                 effective_risk = min(effective_risk, max(0.35, vol_target / avg_vol))
-    weights = {row["selected_proxy"]: effective_risk / len(chosen) for row in chosen}
+    sleeves: list[str] = []
+    for row in chosen:
+        if expression == "stocks":
+            stocks = rank_stock_candidates(monthly, date, row["theme_id"], stock_top_n)
+            sleeves.extend(stocks if stocks else [row["selected_proxy"]])
+        else:
+            sleeves.append(row["selected_proxy"])
+    sleeves = list(dict.fromkeys(sleeves))
+    if not sleeves:
+        return defensive_weights(monthly, date), rows
+    weights = {ticker: effective_risk / len(sleeves) for ticker in sleeves}
     if effective_risk < 1.0:
         weights["US.BIL"] = 1.0 - effective_risk
     return weights, rows
@@ -199,6 +231,8 @@ def run_strategy(
     use_cooldown: bool = False,
     vol_target: float | None = None,
     dd_brake: bool = False,
+    expression: str = "etf",
+    stock_top_n: int = 2,
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -220,6 +254,8 @@ def run_strategy(
                 risk_weight,
                 use_cooldown=use_cooldown,
                 vol_target=vol_target,
+                expression=expression,
+                stock_top_n=stock_top_n,
             )
         preview_weights_by_date[pd.Timestamp(dt)] = weights
         monthly_rows[pd.Timestamp(dt)] = rows
@@ -308,19 +344,43 @@ def fmt_pct(value: float | None) -> str:
     return f"{value * 100:+.1f}%"
 
 
-def write_report(result_rows: list[dict[str, Any]], decisions: list[dict[str, Any]], path: Path, start: str, end: str) -> None:
+def write_report(
+    result_rows: list[dict[str, Any]],
+    decisions: list[dict[str, Any]],
+    benchmark_rows: list[dict[str, Any]],
+    path: Path,
+    start: str,
+    end: str,
+) -> None:
     ranked = sorted(result_rows, key=lambda row: (row["stats"]["sharpe"], row["stats"]["ann_ret"]), reverse=True)
     lines = [
-        "# V6-B Dynamic Theme Rotation Backtest v0",
+        "# V6-B Dynamic Theme Rotation Backtest",
         "",
         f"- Generated: `{datetime.now().isoformat(timespec='seconds')}`",
         f"- Window: `{start}` to `{end}`",
-        "- Scope: first-layer ETF theme discovery only. This tests whether the system can rotate across market themes before entering stock-level candidate pools.",
+        "- Scope: dynamic ETF theme discovery, then either ETF expression or theme-to-stock expression.",
         "- Design intent: confirm the main uptrend later but avoid staying trapped in an expired theme.",
+        "",
+        "## Benchmarks",
+        "",
+        "| ticker | ann | maxDD | Sharpe | final |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in benchmark_rows:
+        s = row["stats"]
+        lines.append(
+            f"| `{row['ticker']}` | {fmt_pct(s.get('ann_ret'))} | {fmt_pct(s.get('max_dd'))} | "
+            f"{s.get('sharpe', 0):.2f} | ${s.get('final', 0):,.0f} |"
+        )
+    lines.extend(
+        [
+        "",
+        "## Strategy Grid",
         "",
         "| rank | config | ann | maxDD | Sharpe | 2020 | 2022 | 2024-2025 | final |",
         "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ]
+        ]
+    )
     for idx, row in enumerate(ranked, start=1):
         s = row["stats"]
         p2020 = row.get("periods", {}).get("2020", {})
@@ -345,7 +405,14 @@ def main() -> None:
     parser.add_argument("--tag", default=datetime.now().strftime("%Y%m%d_%H%M%S"))
     args = parser.parse_args()
 
-    tickers = sorted(set(BENCHMARKS + DEFENSIVE + [proxy for theme in THEMES.values() for proxy in theme["proxies"]]))
+    tickers = sorted(
+        set(
+            BENCHMARKS
+            + DEFENSIVE
+            + [proxy for theme in THEMES.values() for proxy in theme["proxies"]]
+            + [stock for theme in THEMES.values() for stock in theme.get("stocks", [])]
+        )
+    )
     prices = build_price_matrix(tickers, args.start, args.end)
     required = [ticker for ticker in tickers if ticker in prices.columns]
     prices = prices[required].dropna(axis=1, how="all").ffill(limit=3).dropna(subset=["US.SPY", "US.QQQ", "US.BIL"])
@@ -354,30 +421,45 @@ def main() -> None:
     for top_n in [1, 2, 3]:
         for min_score in [0.02, 0.05, 0.08]:
             for risk_weight in [0.75, 0.90, 1.0]:
-                configs.append(
-                    {
-                        "top_n": top_n,
-                        "min_score": min_score,
-                        "risk_weight": risk_weight,
-                        "use_cooldown": False,
-                        "vol_target": None,
-                        "dd_brake": False,
-                        "version": "v0",
-                    }
-                )
-                configs.append(
-                    {
-                        "top_n": top_n,
-                        "min_score": min_score,
-                        "risk_weight": risk_weight,
-                        "use_cooldown": True,
-                        "vol_target": 0.22,
-                        "dd_brake": True,
-                        "version": "v1_guarded",
-                    }
-                )
+                for expression in ["etf", "stocks"]:
+                    configs.append(
+                        {
+                            "top_n": top_n,
+                            "min_score": min_score,
+                            "risk_weight": risk_weight,
+                            "use_cooldown": False,
+                            "vol_target": None,
+                            "dd_brake": False,
+                            "expression": expression,
+                            "stock_top_n": 2,
+                            "version": "v0",
+                        }
+                    )
+                    configs.append(
+                        {
+                            "top_n": top_n,
+                            "min_score": min_score,
+                            "risk_weight": risk_weight,
+                            "use_cooldown": True,
+                            "vol_target": 0.22,
+                            "dd_brake": True,
+                            "expression": expression,
+                            "stock_top_n": 2,
+                            "version": "v1_guarded",
+                        }
+                    )
 
     rows = []
+    benchmark_rows = []
+    for ticker in BENCHMARKS:
+        if ticker not in prices.columns:
+            continue
+        series = prices[ticker].dropna()
+        if len(series) < 20:
+            continue
+        eq = series / float(series.iloc[0]) * INITIAL_CAPITAL
+        benchmark_rows.append({"ticker": ticker, "stats": stats(eq)})
+
     best_decisions: list[dict[str, Any]] = []
     best_score = -1e9
     for config in configs:
@@ -389,6 +471,8 @@ def main() -> None:
             use_cooldown=bool(config["use_cooldown"]),
             vol_target=config["vol_target"],
             dd_brake=bool(config["dd_brake"]),
+            expression=str(config["expression"]),
+            stock_top_n=int(config["stock_top_n"]),
         )
         s = stats(eq)
         if not s:
@@ -400,7 +484,7 @@ def main() -> None:
         }
         label = (
             f"{config['version']}_top{config['top_n']}_min{config['min_score']:.2f}_"
-            f"risk{config['risk_weight']:.0%}"
+            f"risk{config['risk_weight']:.0%}_{config['expression']}"
         )
         row = {"config": label, **config, "stats": s, "periods": periods}
         rows.append(row)
@@ -412,9 +496,16 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / f"v6b_theme_rotation_{args.tag}.json"
     md_path = OUT_DIR / f"v6b_theme_rotation_{args.tag}.md"
-    serializable = {"generated_at": datetime.now().isoformat(timespec="seconds"), "start": args.start, "end": args.end, "rows": rows, "best_recent_decisions": best_decisions[-24:]}
+    serializable = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "start": args.start,
+        "end": args.end,
+        "benchmarks": benchmark_rows,
+        "rows": rows,
+        "best_recent_decisions": best_decisions[-24:],
+    }
     json_path.write_text(json.dumps(serializable, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
-    write_report(rows, best_decisions, md_path, args.start, args.end)
+    write_report(rows, best_decisions, benchmark_rows, md_path, args.start, args.end)
     print(f"JSON: {json_path}")
     print(f"Report: {md_path}")
 
