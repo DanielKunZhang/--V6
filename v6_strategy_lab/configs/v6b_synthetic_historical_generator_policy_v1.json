@@ -57,6 +57,28 @@
         "rel120_vs_qqq": 0.1
       }
     },
+    "optics_and_interconnect": {
+      "members": [
+        "US.COHR",
+        "US.LITE",
+        "US.AAOI"
+      ],
+      "max_names": 2,
+      "filters": {
+        "min_mom20": -0.18,
+        "min_mom60": 0.0,
+        "min_mom120": 0.05,
+        "min_rel60_vs_qqq": -0.05,
+        "max_drawdown_from_high": -0.40
+      },
+      "score_weights": {
+        "mom20": 0.15,
+        "mom60": 0.3,
+        "mom120": 0.25,
+        "rel60_vs_qqq": 0.2,
+        "rel120_vs_qqq": 0.1
+      }
+    },
     "turnaround_momentum": {
       "members": [
         "US.INTC"

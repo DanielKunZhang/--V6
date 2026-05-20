@@ -33,16 +33,18 @@ VARIANTS = {
     "v6a_base_only": {"tracks": [], "overlay_base": True, "dynamic_only": False},
     "v6b_core_track": {"tracks": ["core_reacceleration"], "overlay_base": False, "dynamic_only": True},
     "v6b_bottleneck_track": {"tracks": ["bottleneck_diffusion"], "overlay_base": False, "dynamic_only": True},
+    "v6b_optics_track": {"tracks": ["optics_and_interconnect"], "overlay_base": False, "dynamic_only": True},
     "v6b_turnaround_track": {"tracks": ["turnaround_momentum"], "overlay_base": False, "dynamic_only": True},
     "v6b_blended_tracks": {
-        "tracks": ["core_reacceleration", "bottleneck_diffusion", "turnaround_momentum"],
+        "tracks": "__ALL_DYNAMIC_TRACKS__",
         "overlay_base": False,
         "dynamic_only": True,
     },
     "v6ab_core_overlay": {"tracks": ["core_reacceleration"], "overlay_base": True, "dynamic_only": False},
     "v6ab_bottleneck_overlay": {"tracks": ["bottleneck_diffusion"], "overlay_base": True, "dynamic_only": False},
+    "v6ab_optics_overlay": {"tracks": ["optics_and_interconnect"], "overlay_base": True, "dynamic_only": False},
     "v6ab_blended_overlay": {
-        "tracks": ["core_reacceleration", "bottleneck_diffusion", "turnaround_momentum"],
+        "tracks": "__ALL_DYNAMIC_TRACKS__",
         "overlay_base": True,
         "dynamic_only": False,
     },
@@ -59,6 +61,16 @@ def load_snapshot_schedule(manifest_path: Path) -> tuple[list[pd.Timestamp], dic
         schedule[as_of] = {track: list(tickers) for track, tickers in row.get("selected", {}).items()}
     dates.sort()
     return dates, schedule
+
+
+def expand_variant_tracks(variant: dict[str, Any], schedule: dict[pd.Timestamp, dict[str, list[str]]]) -> dict[str, Any]:
+    tracks = variant.get("tracks")
+    if tracks == "__ALL_DYNAMIC_TRACKS__":
+        all_tracks = sorted({track for rows in schedule.values() for track in rows})
+        updated = dict(variant)
+        updated["tracks"] = all_tracks
+        return updated
+    return variant
 
 
 def current_snapshot_tickers(dt: pd.Timestamp, dates: list[pd.Timestamp], schedule: dict[pd.Timestamp, dict[str, list[str]]], variant: dict[str, Any]) -> list[str]:
@@ -231,6 +243,7 @@ def main() -> None:
 
     rows = []
     for variant_name, variant in VARIANTS.items():
+        variant = expand_variant_tracks(variant, schedule)
         for params in ENGINE_PARAMS:
             eq, metrics = run_engine(prices, snapshot_dates, schedule, variant, params)
             if not metrics:

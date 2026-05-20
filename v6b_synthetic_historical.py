@@ -376,27 +376,18 @@ def write_snapshot_series(
         lines.append(
             f"| `{row['ticker']}` | `{row['track']}` | `{row['first_selected']}` | `{row['last_selected']}` | {row['selected_months']} |"
         )
-    lines.extend(
-        [
-            "",
-            "## Sample Snapshots",
-            "",
-            "| as_of | entries | core | bottleneck | turnaround |",
-            "| --- | ---: | --- | --- | --- |",
-        ]
-    )
+    sample_tracks = list(policy.get("tracks", {}).keys())
+    lines.extend(["", "## Sample Snapshots", ""])
+    lines.append("| as_of | entries | " + " | ".join(sample_tracks) + " |")
+    lines.append("| --- | ---: | " + " | ".join(["---"] * len(sample_tracks)) + " |")
     sample_rows = manifest_rows[:2] + manifest_rows[-3:] if len(manifest_rows) > 5 else manifest_rows
     seen = set()
     for row in sample_rows:
         if row["as_of"] in seen:
             continue
         seen.add(row["as_of"])
-        lines.append(
-            f"| `{row['as_of']}` | {row['entry_count']} | "
-            f"`{', '.join(row['selected'].get('core_reacceleration', []))}` | "
-            f"`{', '.join(row['selected'].get('bottleneck_diffusion', []))}` | "
-            f"`{', '.join(row['selected'].get('turnaround_momentum', []))}` |"
-        )
+        selected_cells = [f"`{', '.join(row['selected'].get(track, []))}`" for track in sample_tracks]
+        lines.append(f"| `{row['as_of']}` | {row['entry_count']} | " + " | ".join(selected_cells) + " |")
     report_path = out_dir / "summary.md"
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return manifest_path, report_path
