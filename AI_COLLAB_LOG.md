@@ -219,3 +219,4 @@
 
 - [11:07] [决策] 2026-05-20 冷启动口径修正：README_CURRENT.md 不再把旧 Iron Condor 写作生产系统；当前统一为 Daily Board / Central Risk Board、V6-A 小额人工 pilot、V6-B research/SIM、A股Radar Phase 1A、Value Wheel analyze-only、V3/IC legacy paused。所有模块必须服从统一目标：在不牺牲长期安全性的前提下相对安全地快速增长资本。
 - [11:10] [代码] 补齐 2026-05-19 X Radar Daily 的 High 后续动作：GOOGL Google Search AI化已从日报正文落到 x_radar_signal_trial.csv、investment_screener/watchlist.json notes 和 events_calendar 2026-05-22 复盘事件；AI infra 13F long + semi put 对冲此前已在 13F 学习中落到 institutional_hedge_signal / crowding_penalty / reflexivity_score / macro_regime_fit / position_role 字段与 6月1日 V6-B/Radar 刷新清单。
+- [11:23] [代码] 把13F学习从文档升级为系统输入：新增 us_radar_13f_system_input_seed.csv 和 us_radar_13f_system_input.py，生成 backtest_results/us_radar_13f_system_input/latest.{json,csv,md} 并同步桌面 LATEST；morning_brief.py 已读取 13F 系统输入，将 GOOGL/IREN/NVDA 等 P0 动作和 6月1日 V6-B候选刷新推入 Daily Board。13F仍禁止直接买卖，只用于候选质量、风险控制、反身性和研究优先级。

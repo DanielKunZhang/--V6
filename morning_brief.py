@@ -44,6 +44,7 @@ RELEASE_GATE_DIR      = ROOT / "backtest_results" / "attack_engine_release_gate"
 SA_TRIAL_SPEC         = ROOT / "SEEKING_ALPHA_INPUT_TRIAL.md"
 SA_TRIAL_CSV          = ROOT / "backtest_results" / "external_signal_trials" / "seeking_alpha_trial.csv"
 US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
+US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_input" / "latest.json"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -353,6 +354,56 @@ def collect_13f_learning_window(today: date | None = None) -> dict:
     return {"active": False}
 
 
+def collect_13f_system_actions(today: date | None = None, days_ahead: int = 14) -> list[dict[str, Any]]:
+    """Read machine-readable 13F outputs and return actionable system tasks.
+
+    These are not trade signals. They are Radar/V6-B/valuation tasks created
+    only after a 13F learning pass has produced explicit system fields.
+    """
+    today = today or date.today()
+    payload = read_json(US_RADAR_13F_SYSTEM_INPUT)
+    rows = payload.get("rows", []) if isinstance(payload, dict) else []
+    actions: list[dict[str, Any]] = []
+    v6b_candidates: list[dict[str, Any]] = []
+    for row in rows:
+        if str(row.get("status", "")).upper() != "OPEN":
+            continue
+        if row.get("priority") not in {"P0", "P1"}:
+            continue
+        try:
+            deadline = date.fromisoformat(str(row.get("review_deadline", "")))
+        except ValueError:
+            continue
+        days = (deadline - today).days
+        if days < -7 or days > days_ahead:
+            continue
+        ticker = str(row.get("ticker", "")).replace("US.", "")
+        if row.get("position_role") == "V6B_candidate":
+            v6b_candidates.append({**row, "ticker_short": ticker})
+            continue
+        actions.append({
+            "priority": "HIGH" if row.get("priority") == "P0" and days <= 3 else "MED",
+            "ticker": ticker,
+            "item": f"{ticker} 13F系统输入：{row.get('system_effect', '')}",
+            "trigger": f"复盘 {ticker}",
+            "reason": f"{row.get('next_system_action', '')}；13F不是买入信号：{row.get('no_trade_reason', '')}",
+        })
+    if v6b_candidates:
+        tickers = " / ".join(str(row.get("ticker_short", "")) for row in v6b_candidates[:8])
+        top_deadline = min(str(row.get("review_deadline", "9999-12-31")) for row in v6b_candidates)
+        reason_parts = []
+        for row in v6b_candidates[:4]:
+            reason_parts.append(f"{row.get('ticker_short')}: {row.get('next_system_action')}")
+        actions.append({
+            "priority": "MED",
+            "ticker": tickers,
+            "item": f"13F V6-B候选刷新：{tickers}",
+            "trigger": "复盘 V6-B",
+            "reason": f"最早截止 {top_deadline}；" + "；".join(reason_parts) + "；13F不是买入信号，必须等point-in-time和估值现实检查。",
+        })
+    return actions
+
+
 # ── K线额度 ──────────────────────────────────────────────────────────────────
 
 def collect_kline_quota() -> dict | None:
@@ -655,6 +706,15 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             f"13F 季度学习窗口开启：{q13f.get('quarter')}，更新 P0/P1 基金与自营交易公司样本",
             "更新13F学习",
             f"窗口 {q13f.get('window')}；先看 {p0}，再看 P1×{q13f.get('p1_count', 0)} / P2×{q13f.get('p2_count', 0)}；只用于完善 Radar skills，不自动交易",
+        )
+
+    for row in collect_13f_system_actions(today):
+        add(
+            row["priority"],
+            "13F系统输入",
+            row["item"],
+            row["trigger"],
+            row["reason"],
         )
 
     # 非交易日也给出明确状态，避免 Daily/Weekly 邮件看起来“没有今日待办”。

@@ -1,0 +1,17 @@
+quarter,as_of,ticker,theme,source_managers,institutional_validation,institutional_hedge_signal,crowding_penalty,reflexivity_score,macro_regime_fit,position_role,next_system_action,review_deadline,priority,status,no_trade_reason
+2026Q1,2026-05-20,US.ANET,AI networking / fabric,Point72,5,call/long validation,3,3,4,V6B_candidate,6月1日后纳入V6-B point-in-time refresh并做估值现实检查,2026-06-01,P0,OPEN,13F只验证机构关注和主题宽度；不构成买入
+2026Q1,2026-05-20,US.TSM,AI manufacturing anchor,Duquesne;Situational Awareness,5,long/call validation plus sector hedge,4,3,4,V6B_candidate,6月1日后纳入V6-B core_reaccel refresh；补地缘/估值折扣,2026-06-01,P0,OPEN,13F滞后且半导体beta拥挤；必须等系统验证
+2026Q1,2026-05-20,US.SNDK,AI storage / memory repricing,Situational Awareness,4,long/call validation,3,3,3,research,补估值现实检查和存储周期峰值折扣；确认是否映射WDC/分拆后标的,2026-06-01,P1,OPEN,存储周期股不能因机构call直接主仓化
+2026Q1,2026-05-20,US.BE,AI power / distributed energy,Situational Awareness;Duquesne,4,long validation,3,4,4,research,补订单/毛利/现金流反证；与NEE/GEV/ETN电力链横向比较,2026-06-07,P1,OPEN,高弹性电力链必须先证明订单和现金流
+2026Q1,2026-05-20,US.CRWV,AI cloud / new AI infrastructure,Situational Awareness,4,long validation,4,5,3,research,补客户集中度/融资/折旧/capex反证；只进Radar样本,2026-06-07,P1,OPEN,新云平台反身性强但毁灭性回撤风险高
+2026Q1,2026-05-20,US.IREN,AI data center / miner-to-compute,Situational Awareness;Options flow,4,put sweep risk plus long validation,5,5,3,pullback,提高拥挤度惩罚；核查融资/客户/电力成本/期权OI后再复核,2026-05-21,P0,OPEN,期权流和融资风险未清楚前禁止追高
+2026Q1,2026-05-20,US.APLD,AI data center / miner-to-compute,Situational Awareness,4,long validation,4,5,3,research,补融资/客户/订单/capex反证；纳入AI data center样本组,2026-06-07,P1,OPEN,矿转算力票只做小样本验证
+2026Q1,2026-05-20,US.CORZ,AI data center / miner-to-compute,Situational Awareness,4,long validation,4,5,3,research,补融资/客户/订单/capex反证；纳入AI data center样本组,2026-06-07,P1,OPEN,矿转算力票只做小样本验证
+2026Q1,2026-05-20,US.MU,HBM / memory bottleneck,Situational Awareness;13F consensus,5,long/call validation plus cycle hedge,4,3,4,V6B_candidate,6月1日后纳入V6-B refresh；估值中强制周期峰值利润折扣,2026-06-01,P0,OPEN,HBM瓶颈真实但记忆体周期不能线性外推
+2026Q1,2026-05-20,US.AMD,AI accelerator / core reacceleration,Situational Awareness;13F consensus,4,long plus sector hedge,4,2,4,V6B_candidate,6月1日后纳入V6-B refresh；只用系统买点不主观追高,2026-06-01,P1,OPEN,竞争和利润率不确定；不能靠13F解锁仓位
+2026Q1,2026-05-20,US.AVGO,AI networking / custom ASIC,13F consensus;Situational Awareness,5,long plus sector hedge,4,2,4,watch,V6-A已有相关暴露；只做集中度和机会成本监控,2026-06-01,P1,OPEN,已有AI infra敞口时不因13F重复加仓
+2026Q1,2026-05-20,US.NVDA,AI platform / GPU core,Point72;Millennium;Situational Awareness,5,long/call plus put hedge,5,2,4,watch,财报后按AI-Core v2.6复盘；不因13F增加财报前敞口,2026-05-20,P0,OPEN,高拥挤核心持仓；13F只提高风险意识
+2026Q1,2026-05-20,US.GOOGL,AI platform / Search / Cloud,13F consensus;Tudor,5,long/call/put mixed,3,3,4,watch,做完整估值复核并加入AI Search thesis watch；当前不买,2026-05-22,P0,OPEN,好公司但估值和AI搜索利润率仍需验证
+2026Q1,2026-05-20,US.ADBE,Software risk carrier / AI disruption,Tudor,3,option structure signal,3,3,3,watch,不因13F改变仓位纪律；仍等Q2/CEO gate,2026-06-20,P2,OPEN,13F只说明流动性和交易兴趣，不证明thesis
+2026Q1,2026-05-20,US.NTRA,Non-AI alpha sample,Duquesne,4,concentrated long,1,2,3,research,只作为非AI alpha样本归档；不进主仓动作,2026-06-30,P2,OPEN,能力圈不足且医疗个股需独立研究
+2026Q1,2026-05-20,US.INSM,Non-AI alpha sample,Duquesne,4,concentrated long,1,2,3,research,只作为非AI alpha样本归档；不进主仓动作,2026-06-30,P2,OPEN,能力圈不足且医疗个股需独立研究
