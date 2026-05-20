@@ -167,6 +167,96 @@ def dynamic_overlay_equity(
     return pd.Series([value for _, value in records], index=[dt for dt, _ in records]), pd.DataFrame(rows)
 
 
+def dynamic_b_sizing_equity(
+    curves: dict[str, pd.Series],
+    *,
+    b_key: str,
+    b_low: float,
+    b_mid: float,
+    b_high: float,
+    b_strong_126d: float,
+    b_weak_63d: float,
+    hedge_max: float,
+    vol_threshold: float,
+    corr_threshold: float,
+    dd_threshold: float,
+    start: str,
+    end: str,
+) -> tuple[pd.Series, pd.DataFrame]:
+    frame = pd.DataFrame(curves).sort_index().ffill().dropna()
+    frame = frame[(frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))]
+    rets = frame.pct_change().fillna(0.0)
+    spy_ma = frame["SPY"].rolling(200).mean()
+    qqq_ma = frame["QQQ"].rolling(200).mean()
+    gld_ma = frame["GLD"].rolling(126).mean()
+    b_mom_63 = frame[b_key].pct_change(63)
+    b_mom_126 = frame[b_key].pct_change(126)
+    ab_corr = rets["V6A"].rolling(63).corr(rets[b_key])
+
+    equity = INITIAL_CAPITAL
+    base_equity = 1.0
+    base_peak = 1.0
+    records: list[tuple[pd.Timestamp, float]] = []
+    rows: list[dict[str, Any]] = []
+    for i, dt in enumerate(frame.index):
+        if i == 0:
+            b_weight = b_mid
+            weights = {"V6A": 1.0 - b_weight, b_key: b_weight, "GLD": 0.0, "BIL": 0.0}
+        else:
+            prev = frame.index[i - 1]
+            market_ok = (
+                pd.notna(spy_ma.loc[prev])
+                and pd.notna(qqq_ma.loc[prev])
+                and frame.loc[prev, "SPY"] > spy_ma.loc[prev]
+                and frame.loc[prev, "QQQ"] > qqq_ma.loc[prev]
+            )
+            market_bad = (
+                pd.notna(spy_ma.loc[prev])
+                and pd.notna(qqq_ma.loc[prev])
+                and (frame.loc[prev, "SPY"] < spy_ma.loc[prev] or frame.loc[prev, "QQQ"] < qqq_ma.loc[prev])
+            )
+            b_weight = b_mid
+            if pd.notna(b_mom_126.loc[prev]) and b_mom_126.loc[prev] >= b_strong_126d and market_ok:
+                b_weight = b_high
+            if pd.notna(b_mom_63.loc[prev]) and b_mom_63.loc[prev] <= b_weak_63d:
+                b_weight = b_low
+            if market_bad and pd.notna(ab_corr.loc[prev]) and ab_corr.loc[prev] >= corr_threshold:
+                b_weight = min(b_weight, b_low)
+
+            a_weight = 1.0 - b_weight
+            base_ret = a_weight * float(rets.loc[dt, "V6A"]) + b_weight * float(rets.loc[dt, b_key])
+            base_equity *= 1.0 + base_ret
+            base_peak = max(base_peak, base_equity)
+            base_dd = base_equity / base_peak - 1.0
+            blend_ret = a_weight * rets["V6A"] + b_weight * rets[b_key]
+            base_vol = float(blend_ret.iloc[max(0, i - 63) : i].std() * np.sqrt(252)) if i > 20 else np.nan
+            trigger_count = 0
+            if market_bad:
+                trigger_count += 1
+            if np.isfinite(base_vol) and base_vol >= vol_threshold:
+                trigger_count += 1
+            if base_dd <= dd_threshold:
+                trigger_count += 1
+            if market_bad and pd.notna(ab_corr.loc[prev]) and ab_corr.loc[prev] >= corr_threshold:
+                trigger_count += 1
+            hedge_weight = hedge_max if trigger_count >= 2 else (hedge_max * 0.5 if trigger_count == 1 else 0.0)
+            hedge_asset = "GLD" if pd.notna(gld_ma.loc[prev]) and frame.loc[prev, "GLD"] >= gld_ma.loc[prev] else "BIL"
+            weights = {"V6A": a_weight * (1.0 - hedge_weight), b_key: b_weight * (1.0 - hedge_weight), "GLD": 0.0, "BIL": 0.0}
+            weights[hedge_asset] = hedge_weight
+
+        day_ret = sum(float(rets.loc[dt, key]) * weight for key, weight in weights.items() if key in rets.columns)
+        equity *= 1.0 + day_ret
+        records.append((dt, equity))
+        rows.append(
+            {
+                "date": str(dt.date()),
+                "equity": round(float(equity), 2),
+                "weights": json.dumps({key: round(float(value), 6) for key, value in weights.items() if value > 1e-9}, sort_keys=True),
+            }
+        )
+    return pd.Series([value for _, value in records], index=[dt for dt, _ in records]), pd.DataFrame(rows)
+
+
 def max_corr(curves: dict[str, pd.Series], start: str, end: str) -> pd.DataFrame:
     frame = pd.DataFrame(curves).sort_index().ffill().dropna()
     frame = frame[(frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))]
@@ -408,6 +498,43 @@ def main() -> None:
                                             "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
                                         }
                                     )
+        dynamic_b_grid = [
+            {"b_low": 0.05, "b_mid": 0.30, "b_high": 0.45, "b_strong_126d": 0.08, "b_weak_63d": -0.08},
+            {"b_low": 0.05, "b_mid": 0.30, "b_high": 0.35, "b_strong_126d": 0.16, "b_weak_63d": -0.08},
+            {"b_low": 0.10, "b_mid": 0.30, "b_high": 0.45, "b_strong_126d": 0.08, "b_weak_63d": -0.08},
+        ]
+        for grid in dynamic_b_grid:
+            eq, sizing_log = dynamic_b_sizing_equity(
+                {key: curves[key] for key in ["V6A", b_name, "GLD", "BIL", "SPY", "QQQ"]},
+                b_key=b_name,
+                hedge_max=0.30,
+                vol_threshold=0.28,
+                corr_threshold=0.60,
+                dd_threshold=-0.12,
+                start=args.start,
+                end=args.end,
+                **grid,
+            )
+            s = stats(eq)
+            if not s:
+                continue
+            rows.append(
+                {
+                    "mode": "dynamic_b_sizing",
+                    "config": b_name,
+                    "weights": {
+                        "V6A": 1.0 - grid["b_mid"],
+                        b_name: grid["b_mid"],
+                        **grid,
+                        "hedge_max": 0.30,
+                        "vol_trigger": 0.28,
+                        "corr_trigger": 0.60,
+                        "dd_trigger": -0.12,
+                    },
+                    "stats": s,
+                    "overlay_days": int((sizing_log["weights"].str.contains("GLD|BIL")).sum()) if not sizing_log.empty else 0,
+                }
+            )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.json"

@@ -176,6 +176,8 @@ The refined research candidate is:
 
 This candidate is still only around Sharpe `1.14`. It is acceptable as a directionally correct research baseline, but below the desired `1.2+` quality bar.
 
+The preferred paper-sim candidate is now the dynamic V6-B sizing version described below.
+
 ## Paper Sim Candidate
 
 The first paper-sim candidate is now fixed as:
@@ -219,6 +221,48 @@ Verdict:
 - This is good enough to start paper simulation.
 - It is not good enough for live capital allocation.
 - The next improvement must target crisis-regime risk reduction, not normal-market parameter tuning.
+
+## Dynamic V6-B Sizing Candidate
+
+The better candidate makes V6-B sleeve size regime-aware instead of holding it at a fixed `30%`.
+
+Config:
+
+- `v6_strategy_lab/configs/v6ab_sim_candidate_v2.json`
+- Candidate ID: `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`
+
+Sizing rule:
+
+- Default V6-B weight: `30%`
+- High V6-B weight: `45%`
+- Low V6-B weight: `5%`
+- Raise to `45%` when V6-B 126-trading-day return is at least `+8%` and both SPY / QQQ are above their 200-day moving averages.
+- Cut to `5%` when V6-B 63-trading-day return is below `-8%`, or when market is below trend and A/B 63-day correlation is at least `60%`.
+- Remaining non-overlay capital goes to V6-A.
+- Dynamic GLD/BIL overlay remains max `30%`.
+
+Result:
+
+- Report: `backtest_results/v6ab_sleeve_blend/v6ab_sleeve_blend_20260520_dynamic_b_sizing_v1.md`
+- Window: `2012-05-21` to `2026-05-19`
+- Annualized return: `+31.8%`
+- Max drawdown: `-15.7%`
+- Sharpe: `1.23`
+- Overlay active: `1167 / 3520` days
+
+Improvement versus fixed-30% V6-B candidate:
+
+| version | ann | maxDD | Sharpe |
+| --- | ---: | ---: | ---: |
+| `V1 fixed B 30% + dynamic overlay` | `+29.5%` | `-18.6%` | `1.14` |
+| `V2 dynamic B sizing + dynamic overlay` | `+31.8%` | `-15.7%` | `1.23` |
+
+Interpretation:
+
+- This confirms the hypothesis: V6-B is not an all-weather enhancer.
+- The system improves when V6-B expands in main-trend years and shrinks in adverse regimes.
+- This is the first candidate that clears the `1.2+` quality bar.
+- It is still paper-sim only until daily target weights, paper execution, and live feasibility are verified.
 
 This is not yet a production allocation. Before live allocation changes, the next required checks are:
 
