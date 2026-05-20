@@ -134,6 +134,34 @@ def build_configs(extra_manifest: str = "") -> dict[str, dict[str, Any]]:
             "pit_manifest": extra_manifest,
             "pit_theme_map": DEFAULT_GAP_FILL_PIT_MAP,
         }
+        configs["v6b_extra_real_stock_dominant_pit_guarded_top1_90"] = {
+            "top_n": 1,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 3,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+        }
+        configs["v6b_extra_real_stock_dominant_confirmed_pit_top1_90"] = {
+            "top_n": 1,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 3,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+            "selection_mode": "dominant_confirmed",
+            "dominant_margin": 0.08,
+            "challenger_confirm_months": 2,
+            "incumbent_exit_rank": 3,
+        }
     return configs
 
 

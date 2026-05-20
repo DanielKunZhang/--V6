@@ -231,6 +231,11 @@ def pick_weights(
     stock_top_n: int,
     pit_universe: dict[str, Any] | None = None,
     pit_theme_map: dict[str, list[str]] | None = None,
+    selection_mode: str = "multi_theme",
+    dominant_state: dict[str, Any] | None = None,
+    dominant_margin: float = 0.08,
+    challenger_confirm_months: int = 2,
+    incumbent_exit_rank: int = 3,
 ) -> tuple[dict[str, float], list[dict[str, Any]]]:
     rows = theme_scores(monthly, date)
     if not market_ok(monthly, date):
@@ -240,7 +245,43 @@ def pick_weights(
         cooled = [row for row in candidates if not is_overheated(monthly, date, row["selected_proxy"])]
         if cooled:
             candidates = cooled
-    chosen = candidates[:top_n]
+    if selection_mode == "dominant_confirmed":
+        if dominant_state is None:
+            dominant_state = {}
+        leader = candidates[0]
+        current_theme = dominant_state.get("current_theme")
+        current_idx = next((idx for idx, row in enumerate(candidates) if row["theme_id"] == current_theme), None)
+        current_row = candidates[current_idx] if current_idx is not None else None
+        if current_row is None or current_idx + 1 > incumbent_exit_rank:
+            dominant_state["current_theme"] = leader["theme_id"]
+            dominant_state["challenger_theme"] = None
+            dominant_state["challenger_count"] = 0
+            chosen = [leader]
+        elif leader["theme_id"] == current_theme:
+            dominant_state["challenger_theme"] = None
+            dominant_state["challenger_count"] = 0
+            chosen = [current_row]
+        else:
+            lead = float(leader["theme_score"] - current_row["theme_score"])
+            if lead >= dominant_margin:
+                if dominant_state.get("challenger_theme") == leader["theme_id"]:
+                    dominant_state["challenger_count"] = int(dominant_state.get("challenger_count", 0)) + 1
+                else:
+                    dominant_state["challenger_theme"] = leader["theme_id"]
+                    dominant_state["challenger_count"] = 1
+                if int(dominant_state.get("challenger_count", 0)) >= challenger_confirm_months:
+                    dominant_state["current_theme"] = leader["theme_id"]
+                    dominant_state["challenger_theme"] = None
+                    dominant_state["challenger_count"] = 0
+                    chosen = [leader]
+                else:
+                    chosen = [current_row]
+            else:
+                dominant_state["challenger_theme"] = None
+                dominant_state["challenger_count"] = 0
+                chosen = [current_row]
+    else:
+        chosen = candidates[:top_n]
     if not chosen:
         return defensive_weights(monthly, date), rows
     effective_risk = risk_weight
@@ -292,6 +333,10 @@ def run_strategy(
     stock_top_n: int = 2,
     pit_manifest: str | Path | None = None,
     pit_theme_map: dict[str, list[str]] | None = None,
+    selection_mode: str = "multi_theme",
+    dominant_margin: float = 0.08,
+    challenger_confirm_months: int = 2,
+    incumbent_exit_rank: int = 3,
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -301,6 +346,7 @@ def run_strategy(
     decisions = []
     preview_weights_by_date: dict[pd.Timestamp, dict[str, float]] = {}
     pit_universe = load_pit_universe(pit_manifest)
+    dominant_state: dict[str, Any] = {}
     for dt in monthly.index:
         if monthly.index.get_loc(dt) < 12:
             weights = {"CASH": 1.0}
@@ -318,6 +364,11 @@ def run_strategy(
                 stock_top_n=stock_top_n,
                 pit_universe=pit_universe,
                 pit_theme_map=pit_theme_map,
+                selection_mode=selection_mode,
+                dominant_state=dominant_state,
+                dominant_margin=dominant_margin,
+                challenger_confirm_months=challenger_confirm_months,
+                incumbent_exit_rank=incumbent_exit_rank,
             )
         preview_weights_by_date[pd.Timestamp(dt)] = weights
         monthly_rows[pd.Timestamp(dt)] = rows
