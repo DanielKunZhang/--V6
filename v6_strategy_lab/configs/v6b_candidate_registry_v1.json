@@ -106,7 +106,7 @@
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "advanced_packaging",
       "registry_status": "watch_add_candidate",
-      "data_status": "needs_price_cache",
+      "data_status": "local_cache_available",
       "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
       "reason": "ASE Technology watch-add candidate for packaging / OSAT layer."
     },
@@ -115,7 +115,7 @@
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "optics_and_interconnect",
       "registry_status": "observe_only",
-      "data_status": "needs_price_cache",
+      "data_status": "local_cache_available",
       "external_sample": true,
       "source": "2026-05-13_v6b_supply_chain_diffusion_map_v1.md",
       "reason": "Theme-relevant optics candidate and 2026-05-14 user short-term network miss sample; use for external sample attribution, not independent alpha."
@@ -125,7 +125,7 @@
       "theme_id": "ai_supply_chain_diffusion",
       "bucket_id": "optics_and_interconnect",
       "registry_status": "observe_only",
-      "data_status": "needs_price_cache",
+      "data_status": "local_cache_available",
       "source": "2026-05-10 Radar weekly patch",
       "reason": "Optics peer used to prevent single-name blind spot."
     },

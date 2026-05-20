@@ -1,0 +1,51 @@
+[
+  {
+    "ticker": "US.ANET",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.TSM",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.MU",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.AMD",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.AAOI",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.ASX",
+    "status": "ok",
+    "rows": 2097,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.LITE",
+    "status": "ok",
+    "rows": 2106,
+    "start": "2018-01-02",
+    "end": "2026-05-19"
+  }
+]

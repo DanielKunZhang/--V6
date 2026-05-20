@@ -1,0 +1,72 @@
+[
+  {
+    "ticker": "US.AMZN",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.AVGO",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.GOOGL",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.META",
+    "status": "ok",
+    "rows": 3520,
+    "start": "2012-05-18",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.MSFT",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.NVDA",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.BIL",
+    "status": "ok",
+    "rows": 3613,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.GLD",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.SPY",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  },
+  {
+    "ticker": "US.QQQ",
+    "status": "ok",
+    "rows": 3615,
+    "start": "2012-01-03",
+    "end": "2026-05-19"
+  }
+]
