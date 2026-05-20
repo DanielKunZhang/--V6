@@ -200,8 +200,8 @@ def write_report(
             "## Interpretation",
             "",
             "- This is a research blend, not a live allocation change.",
-        "- A blend is only interesting if Sharpe improves versus both V6-A and V6-B alone while max drawdown remains controlled.",
-        "- Dynamic overlay rows use GLD/BIL only when risk triggers fire; GLD is not treated as a fixed permanent sleeve.",
+            "- A blend is only interesting if Sharpe improves versus both V6-A and V6-B alone while max drawdown remains controlled.",
+            "- Dynamic overlay rows use GLD/BIL only when risk triggers fire; GLD is not treated as a fixed permanent sleeve.",
             "- Next production step is sleeve sizing with explicit capital caps and live execution constraints.",
         ]
     )
@@ -309,41 +309,45 @@ def main() -> None:
                             continue
                         rows.append({"mode": "static", "config": b_name, "weights": weights, "stats": s})
 
-        for a_w in [0.55, 0.60, 0.65, 0.70, 0.75]:
-            for b_w in [0.25, 0.30, 0.35, 0.40]:
+        if b_name != "v6b_guarded_top3_90":
+            continue
+        for a_w in [0.65, 0.70, 0.75]:
+            for b_w in [0.25, 0.30, 0.35]:
                 if a_w + b_w <= 0 or a_w + b_w > 1.0:
                     continue
-                for hedge_max in [0.10, 0.15, 0.20, 0.25]:
-                    for vol_threshold in [0.22, 0.28, 0.34]:
-                        weights = {"V6A": a_w, b_name: b_w}
-                        eq, overlay_log = dynamic_overlay_equity(
-                            {key: curves[key] for key in ["V6A", b_name, "GLD", "BIL", "SPY", "QQQ"]},
-                            base_weights=weights,
-                            hedge_max=hedge_max,
-                            vol_threshold=vol_threshold,
-                            corr_threshold=0.65,
-                            dd_threshold=-0.10,
-                            start=args.start,
-                            end=args.end,
-                        )
-                        s = stats(eq)
-                        if not s:
-                            continue
-                        rows.append(
-                            {
-                                "mode": "dynamic_overlay",
-                                "config": b_name,
-                                "weights": {
-                                    **weights,
-                                    "hedge_max": hedge_max,
-                                    "vol_trigger": vol_threshold,
-                                    "corr_trigger": 0.65,
-                                    "dd_trigger": -0.10,
-                                },
-                                "stats": s,
-                                "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
-                            }
-                        )
+                for hedge_max in [0.25, 0.30]:
+                    for vol_threshold in [0.28]:
+                        for corr_threshold in [0.60, 0.65]:
+                            for dd_threshold in [-0.10, -0.12]:
+                                weights = {"V6A": a_w, b_name: b_w}
+                                eq, overlay_log = dynamic_overlay_equity(
+                                    {key: curves[key] for key in ["V6A", b_name, "GLD", "BIL", "SPY", "QQQ"]},
+                                    base_weights=weights,
+                                    hedge_max=hedge_max,
+                                    vol_threshold=vol_threshold,
+                                    corr_threshold=corr_threshold,
+                                    dd_threshold=dd_threshold,
+                                    start=args.start,
+                                    end=args.end,
+                                )
+                                s = stats(eq)
+                                if not s:
+                                    continue
+                                rows.append(
+                                    {
+                                        "mode": "dynamic_overlay_refined",
+                                        "config": b_name,
+                                        "weights": {
+                                            **weights,
+                                            "hedge_max": hedge_max,
+                                            "vol_trigger": vol_threshold,
+                                            "corr_trigger": corr_threshold,
+                                            "dd_trigger": dd_threshold,
+                                        },
+                                        "stats": s,
+                                        "overlay_days": int((overlay_log["weights"].str.contains("GLD|BIL")).sum()) if not overlay_log.empty else 0,
+                                    }
+                                )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / f"v6ab_sleeve_blend_{args.tag}.json"

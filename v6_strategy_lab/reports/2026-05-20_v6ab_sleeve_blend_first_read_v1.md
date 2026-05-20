@@ -87,6 +87,47 @@ This is materially better than fixed GLD:
 - Static best max drawdown: `-17.9%`
 - Dynamic overlay best max drawdown: `-17.6%`
 
+## Refined Overlay Result
+
+A narrower follow-up grid tested the most promising dynamic overlay region:
+
+- V6-B branch: `v6b_guarded_top3_90`
+- Base A/B range: `65-75% V6-A` and `25-35% V6-B`
+- Overlay max: `25-30%`
+- Vol trigger: `28%`
+- Corr trigger: `60-65%`
+- Drawdown trigger: `-10%` to `-12%`
+- Report: `backtest_results/v6ab_sleeve_blend/v6ab_sleeve_blend_20260520_overlay_refined_v1.md`
+
+Best refined result:
+
+- Base: `70% V6-A / 30% V6-B guarded`
+- Max overlay: `30%`
+- Vol trigger: `28%`
+- Corr trigger: `60%`
+- Drawdown trigger: `-12%`
+- Annualized return: `+29.5%`
+- Max drawdown: `-18.6%`
+- Sharpe: `1.14`
+
+More conservative nearby candidate:
+
+- Base: `65% V6-A / 25% V6-B guarded`
+- Max overlay: `30%`
+- Vol trigger: `28%`
+- Corr trigger: `60%`
+- Drawdown trigger: `-12%`
+- Annualized return: `+29.4%`
+- Max drawdown: `-18.4%`
+- Sharpe: `1.14`
+
+Interpretation:
+
+- Dynamic overlay optimization improves Sharpe from about `1.12` to about `1.14`.
+- This is progress, but not enough to call the system excellent.
+- A Sharpe target around `1.2+` likely requires improving signal quality and correlation control, not just tuning overlay thresholds.
+- Further optimization should focus on crisis-window attribution, V6-B off-switch / half-risk rules, and reducing A/B overlap when both are effectively long high-beta growth.
+
 ## Higher Return Blend
 
 Best high-return blend among the top ranks:
@@ -128,6 +169,12 @@ The best first-pass static allocation is:
 But the better system-level candidate is now:
 
 `70% V6-A / 30% V6-B guarded`, with GLD/BIL used only by dynamic overlay triggers.
+
+The refined research candidate is:
+
+`70% V6-A / 30% V6-B guarded / max 30% dynamic GLD-or-BIL overlay`
+
+This candidate is still only around Sharpe `1.14`. It is acceptable as a directionally correct research baseline, but below the desired `1.2+` quality bar.
 
 This is not yet a production allocation. Before live allocation changes, the next required checks are:
 
