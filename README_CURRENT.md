@@ -1,97 +1,68 @@
 # README_CURRENT
 
-当前生产系统是美股多标的 `Iron Condor` 自动交易框架。
+当前仓库服务于 `/Users/zhangkun/Desktop/AI个人投资公司` 的程序化与备份层。新 AI 或新机器接手时，先读本文件，再读 `AI_WORK_SYNC_CURRENT.md` 和桌面端 `投资系统全景图_SYSTEM_OVERVIEW.html`。
 
-## 生产目标
+## 当前生产口径
 
-- 主交易标的：`US.QQQ` / `US.IWM` / `US.GLD`
-- 策略结构：不对称铁鹰 `Put 3.0% / Call 6.0% / Wing 9% / DTE 45`
-- 资金：`$15,000` 实际本金
-- 杠杆：`2x`
-- 名义资金：`$30,000`
-- 动态组数：`Config F=20x`
+旧 `Iron Condor` 自动化链路已失效，不再作为上线、收益或风控依据。当前主线是：
 
-## 当前实盘配置基准
+| 模块 | 当前状态 | 作用 |
+|---|---|---|
+| `Daily Board / Central Risk Board` | active | 汇总今日动作、事件、V6异常、Radar复盘、组合风险 |
+| `Cash Alpha V6-A` | `REAL_MANUAL_PILOT_ACTIVE` | 美股动量/防守切换小额人工 pilot，禁止无人值守实盘 |
+| `V6-B / US Radar` | `research / SIM only` | 动态候选池、missing opportunity review、point-in-time 验证 |
+| `A股 Radar` | `Phase 1A` | FutuAPI 拉行情与复盘，长江证券手动下单，不接委托接口 |
+| `Value Wheel V2` | analyze-only | 基于估值与持仓约束生成建议，不自动下单 |
+| `Cash Alpha V3 / IC` | paused / legacy | 低波现金增强备用线，未来重启需重新 gate |
 
-| 项目 | 内容 |
-|---|---|
-| 当前实盘配置 | `P3.0%/C6.0% Wing9% DTE45 2x + 动态Config F=20x` |
-| 长周期复核（2026-04-12） | `F=20x` 为收益/终值最高：`+38.45% / -9.04% / Sharpe 2.90 / ~$5.47M` |
-| 长周期复核（2026-04-12） | `D=10x` 为风险调整后更优：`+33.22% / -6.72% / Sharpe 2.92 / ~$2.95M` |
+## 最高目标
 
-备注：`当前生产仍使用 F=20x；是否继续维持为“最佳配置”，以 OOS + 黑天鹅抽测结果为准`
+所有研究、估值、Radar、V6、仓位调整、报告和新功能都必须服务于：
 
-## 资金分配
+> 在不牺牲长期安全性、不扩大毁灭性回撤风险的前提下，相对安全地快速增长资本。
 
-- `QQQ`: `$18,000` 名义资金，基线 `4` 组
-- `IWM`: `$6,000` 名义资金，基线 `2` 组
-- `GLD`: `$6,000` 名义资金，基线 `2` 组
+执行前必须回答：是否提高组合预期收益、是否降低重大回撤或错误加仓风险、是否改善标的选择或仓位结构、是否符合投资哲学、是否形成实际动作或明确归档。
 
-## DTE 规则
+正式文件：
 
-- `DTE 45` 的含义是：**以 45 天为目标，选择最接近 45 的实际到期日**
-- 不是只能固定选恰好 `45` 天
-- 例如可选只有 `39` 和 `50`，当前代码会优先选 `50`，因为它离 `45` 更近
-- 若最接近 `45` 的链流动性不足，程序会继续尝试更长的目标层级：`45 → 52 → 59 → 66`
+- `/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/AI个人投资公司_统一目标与系统协同原则_20260520.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/投资系统全景图_SYSTEM_OVERVIEW.html`
 
-## 动态组数逻辑
+## 冷启动读取顺序
 
-```text
-effective_groups = base × (IC_MANUAL_CAPITAL × LEVERAGE / $30K)
-cap = base × 20
-```
-
-- 当你调整 `IC_MANUAL_CAPITAL` 时，组数会自动联动调整
-- 不再依赖账户总资产 API，避免其他仓位污染
-- 每日交易日报与 `ic_monitor.py` 会同步展示当前容量档位、预计组数、单批建议与是否触发 `200k/300k` 阈值
-
-## 风控骨架
-
-- HV20开仓阈值：`QQQ/IWM <= 25%`，`GLD <= 18%`（超过即禁止新开仓）
-- HV20降杠杆阈值：`HV20 > 22%`（仅在允许开仓时，`max_groups` 减半）
-- HV20硬止损阈值：`HV20 >= 39%`
-- HV20恢复阈值：`HV20 < 28%`
-- 价格止损：穿入翼宽 `50%`
-- 资金止损：单标的策略权益相对峰值回撤 `5%`
-- 止盈：盈利达到权利金 `50%`
-- 冷却期：`5` 天
-- 提前平仓：到期前 `2` 个交易日
-- 节假日保护：长假前自动跳过新开仓
-
-## 当前生产入口
-
-- `main_ic_us.py`：主交易程序
-- `scheduler.py`：自动调度器
-- `start_scheduler.sh`：守护启动入口
-- `ic_monitor.py`：盘后监控与日报
-- `dynamic_composite_backtest.py`：动态组数长周期对比回测
-- `oos_validation.py`：样本外、鲁棒性、手续费、GFC/extreme 验证
+1. `AI_WORK_SYNC_CURRENT.md`
+2. `AI_HANDOFF_CURRENT.md`
+3. `SYSTEM_OPERATIONS_CHECKLIST.md`
+4. `V6_STRATEGY_LAB.md`
+5. `CENTRAL_RISK_BOARD_SPEC.md`
+6. `investment_screener/A_SHARE_SHORTLINE_SYSTEM_SPEC.md`
+7. 桌面端 `投资系统全景图_SYSTEM_OVERVIEW.html`
 
 ## 常用命令
 
 ```bash
 cd /Users/zhangkun/WorkBuddy/程序化/量化程序
 
-# 干跑测试
-python3 main_ic_us.py --once --dry-run
+# 刷新唯一 AI 同步文件
+python3 collab_sync.py export-current
 
-# 盘后监控
-python3 ic_monitor.py
+# 查看今天协作日志
+python3 collab_sync.py today
 
-# 启动调度
-bash start_scheduler.sh
+# 生成中央风控看板
+python3 central_risk_board.py --cadence daily
 
-# 查看日志
-tail -f logs/scheduler_daemon.log
+# 系统健康检查
+python3 system_health_check.py
 
-# 长周期动态回测
-python3 dynamic_composite_backtest.py
-
-# 样本外/极端年份验证
-python3 oos_validation.py
+# V6-A guarded executor 默认 plan-only；实盘需额外 armed/confirm
+python3 attack_engine_guarded_real_executor.py
 ```
 
-## 说明
+## 硬边界
 
-- 旧港股 / 腾讯 / Wheel 入口均已降级为历史遗留，不再作为生产执行入口
-- 生产系统一律以美股多标的 IC 为准
+- 没有通过 reviewed / release gate / guarded runner 的链路，一律不允许真实自动下单。
+- V6-A 当前只做小额人工 pilot；`kill switch`、managed state、reconciliation 和人工确认优先。
+- stale data 模式下只允许刹车：BUY / ADD / ROTATE_IN 阻断；SELL 进入人工风险退出复核。
+- A股 Radar 当前只做训练仓；真实交易由用户在长江证券手动下单，不写自动委托代码。
+- 任何新功能如果不能解释对收益质量、风险控制、仓位结构或维护成本的增益，应降级或不做。

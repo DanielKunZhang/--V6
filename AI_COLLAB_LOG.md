@@ -210,3 +210,11 @@
 
 - [17:17] [发现] ISRG 全量 SOP v2.5 估值已完成：HTML 报告存入 /Users/zhangkun/Desktop/AI个人投资公司/公司估值/ISRG_估值报告_20260518_SOPv2.5版.html；watchlist.json 已更新。当前正式口径：Core Quality，V_base 约 $305，WACC 9.0%，FDA Class I 召回进行中，当前 $421 不建仓，观察仓触发区 <$380 / $360-380。GPT review 后要求修正 FDA Class I 日期和部分估值口径一致性。
 - [17:18] [代码] A股Radar 全量收盘复盘已完成：investment_screener/radar_astock.json 更新三只样本，绿的谐波维持龙头、三丰智能维持中军、纽威数控进入 DIVERGE_WARNING 且 review_required=True、max_position_pct=0；events_calendar.json 写入 2026-05-19 Radar 跟踪事件。GPT review 后修复 morning_brief 路由，确保该事件触发词为“复盘 A股Radar”而不是“X Radar 扫描”。
+
+---
+
+## 2026-05-20
+
+### GPT
+
+- [11:07] [决策] 2026-05-20 冷启动口径修正：README_CURRENT.md 不再把旧 Iron Condor 写作生产系统；当前统一为 Daily Board / Central Risk Board、V6-A 小额人工 pilot、V6-B research/SIM、A股Radar Phase 1A、Value Wheel analyze-only、V3/IC legacy paused。所有模块必须服从统一目标：在不牺牲长期安全性的前提下相对安全地快速增长资本。
