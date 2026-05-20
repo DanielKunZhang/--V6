@@ -51,12 +51,23 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - 较激进高收益版：`v0_top3_min0.02_risk100%_stocks`，约 `+31.2%` 年化、`-31.6%` 最大回撤、Sharpe `0.86`。
   - 同期基准：`SPY +14.5% / Sharpe 0.60`，`QQQ +20.2% / Sharpe 0.76`，`BRK.B +13.5% / Sharpe 0.52`，`VTV +12.2% / Sharpe 0.50`。
   - 结论：V6-B 的主干应该是 `ETF theme discovery -> theme stock expression`，而不是 ETF-only 交易；第一版证据显示它有长期打败宽基和价值代理的潜力，但 Sharpe 仍未过 `1.0`，需要继续做 walk-forward / OOS / 组合 sleeve 风控。
+- 已完成 V6-A + V6-B 组合层验证，并启动 V6 完整版模拟盘：
+  - 生产候选：`V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`
+  - 配置：`v6_strategy_lab/configs/v6ab_sim_candidate_v2.json`
+  - 组合结构：`V6-A stability core + V6-B dynamic main-theme sleeve + dynamic GLD/BIL/CASH overlay`
+  - 研究基准：约 `+31.8%` 年化、`-15.7%` MaxDD、Sharpe `1.23`
+  - 富途模拟账户：重置后 active SIMULATE US account 为 `19429788`
+  - 策略资本：`$50,000`
+  - 初始订单：8 笔已被 Futu SIMULATE 接受，状态 `SUBMITTED`，等待 RTH 成交后 reconciliation
+  - 工程提交：`c7fb7b8 execution: harden v6 sim account routing`
+  - 执行边界：`V6-A` 继续跑 `$5,000` 真实人工 pilot；不再单独保留长期 `V6-A` 模拟盘；`50,000 USD` 模拟账户用于完整 `V6AB` 验证。
 
 ### 部分完成
 
 - `US.MRVL / US.NOK` 已有本地旧缓存，但未刷新到 `2026-05-19`；当前结论仍然不允许直接追高或主动升 active。
 - robotics 第二批 `US.ROK / US.ETN / US.HON / US.IR / US.TER` 已有部分历史缓存，但尚未完成本卡要求的统一 2026-06-01 刷新与正式 triage。
 - Radar 当前截面扫描可以识别最高主线和二阶扩散；V6-B 主干已从 ETF-only 推进到“跨主题 ETF 主线轮动 -> 主题内候选池”的第一版动态验证，但仍需扩大主题股票池并做 walk-forward / OOS 验证。
+- V6AB 模拟盘已提交订单但尚未成交；成交后需要跑 reconciliation，把 pending orders 落成实际模拟持仓，再开始每日/每周模拟盘绩效跟踪。
 
 ### 仍待 6月1日或额度允许时完成
 
@@ -84,6 +95,7 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - Sharpe 未过 `1.0` 前，不允许把它当作大资金全账户核心，只能作为 V6-B sleeve 候选。
 - 重跑 `v6_weekly_review_board.py` 和 `investment_company_dashboard.py`，确认 backlog / 驾驶舱吸收本轮结论。
 - 重新提交 6月1日正式刷新结果。
+- V6AB 初始订单成交后，跑 `attack_engine_sim_reconciliation.py` 并更新模拟盘状态；后续任何 alpha 改进都必须与 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING` 基准对照，而不是与已经淘汰的 ETF-only / 静态 V6-B 回测对照。
 
 ## 一句话目标
 

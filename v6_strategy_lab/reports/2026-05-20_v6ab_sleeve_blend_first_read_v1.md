@@ -271,3 +271,57 @@ This is not yet a production allocation. Before live allocation changes, the nex
 3. Crisis-window attribution for 2018Q4, 2020, 2022, and 2025.
 4. Capital cap mapping from research weights to the current real-account V6-A pilot size.
 5. Explicit rule for when V6-B sleeve is disabled or cut in half.
+
+## Paper Sim Launch Update
+
+The V2 dynamic B sizing candidate has been promoted from research candidate to active paper-sim candidate.
+
+- Launch date: `2026-05-20`
+- Candidate ID: `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`
+- Config: `v6_strategy_lab/configs/v6ab_sim_candidate_v2.json`
+- Strategy capital: `$50,000`
+- Futu SIMULATE account: `19429788`
+- Executor: `v6ab_sim_executor.py`
+- Account-routing hardening commit: `c7fb7b8 execution: harden v6 sim account routing`
+
+Important execution note:
+
+- The previous SIM account `19005590` disappeared after the user reset the paper account.
+- OpenD then exposed the new ACTIVE SIMULATE US account `19429788` with exactly `$50,000` cash.
+- `v6ab_sim_executor.py` now auto-resolves the current ACTIVE SIMULATE US account instead of relying on a hard-coded account id.
+- `attack_engine_sim_executor.py` now runs a SIM trade preflight through `order_list_query` before placing orders. If the account is unavailable, execution stops before order submission.
+
+Initial target weights:
+
+| ticker | target weight | initial order |
+| --- | ---: | ---: |
+| `US.GOOGL` | `23.5%` | `BUY 30` |
+| `US.BIL` | `18.6%` | `BUY 101` |
+| `US.NVDA` | `13.1%` | `BUY 29` |
+| `US.AMZN` | `10.4%` | `BUY 19` |
+| `US.DBC` | `7.2%` | `BUY 113` |
+| `US.SLV` | `7.2%` | `BUY 52` |
+| `US.AVGO` | `6.7%` | `BUY 7` |
+| `US.GLD` | `4.0%` | `BUY 4` |
+| `CASH` | `9.4%` | no order |
+
+Execution result:
+
+- All 8 orders were accepted by Futu SIMULATE.
+- Latest reconciliation status: `PENDING`.
+- `dealt_qty` was still `0` at the first check because the orders are RTH DAY limit orders submitted outside regular US trading hours.
+- Account cash fell to about `$5,959.70`, indicating cash was reserved for submitted orders.
+- Do not mark positions as filled until reconciliation confirms fills after regular trading opens.
+
+Local evidence:
+
+- Plan orders: `backtest_results/v6ab_sim_executor/v6ab_orders_20260520_v6ab_v2_50k_newacc_plan.csv`
+- Execute results: `backtest_results/v6ab_sim_executor/v6ab_results_20260520_v6ab_v2_50k_newacc_execute.json`
+- Reconciliation: `backtest_results/attack_engine_sim_reconciliation/v6_sim_reconciliation_20260520_v6ab_v2_50k_newacc_execute.json`
+
+Operating decision:
+
+- Keep `V6-A` on the existing `$5,000` real manual pilot.
+- Do not maintain a separate long-running `V6-A` paper account.
+- Use the `50,000 USD` paper account for the complete `V6-A + V6-B + dynamic GLD/BIL/CASH overlay` system.
+- Future work should focus on improving alpha and reducing drawdown versus this V2 baseline, not on duplicating the standalone V6-A simulation.

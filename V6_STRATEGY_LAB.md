@@ -25,7 +25,10 @@ V6 的收益目标必须分层管理，不能把 `35%+` 年化当作默认预期
 - `25%+`：核心门槛。达到这一层，V6 才有资格作为进攻仓的长期核心策略。
 - `30%+`：优秀目标。说明 baseline、Universe 和执行质量形成了明显 alpha。
 - `35%+`：进攻目标。必须依靠 `V6-A baseline + V6-B 动态 Universe + Allocator + 真实执行质量` 共同达成，不能作为默认假设。
+- `45%-55%+`：组合右尾年份目标。只能来自 `主仓顺风 + V6 顺风 + Radar/Overlay 少数右尾样本` 的共同作用，不能要求 V6 单独承担，也不能为了追求这个区间破坏风控。
 - `纪律要求`：不得为了追求 `35%+` 牺牲风控、kill switch、managed state、preflight gate 和验证纪律。
+
+V6 的职责是提高资本效率，不是毁掉生活质量。系统可以争取高收益年份，但不能把高收益年份当成必须兑现的压力目标。
 
 ## 当前主策略
 
@@ -34,6 +37,52 @@ V6 的收益目标必须分层管理，不能把 `35%+` 年化当作默认预期
 - 当前阶段：`REAL_MANUAL_PILOT_ACTIVE`
 - 当前定位：`$5,000` V6-A 已进入 Futu real manual pilot；managed state、reconciliation、日报、preflight gate 已打通，但 kill switch 仍保持 `ON`，无人值守自动实盘仍未开启
 - 并行升级线：`V6-A core engine baseline/challenger` 已通过 `replay bridge` 独立产出 runner-compatible artifacts；当前与 legacy `ATTACK_EQUAL_REPLAY` live sleeve 分轨管理，避免把参数升级和执行验证混成一步
+
+## 当前 V6 完整版状态（2026-05-20）
+
+V6 完整版已从“研究组合”进入 `50,000 USD` 富途模拟盘验证阶段，但不改变 V6-A 小额实盘 pilot 的边界。
+
+- `V6-A`：继续作为 `$5,000` 真实账户人工监控 pilot 运行。它负责验证真实成交、滑点、stale-data gate、managed state 和风险退出纪律；不需要再单独在模拟账户保留一套 V6-A 对照盘。
+- `V6AB`：当前模拟盘生产候选为 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`，配置文件为 `v6_strategy_lab/configs/v6ab_sim_candidate_v2.json`。
+- `V6-B`：不再被定义为固定 AI infra 主题策略，而是动态主线 / theme rotation / 候选池内相对强弱选择机制；顺风年扩权，逆风或高相关风险时缩权。
+- `Overlay`：固定 `10% GLD` 已被否决；采用动态 `GLD/BIL/CASH` 防守 overlay，根据波动、相关性、回撤、GLD 趋势触发。
+- `执行账户`：富途模拟账户重置后 API active SIM account 变为 `19429788`；`v6ab_sim_executor.py` 已改为自动解析当前 ACTIVE SIMULATE US 账户，避免继续使用旧账号 `19005590`。
+- `当前模拟订单`：2026-05-20 已按 `50,000 USD` 策略资本提交 V6AB 模拟订单；富途返回 `SUBMITTED`，未失败，未成交，等待美股 RTH 成交后用 reconciliation 落仓。
+
+当前 V6AB 模拟目标权重：
+
+| ticker | target weight | role |
+| --- | ---: | --- |
+| `US.GOOGL` | `23.5%` | V6-A / V6-B 共同偏好的大型平台与 broad beta 表达 |
+| `US.BIL` | `18.6%` | V6-B 内部现金/短债风险缓冲 |
+| `US.NVDA` | `13.1%` | V6-A AI mega 核心暴露 |
+| `US.AMZN` | `10.4%` | V6-B broad beta / 平台主线表达 |
+| `US.DBC` | `7.2%` | resources / commodities theme |
+| `US.SLV` | `7.2%` | precious metals theme |
+| `US.AVGO` | `6.7%` | V6-A AI infra 核心暴露 |
+| `US.GLD` | `4.0%` | 动态防守 / 黄金 sleeve 残余权重 |
+| `CASH` | `9.4%` | 现金余量 |
+
+最新 V6AB 研究基准：
+
+| version | ann | maxDD | Sharpe | status |
+| --- | ---: | ---: | ---: | --- |
+| `V6-A standalone` | `+28.2%` | `-21.1%` | `0.99` | live pilot baseline |
+| `V6-B guarded standalone` | `+25.7%` | `-24.3%` | `0.84` | alpha sleeve only |
+| `V6AB V1 fixed B 30% + dynamic overlay` | `+29.5%` | `-18.6%` | `1.14` | superseded |
+| `V6AB V2 dynamic B sizing + dynamic overlay` | `+31.8%` | `-15.7%` | `1.23` | current paper-sim candidate |
+
+后续 V6 完整版工作只有两个核心目标：
+
+1. `持续提升 alpha`：用 V6-B theme rotation、X Radar、13F 学习、Seeking Alpha、财报/估值、行业强度和候选池过滤，提高标的选择质量；任何新增信号必须进入回测、对照、模拟盘替换流程，不能只停留在文档。
+2. `尽可能降低回撤`：优化 sleeve sizing、动态 overlay、crisis window 行为、A/B 相关性控制、stale-data / kill-switch / managed-state 执行纪律。
+
+禁止事项：
+
+- 不再开一套单独 V6-A 模拟账户长期跑，避免和 V6-A 真实 pilot、V6AB 模拟盘重复。
+- 不因某个单一主题强而把 V6-B 固化成该主题策略。
+- 不把 X Radar、13F、Seeking Alpha 或估值报告只做成展示文档；必须能反哺候选池、过滤器、权重、风控或复盘。
+- 不在成交确认前把 pending orders 记为实际持仓；必须等待 reconciliation。
 
 ## 双 AI 对照锁定的后续优化方向（2026-05-12）
 
@@ -66,6 +115,7 @@ V6-A Core Pool = 低频更新的 AI mega / mega tech 核心池，当前 baseline
 V6-B Dynamic Pool = 动态主题扩散 / 候选池生成与验证机制；AI-capex 只是第一代训练主题，不是策略本体
 V6-C Pool = ETF / 行业 / 全市场 meta-rotation，未来 challenger
 Allocator = 风控与资金分配器，根据近期表现、相关性、回撤、regime 分配 Core / Dynamic / Defensive 权重
+Options Expression Layer = 可选表达层，只在已有 V6/Radar edge 通过后评估期权结构；不替代 V6 正股/ETF engine
 ```
 
 ## 与全投资系统的关系
@@ -78,6 +128,7 @@ V6 不是孤立存在的。
 - `V6`：中频进攻/防守切换的收益增强层
 - `Radar-Sourced Overlay`：小额右尾收益层
 - `Research / Experimental Sleeves`：只负责验证，不默认进入生产
+- `Options Expression Layer`：定义风险表达层，每个标的/策略都必须评估期权是否更合适，但可以明确结论为不使用期权
 
 未来 `12` 个月的系统升级总路线见：
 
@@ -99,6 +150,7 @@ V6-B 的正式定义应为：
 - `Theme Layer`：识别当前最强的资本开支、利润扩散或供需错配主线。AI 只是其中一个阶段性主题。
 - `Universe Layer`：针对该主线构建 point-in-time 候选池，靠扩散地图、瓶颈识别、预期上修、流动性和反证清晰度筛票。
 - `Engine Layer`：不负责找主题，只负责在候选池里做入场、减仓、退出、risk-on/risk-off 和仓位控制。
+- `Expression Layer`：在 V6-B 候选通过买点、流动性和风控后，比较正股/ETF、call debit spread、protective put、index iron condor 等表达方式；当前只研究，不自动实盘。
 
 设计纪律：
 
@@ -125,6 +177,39 @@ V6-B 的正式定义应为：
 - 任何新增 universe 都要证明增量收益，而不是因为最近涨过就加入历史回测。
 - `V6-A` 是 baseline core pool，但不是永久冻结名单；它应低频维护，像指数委员会一样慢变，而不是像 Radar 一样快变。
 - `V6-B` 不应演化成“一主题一策略”；正确方向是 `统一 engine skeleton + 少数 track-aware execution profiles`。
+- 每个 V6-B 候选进入交易讨论前，必须补 `期权表达评估`：可以写 `NO_OPTION`，但必须说明为什么正股/ETF优于期权。
+- V6-B 期权化的第一原则是 `V6 signal first, option expression second`。没有 V6-B edge，不允许用期权制造虚假进攻性。
+
+### V6-B 新设计：Radar 供给 + 买点过滤 + 可选期权表达
+
+V6-B 后续按三段式设计：
+
+1. `Radar Supply`
+   - 负责全市场主题识别、扩散链、missing opportunity review、external sample attribution。
+   - 输出 point-in-time universe，不直接输出交易。
+
+2. `V6-B Trade Filter`
+   - 负责对候选做动量、趋势、回撤、流动性、chase_risk、trade_posture 过滤。
+   - 只有通过过滤的候选，才允许进入 V6-B standalone / V6-A 对比 / allocator judgement。
+
+3. `Options Expression Review`
+   - 负责判断这次信号是否适合期权表达。
+   - 默认生产路径仍是正股/ETF；期权只作为研究层或小额定义风险 overlay。
+
+当前允许研究的 V6-B 期权表达只有三类：
+
+| 研究线 | 适用场景 | 当前状态 |
+| --- | --- | --- |
+| `V6-B signal + call debit spread` | 强趋势、单腿 Call 太贵、希望定义最大亏损 | research only |
+| `V6 sideways regime + QQQ/SPY iron condor` | 无强趋势、指数震荡、IV 有溢价 | research only |
+| `V6 high-risk window + protective put` | V6/主仓风险同向过高，需要尾部保护 | risk tool research |
+
+禁止：
+
+- 把 V6-B 买入信号直接替换成裸 Call。
+- 因为想提高收益率而跳过期权回测、IV、bid/ask、DTE、Delta 检查。
+- 在 Central Risk Board 为 `RED` 时扩大期权预算。
+- 让期权交易污染 V6-B 正股/ETF 回测样本。
 
 ## V6 调整治理：自动 vs 人工
 
