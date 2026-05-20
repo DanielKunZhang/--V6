@@ -236,6 +236,12 @@ def pick_weights(
     dominant_margin: float = 0.08,
     challenger_confirm_months: int = 2,
     incumbent_exit_rank: int = 3,
+    mainline_confirm_months: int = 4,
+    mainline_exit_months: int = 2,
+    mainline_min_score: float = 0.18,
+    mainline_rank_limit: int = 2,
+    mainline_confirm_score: float = 4.0,
+    mainline_decay: float = 0.65,
 ) -> tuple[dict[str, float], list[dict[str, Any]]]:
     rows = theme_scores(monthly, date)
     if not market_ok(monthly, date):
@@ -245,6 +251,8 @@ def pick_weights(
         cooled = [row for row in candidates if not is_overheated(monthly, date, row["selected_proxy"])]
         if cooled:
             candidates = cooled
+    if not candidates:
+        return defensive_weights(monthly, date), rows
     if selection_mode == "dominant_confirmed":
         if dominant_state is None:
             dominant_state = {}
@@ -280,6 +288,103 @@ def pick_weights(
                 dominant_state["challenger_theme"] = None
                 dominant_state["challenger_count"] = 0
                 chosen = [current_row]
+    elif selection_mode == "mainline_state_v1":
+        if dominant_state is None:
+            dominant_state = {}
+        leader = candidates[0]
+        current_theme = dominant_state.get("mainline_theme")
+        candidate_theme = dominant_state.get("candidate_theme")
+        candidate_count = int(dominant_state.get("candidate_count", 0))
+        confirmed = bool(dominant_state.get("confirmed", False))
+        current_idx = next((idx for idx, row in enumerate(candidates) if row["theme_id"] == current_theme), None)
+        current_row = candidates[current_idx] if current_idx is not None else None
+        leader_is_confirmable = leader["theme_score"] >= mainline_min_score and leader["breadth"] >= 0.66
+
+        if leader_is_confirmable and (candidate_theme == leader["theme_id"]):
+            candidate_count += 1
+        elif leader_is_confirmable:
+            candidate_theme = leader["theme_id"]
+            candidate_count = 1
+        else:
+            candidate_theme = None
+            candidate_count = 0
+
+        if (not confirmed) and candidate_theme and candidate_count >= mainline_confirm_months:
+            current_theme = candidate_theme
+            current_row = leader
+            confirmed = True
+            dominant_state["weak_count"] = 0
+
+        if confirmed:
+            if current_row is None or current_idx is None or current_idx + 1 > incumbent_exit_rank or current_row["theme_score"] < min_theme_score:
+                dominant_state["weak_count"] = int(dominant_state.get("weak_count", 0)) + 1
+            else:
+                dominant_state["weak_count"] = 0
+            if int(dominant_state.get("weak_count", 0)) >= mainline_exit_months:
+                confirmed = False
+                current_theme = None
+                current_row = None
+                dominant_state["weak_count"] = 0
+
+        dominant_state["candidate_theme"] = candidate_theme
+        dominant_state["candidate_count"] = candidate_count
+        dominant_state["mainline_theme"] = current_theme
+        dominant_state["confirmed"] = confirmed
+        if confirmed and current_row is not None:
+            chosen = [current_row]
+        else:
+            chosen = candidates[:top_n]
+    elif selection_mode == "mainline_state_v2":
+        if dominant_state is None:
+            dominant_state = {}
+        persistence = dict(dominant_state.get("persistence", {}))
+        eligible_theme_ids = set()
+        for rank, row in enumerate(candidates, start=1):
+            if rank > mainline_rank_limit:
+                continue
+            if row["theme_score"] < mainline_min_score or row["breadth"] < 0.66:
+                continue
+            eligible_theme_ids.add(row["theme_id"])
+            persistence[row["theme_id"]] = float(persistence.get(row["theme_id"], 0.0)) + 1.0 + max(float(row["theme_score"]) - mainline_min_score, 0.0)
+        for theme_id in list(persistence):
+            if theme_id not in eligible_theme_ids:
+                persistence[theme_id] = float(persistence[theme_id]) * mainline_decay
+            if persistence[theme_id] < 0.25:
+                persistence.pop(theme_id, None)
+
+        current_theme = dominant_state.get("mainline_theme")
+        confirmed = bool(dominant_state.get("confirmed", False))
+        current_idx = next((idx for idx, row in enumerate(candidates) if row["theme_id"] == current_theme), None)
+        current_row = candidates[current_idx] if current_idx is not None else None
+        best_theme = max(persistence, key=persistence.get) if persistence else None
+        best_score = float(persistence.get(best_theme, 0.0)) if best_theme else 0.0
+
+        if not confirmed and best_theme and best_score >= mainline_confirm_score:
+            current_theme = best_theme
+            confirmed = True
+            dominant_state["weak_count"] = 0
+            current_idx = next((idx for idx, row in enumerate(candidates) if row["theme_id"] == current_theme), None)
+            current_row = candidates[current_idx] if current_idx is not None else None
+
+        if confirmed:
+            current_persistence = float(persistence.get(current_theme, 0.0))
+            if current_row is None or current_idx is None or current_idx + 1 > incumbent_exit_rank or current_persistence < mainline_confirm_score * 0.35:
+                dominant_state["weak_count"] = int(dominant_state.get("weak_count", 0)) + 1
+            else:
+                dominant_state["weak_count"] = 0
+            if int(dominant_state.get("weak_count", 0)) >= mainline_exit_months:
+                confirmed = False
+                current_theme = None
+                current_row = None
+                dominant_state["weak_count"] = 0
+
+        dominant_state["persistence"] = persistence
+        dominant_state["mainline_theme"] = current_theme
+        dominant_state["confirmed"] = confirmed
+        if confirmed and current_row is not None:
+            chosen = [current_row]
+        else:
+            chosen = candidates[:top_n]
     else:
         chosen = candidates[:top_n]
     if not chosen:
@@ -337,6 +442,12 @@ def run_strategy(
     dominant_margin: float = 0.08,
     challenger_confirm_months: int = 2,
     incumbent_exit_rank: int = 3,
+    mainline_confirm_months: int = 4,
+    mainline_exit_months: int = 2,
+    mainline_min_score: float = 0.18,
+    mainline_rank_limit: int = 2,
+    mainline_confirm_score: float = 4.0,
+    mainline_decay: float = 0.65,
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -369,6 +480,12 @@ def run_strategy(
                 dominant_margin=dominant_margin,
                 challenger_confirm_months=challenger_confirm_months,
                 incumbent_exit_rank=incumbent_exit_rank,
+                mainline_confirm_months=mainline_confirm_months,
+                mainline_exit_months=mainline_exit_months,
+                mainline_min_score=mainline_min_score,
+                mainline_rank_limit=mainline_rank_limit,
+                mainline_confirm_score=mainline_confirm_score,
+                mainline_decay=mainline_decay,
             )
         preview_weights_by_date[pd.Timestamp(dt)] = weights
         monthly_rows[pd.Timestamp(dt)] = rows

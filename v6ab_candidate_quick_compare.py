@@ -162,6 +162,43 @@ def build_configs(extra_manifest: str = "") -> dict[str, dict[str, Any]]:
             "challenger_confirm_months": 2,
             "incumbent_exit_rank": 3,
         }
+        configs["v6b_extra_real_stock_mainline_state_v1"] = {
+            "top_n": 3,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 3,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+            "selection_mode": "mainline_state_v1",
+            "incumbent_exit_rank": 3,
+            "mainline_confirm_months": 4,
+            "mainline_exit_months": 2,
+            "mainline_min_score": 0.18,
+            "mainline_rank_limit": 2,
+        }
+        configs["v6b_extra_real_stock_mainline_state_v2"] = {
+            "top_n": 3,
+            "min_theme_score": 0.08,
+            "risk_weight": 0.90,
+            "use_cooldown": True,
+            "vol_target": 0.22,
+            "dd_brake": True,
+            "expression": "stocks",
+            "stock_top_n": 3,
+            "pit_manifest": extra_manifest,
+            "pit_theme_map": DEFAULT_CROSS_THEME_PIT_MAP,
+            "selection_mode": "mainline_state_v2",
+            "incumbent_exit_rank": 3,
+            "mainline_exit_months": 2,
+            "mainline_min_score": 0.18,
+            "mainline_rank_limit": 2,
+            "mainline_confirm_score": 4.0,
+            "mainline_decay": 0.65,
+        }
     return configs
 
 
