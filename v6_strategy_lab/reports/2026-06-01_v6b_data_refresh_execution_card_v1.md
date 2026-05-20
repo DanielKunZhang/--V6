@@ -38,6 +38,11 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - v0 最佳约 `+16.0%` 年化、`-38.8%` 最大回撤、Sharpe `0.51`。
   - v1_guarded 仍不合格，最佳约 `+10.4%` 年化、`-30.2%` 最大回撤、Sharpe `0.37`。
   - 近期主题识别显示 `Gold / Precious Metals` 与 `Semis / AI Compute` 持续靠前，2026-05-19 top themes 为 `Semis / AI Compute`、`Energy / Resources`、`Broad Beta`。
+- 已将 ETF theme rotation 拉长到 `2012-01-01` 至 `2026-05-19` 检验长期可用性：
+  - v0 最佳按 Sharpe 排名约 `+13.7%` 年化、`-47.9%` 最大回撤、Sharpe `0.45`。
+  - v0 最高收益版本约 `+14.3%` 年化、`-49.7%` 最大回撤、Sharpe `0.43`。
+  - v1_guarded 最好约 `+10.9%` 年化、`-28.0%` 最大回撤、Sharpe `0.38`。
+  - 结论：ETF 主线层可作为“主题发现雷达”，但不能作为长期独立可用策略；下一步必须进入主题内候选池和组合 sleeve 风控。
 
 ### 部分完成
 
@@ -60,6 +65,9 @@ OpenD 历史 K 线额度已提前恢复，因此本卡中一部分 6月1日动�
   - 按主题波动分配 sleeve，而不是全局固定 risk_weight；
   - theme ETF 只作为入口，实际表达转到主题内候选池；
   - V6-A + V6-B sleeve 组合层风控，而不是 ETF rotation 单独满仓跑。
+- 长期可用性判断口径：
+  - ETF 层如果 Sharpe 长期低于 `0.7` 或最大回撤大于 `30%`，只能做 theme discovery，不可作为独立执行策略；
+  - 只有在主题入口映射到个股候选池后，仍能在长周期维持更好收益/回撤比，才进入 V6-B allocator 讨论。
 - 重跑 `v6_weekly_review_board.py` 和 `investment_company_dashboard.py`，确认 backlog / 驾驶舱吸收本轮结论。
 - 重新提交 6月1日正式刷新结果。
 
