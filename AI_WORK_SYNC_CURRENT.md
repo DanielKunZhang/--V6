@@ -265,18 +265,26 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 | `CONFIRM` | 主线已确认；只等分歧回踩、突破回踩或中军确认；当前只记录模拟触发 | `0` |
 | `WATCH_CONFIRM` | 主线有强度，但买点/数据/风险不满足交易 | `0` |
 | `WATCH_ONLY` | 只记录表现，不交易 | `0` |
+| `WATCH_ONLY_PLUS` | 复盘证明普通观察过严，但仍因缺K线/观察期不能交易；优先补K并次日重点模拟确认 | `0` |
 
 ### 当前代码位置
 
 核心脚本：
 
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_plan.py`
 - `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_review.py`
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_feedback.py`
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_backfill.py`
 - `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_evening_guide.py`
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_radar_daily_loop.py`
+
+待恢复/重建：
+
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_short_radar_plan.py` 当前源码缺失，只剩 pyc 和既有输出；后续需要恢复为正式可审计源码。
 
 数据补给：
 
-- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_tech_screener_v1_local/fetch_a_share_csv_from_futu.py`
+- `a_share_radar_backfill.py` 只对复盘反哺 P0 / `WATCH_ONLY_PLUS` 标的定向补 K 线。
+- `/Users/zhangkun/WorkBuddy/程序化/量化程序/a_share_tech_screener_v1_local/fetch_a_share_csv_from_futu.py` 当前源码缺失，只剩 pyc；不作为正式入口。
 
 本地输出：
 
@@ -291,6 +299,9 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar候选_LATEST.csv`
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar主线评分_LATEST.csv`
 - `/Users/zhangkun/Desktop/AI个人投资公司/A股短线Radar晚间操作指导_LATEST.html`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.md`
+- `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar每日闭环_LATEST.md`
 
 支撑文档：
 
@@ -299,26 +310,25 @@ A股 Radar 是低频主线确认观察模块，不替代主仓价值投资，不
 
 ### 当前运行命令
 
-生成计划：
+每日闭环：
 
 ```bash
-python3 a_share_short_radar_plan.py \
-  --input-dir a_share_tech_screener_v1_local/outputs/a_share_short_radar_20260518 \
-  --next-trade-date 2026-05-18 \
-  --asof 2026-05-16 \
-  --live-snapshot
+python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD
 ```
 
-生成晚间指导：
+如果当天已经完成 OpenD 最新价复盘，只从已有复盘继续反哺、补K和晚间指导：
 
 ```bash
-python3 a_share_short_radar_evening_guide.py --asof 2026-05-16
+python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD --skip-review
 ```
 
-收盘复盘：
+单独步骤仍可运行：
 
 ```bash
-python3 a_share_short_radar_review.py
+python3 a_share_short_radar_review.py --asof YYYY-MM-DD
+python3 a_share_radar_feedback.py --asof YYYY-MM-DD
+python3 a_share_radar_backfill.py --asof YYYY-MM-DD
+python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
 ```
 
 ### 最新计划状态

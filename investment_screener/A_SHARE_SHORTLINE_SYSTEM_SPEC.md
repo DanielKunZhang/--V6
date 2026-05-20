@@ -193,6 +193,15 @@
 - 观察期内真实仓位仍为 `0`。
 - 若次日主题退潮、高开加速、开盘冲高回落或无法补齐数据，退回普通 `WATCH_ONLY`。
 
+每日闭环由 `a_share_radar_daily_loop.py` 执行：
+
+1. 用 OpenD 最新快照完成复盘。
+2. 运行 `a_share_radar_feedback.py` 生成反哺清单。
+3. 运行 `a_share_radar_backfill.py` 只对 P0 / `WATCH_ONLY_PLUS` 标的补 K 线。
+4. 重新生成晚间指导，把反哺和补 K 线状态显示出来。
+
+历史 K 线额度只能用于 P0 反哺标的，不允许在本闭环里做全市场泛化补数。
+
 ---
 
 ## 7. 止损 / 退出规则

@@ -95,8 +95,13 @@ A股 Radar 不是价值投资估值，也不是新标的推荐。它只跟踪已
 命令：
 
 ```bash
-python3 a_share_radar_feedback.py --asof YYYY-MM-DD
-python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
+python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD
+```
+
+若当天已完成复盘，只想从已有复盘继续反哺和补 K 线：
+
+```bash
+python3 a_share_radar_daily_loop.py --asof YYYY-MM-DD --skip-review
 ```
 
 输出：
@@ -105,6 +110,8 @@ python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
 /Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.md
 /Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.json
 /Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.csv
+/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.md
+/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar每日闭环_LATEST.md
 ```
 
 `WATCH_ONLY_PLUS` 触发条件：
@@ -122,6 +129,13 @@ python3 a_share_short_radar_evening_guide.py --asof YYYY-MM-DD
 - 次日重点观察。
 - 只记录模拟触发。
 - 观察期内真实仓位仍为 `0`。
+
+定向补 K 线规则：
+
+- 只处理复盘反哺清单中的 P0 / `WATCH_ONLY_PLUS` 标的。
+- 默认拉最近约 120 天日 K，要求至少 50 根有效日 K。
+- 禁止在每日闭环里做全市场历史 K 线补齐。
+- 补齐成功的缓存路径：`data/a_share_radar_kline_cache/`。
 
 ## 角色规则
 

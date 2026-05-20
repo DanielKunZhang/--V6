@@ -24,6 +24,8 @@ REVIEW_MD = REPORT_ROOT / "A股短线Radar复盘_LATEST.md"
 REVIEW_JSON = REPORT_ROOT / "A股短线Radar复盘_LATEST.json"
 FEEDBACK_MD = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.md"
 FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
+BACKFILL_MD = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md"
+BACKFILL_JSON = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json"
 
 OUTPUT_DIR = ROOT / "backtest_results" / "a_share_short_radar_evening_guide"
 
@@ -94,6 +96,26 @@ def feedback_table(feedback: dict[str, Any]) -> str:
         "old_mode": "原模式",
         "mode_after_feedback": "反哺模式",
         "next_system_action": "系统动作",
+    }
+    return df_to_html_table(df[cols].rename(columns=labels), max_rows=6)
+
+
+def backfill_table(backfill: dict[str, Any]) -> str:
+    rows = backfill.get("rows", []) if isinstance(backfill, dict) else []
+    if not rows:
+        return "<p class='muted'>暂无补 K 线任务。</p>"
+    df = pd.DataFrame(rows)
+    keep = ["symbol", "name", "status", "rows", "start_date", "end_date", "path", "message"]
+    cols = [col for col in keep if col in df.columns]
+    labels = {
+        "symbol": "代码",
+        "name": "名称",
+        "status": "状态",
+        "rows": "K线数",
+        "start_date": "开始",
+        "end_date": "结束",
+        "path": "缓存",
+        "message": "说明",
     }
     return df_to_html_table(df[cols].rename(columns=labels), max_rows=6)
 
@@ -170,6 +192,7 @@ def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     plan = read_json(PLAN_JSON)
     review = read_json(REVIEW_JSON)
     feedback = read_json(FEEDBACK_JSON)
+    backfill = read_json(BACKFILL_JSON)
     themes = read_csv(THEMES_CSV)
     candidates = read_csv(CANDIDATES_CSV)
     summary = summarize_plan(plan, themes, candidates)
@@ -217,6 +240,8 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 <h3>复盘反哺 / 数据补齐优先级</h3>
 <p class="muted">这里不是买入指令；只把收盘复盘暴露的规则过严和数据缺口转成明日系统动作。</p>
 {feedback_table(feedback)}
+<h3>K线补齐状态</h3>
+{backfill_table(backfill)}
 </div>
 
 <div class="box">
@@ -256,6 +281,8 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "review_md": str(REVIEW_MD),
             "feedback_md": str(FEEDBACK_MD),
             "feedback_json": str(FEEDBACK_JSON),
+            "backfill_md": str(BACKFILL_MD),
+            "backfill_json": str(BACKFILL_JSON),
         },
     }
     return subject, html_content, payload
