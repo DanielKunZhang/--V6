@@ -31,6 +31,25 @@ RADAR_TO_V6B_THEME = {
     "consumer_discretionary": "consumer_discretionary",
 }
 
+QUALITY_PROFILES: dict[str, dict[str, Any]] = {
+    "none": {"description": "Original price-only trend eligibility."},
+    "v6b_quality_v1": {
+        "description": "Stricter point-in-time gates for real-stock V6-B candidates; no forward returns used.",
+        "default": {"min_mom60": 0.03, "min_mom120": 0.00, "min_score": 0.04, "max_drawdown": -0.50},
+        "themes": {
+            "ai_compute_and_data_center": {"min_mom60": 0.05, "min_mom120": 0.00, "min_score": 0.06, "max_drawdown": -0.55},
+            "software_and_internet": {"min_mom60": 0.04, "min_mom120": 0.00, "min_score": 0.05, "max_drawdown": -0.50},
+            "healthcare_and_biotech": {"min_mom60": 0.03, "min_mom120": 0.00, "min_rel60": -0.02, "min_score": 0.05, "max_drawdown": -0.45},
+            "energy_and_commodities": {"min_mom60": 0.04, "min_mom120": 0.00, "min_score": 0.05, "max_drawdown": -0.45},
+            "gold_and_precious_metals": {"min_mom60": 0.03, "min_mom120": 0.00, "min_score": 0.04, "max_drawdown": -0.50},
+            "financials_and_capital_markets": {"min_mom60": 0.04, "min_mom120": 0.02, "min_rel60": -0.01, "min_score": 0.05, "max_drawdown": -0.40},
+            "industrials_infra": {"min_mom60": 0.04, "min_mom120": 0.00, "min_score": 0.05, "max_drawdown": -0.45},
+            "utilities_power_and_infrastructure": {"min_mom60": 0.03, "min_mom120": 0.02, "min_score": 0.05, "max_drawdown": -0.40},
+            "consumer_discretionary": {"min_mom60": 0.05, "min_mom120": 0.02, "min_rel60": -0.01, "min_score": 0.06, "max_drawdown": -0.45},
+        },
+    },
+}
+
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -102,7 +121,32 @@ def score_candidate(prices: pd.DataFrame, ticker: str, benchmark: str, as_of: pd
     }
 
 
-def build_snapshots(universe: dict[str, Any], prices: pd.DataFrame, start: str, end: str, max_per_theme: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def quality_gate(theme_id: str, metrics: dict[str, Any], profile_name: str) -> tuple[bool, str | None]:
+    if profile_name == "none":
+        return True, None
+    profile = QUALITY_PROFILES.get(profile_name)
+    if profile is None:
+        raise ValueError(f"unknown quality profile: {profile_name}")
+    gates = dict(profile.get("default", {}))
+    gates.update(profile.get("themes", {}).get(theme_id, {}))
+    checks = [
+        ("min_mom60", "mom60", lambda actual, threshold: actual >= threshold),
+        ("min_mom120", "mom120", lambda actual, threshold: actual >= threshold),
+        ("min_rel60", "rel60", lambda actual, threshold: actual >= threshold),
+        ("min_rel120", "rel120", lambda actual, threshold: actual >= threshold),
+        ("min_score", "score", lambda actual, threshold: actual >= threshold),
+        ("max_drawdown", "drawdown_from_high", lambda actual, threshold: actual >= threshold),
+    ]
+    for gate_key, metric_key, predicate in checks:
+        if gate_key not in gates:
+            continue
+        actual = metrics.get(metric_key)
+        if actual is None or not np.isfinite(actual) or not predicate(float(actual), float(gates[gate_key])):
+            return False, f"quality_{gate_key}"
+    return True, None
+
+
+def build_snapshots(universe: dict[str, Any], prices: pd.DataFrame, start: str, end: str, max_per_theme: int, quality_profile: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     monthly_dates = [dt for dt in month_end_dates(prices.index) if pd.Timestamp(start) <= dt <= pd.Timestamp(end)]
     theme_defs = []
     for theme in universe.get("themes", []):
@@ -130,6 +174,10 @@ def build_snapshots(universe: dict[str, Any], prices: pd.DataFrame, start: str, 
                 metrics = score_candidate(prices, ticker, theme["benchmark"], as_of)
                 if not metrics.get("eligible"):
                     blocked.append({"ticker": ticker, "reason": metrics.get("reason", "unknown")})
+                    continue
+                passes, reason = quality_gate(theme["theme_id"], metrics, quality_profile)
+                if not passes:
+                    blocked.append({"ticker": ticker, "reason": reason})
                     continue
                 rows.append({"ticker": ticker, **metrics})
             rows.sort(key=lambda row: (row["score"], row["mom60"], row["mom120"]), reverse=True)
@@ -213,6 +261,7 @@ def main() -> None:
     parser.add_argument("--start", default="2018-01-01")
     parser.add_argument("--end", default="2026-05-19")
     parser.add_argument("--max-per-theme", type=int, default=3)
+    parser.add_argument("--quality-profile", choices=sorted(QUALITY_PROFILES), default="none")
     args = parser.parse_args()
 
     universe_path = Path(args.universe)
@@ -223,7 +272,7 @@ def main() -> None:
         tickers.update(flatten_theme_members(theme))
     tickers.discard("CASH")
     prices = build_price_matrix(sorted(tickers), args.start, args.end).ffill(limit=3)
-    snapshots, summary = build_snapshots(universe, prices, args.start, args.end, args.max_per_theme)
+    snapshots, summary = build_snapshots(universe, prices, args.start, args.end, args.max_per_theme, args.quality_profile)
     generated_at = datetime.now().isoformat(timespec="seconds")
     payload = {
         "manifest_header": {
@@ -233,6 +282,8 @@ def main() -> None:
             "start": args.start,
             "end": args.end,
             "max_per_theme": args.max_per_theme,
+            "quality_profile": args.quality_profile,
+            "quality_profile_description": QUALITY_PROFILES[args.quality_profile]["description"],
             "rules": {
                 "no_lookahead_price_signals": True,
                 "price_only_generator": True,
@@ -248,6 +299,7 @@ def main() -> None:
                 "price_only_generator": True,
                 "not_for_live_trading": True,
             },
+            "quality_profile": args.quality_profile,
         },
         "snapshots": snapshots,
     }
