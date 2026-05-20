@@ -113,6 +113,7 @@ python3 v6ab_daily_evolution.py --asof YYYY-MM-DD
 
 - `backtest_results/v6ab_daily_evolution/latest_evidence_ledger.{md,json,csv}`
 - `backtest_results/v6ab_daily_evolution/latest_mainline_classifier.{md,json}`
+- `backtest_results/v6ab_daily_evolution/latest_classifier_bridge_backtest.{md,json,csv}`
 - `backtest_results/v6ab_daily_evolution/latest_daily_mainline_report.md`
 - `/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/V6AB_Daily_Mainline_Report_LATEST.md`
 
@@ -122,6 +123,7 @@ python3 v6ab_daily_evolution.py --asof YYYY-MM-DD
 - 暂无 `CONFIRMED` 主线，因此继续 fallback 到 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。
 - `b_sleeve_cap_hint = 30%`，但动作仍为 `NO_CHANGE_BACKTEST_ONLY`。
 - ticker triage 前排：`MU / TSM / AVGO / SNDK / AMD / NVDA`。
+- classifier bridge 回测已能让 `theme_allowlist / ticker_priority / b_sleeve_cap_hint` 真实进入 V6AB 回测：V6AB 年化 `31.83% -> 33.98%`，Sharpe `1.23 -> 1.27`，maxDD `-15.68% -> -16.49%`。这是 current-evidence bridge，不是 PIT 晋级证据；下一步必须做历史 PIT ledger。
 
 执行纪律：
 
