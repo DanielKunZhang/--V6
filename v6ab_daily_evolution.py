@@ -34,13 +34,19 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[str, Any]]) -> str:
+def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[str, Any]], promotion: dict[str, Any]) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
     starter = [row for row in themes if row.get("state") == "STARTER"]
     candidates = [row for row in themes if row.get("state") == "CANDIDATE"]
     risk = [row for row in themes if row.get("state") == "RISK_REVIEW"]
     tickers = classifier.get("ticker_priority", [])
+    promotion_decision = promotion.get("decision", {}) if isinstance(promotion.get("decision"), dict) else {}
+    failed_checks = [
+        row.get("check")
+        for row in promotion.get("checks", [])
+        if isinstance(row, dict) and not row.get("passed", False)
+    ]
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -83,6 +89,8 @@ def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[
         "## 今日决策",
         "",
         "- 不替换 V6AB 模拟盘版本；继续使用 V2 作为 fallback/active paper sim。",
+        f"- PIT promotion gate：`{promotion_decision.get('tier', 'UNKNOWN')}` — {promotion_decision.get('action', '未生成')}",
+        f"- 未通过 gate：{', '.join(failed_checks[:8]) if failed_checks else '无'}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -119,10 +127,12 @@ def main() -> int:
         run_step("pit_evidence_classifier_replay", [py, "v6ab_pit_evidence_replay.py", "--asof", args.asof]),
         run_step("pit_classifier_bridge_backtest", [py, "v6ab_pit_classifier_bridge_backtest.py", "--asof", args.asof]),
         run_step("pit_vs_v2_attribution", [py, "v6ab_pit_vs_v2_attribution.py", "--asof", args.asof]),
+        run_step("promotion_gate", [py, "v6ab_promotion_gate.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
-    report = render_daily_report(args.asof, classifier, steps)
-    payload = {"asof": args.asof, "steps": steps, "classifier": classifier}
+    promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
+    report = render_daily_report(args.asof, classifier, steps, promotion)
+    payload = {"asof": args.asof, "steps": steps, "classifier": classifier, "promotion_gate": promotion}
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     (REPORT_ROOT / "V6AB_Daily_Mainline_Report_LATEST.md").write_text(report, encoding="utf-8")

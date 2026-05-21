@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 21:41:17`
+- Last updated: `2026-05-21 21:55:57`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1067,6 +1067,7 @@ dc58870 feat: add V6 daily report automation
 - [21:38] [代码] V6-A guarded auto-execution v1 已实现但默认关闭：新增 `v6a_auto_guarded_executor.py`、`v6_strategy_lab/configs/v6a_auto_execution_policy_v1.json` 和 launchd 草案 `launch_agents/com.dingcle.v6a.guarded-auto.plist`。机制：外层 auto wrapper 先检查 `auto_enabled`、底层 runner `auto_real_orders_allowed`、kill switch、交易窗口、美股工作日、每日执行次数、pending orders、pre-reconciliation；再跑 `v6a_guarded_runner` plan-only，只有 release/quote/account/managed-state/notional 全 PASS 且确有 executable orders 时才调用 `--execute-real` + confirm phrase；下单后自动 post-reconciliation。默认双开关均为 false，未加载 launchd，不会自动下单。验证：disabled 模式直接 `POLICY_DISABLED` 不连 broker；dry-run/force-window 可走完整只读链路，当前 V6-A 已在目标仓位，返回 `NO_OP_AT_TARGET`。
 - [21:45] [代码] V6-A 5k guarded auto-execution 已正式打开：用户确认 5k cash 本身就是测试金，希望避免错过买卖点。执行前验收：临时 auto-enabled dry-run 通过，无 blockers，当前 `NO_OP_AT_TARGET`；kill switch dry-run 修正后可明确 `BLOCKED`；真实配置 dry-run 通过，无 blockers。随后将 `v6a_auto_execution_policy_v1.json:auto_enabled=true`、`v6a_guarded_runner_policy_v1.json:execution.auto_real_orders_allowed=true`，安装并加载 `com.dingcle.v6a.guarded-auto` 到 `gui/501`。触发时间：北京时间 21:45、22:10（当前美股夏令时约 09:45、10:10），脚本窗口 `America/New_York 09:40-10:20`。自动执行仍受 release gate、live quote/account、pending=0、managed-state sell guard、notional/order count、每日一次真实执行、post-reconciliation 和 kill switch 约束；关闭方式：创建 `backtest_results/v6a_state/AUTO_EXECUTION_DISABLED` 或把 auto_enabled 改回 false。
 - [21:50] [代码] V6 daily 邮件已接入 V6-A guarded auto 状态：`v6_reporting.py` 新增 `auto_execution` 摘要，日报/HTML 现在显示自动执行开关、底层真钱权限、kill switch、执行窗口、每日上限、最近 auto decision、blockers、最近订单数/金额、LaunchAgent 和关闭文件。日报 action 也会在 pending=0 且 auto 开启时显示“自动化已开启”；最新预览已修正为读取最新 gate 对应 preview，当前显示 gate 通过、预览订单数 0、pending 0、auto 最近 `NO_OP_AT_TARGET`。
+- [21:58] [代码] V6AB P1 promotion gate 已实现并接入 daily evolution：新增 `v6ab_promotion_gate.py`，读取 PIT bridge backtest、PIT vs V2 attribution、V2 hindsight audit，统一输出 `REJECTED/WATCH/RESEARCH_OVERLAY/PAPER_SIM_CANDIDATE/PRODUCTION_ELIGIBLE`。Gate 明确要求候选接近 V2 全区间/Sharpe/maxDD/OOS，不能明显错过 2020/2022，成本受控，PIT active 样本足够，BOOST 月度质量不能长期拖累，必须有 OVERRIDE 才能证明可排他替换，同时必须披露 V2 对 semis_ai/top winners/proxy-only 的后视镜依赖。当前 `pit_tier_v6ab_dynamic_b` 被评为 `RESEARCH_OVERLAY`：年化 +30.92% vs V2 +31.83%，maxDD -16.44% vs -15.68%，Sharpe 1.20 vs 1.23，2024-2026 略优；但 2020 少 4.92pp、BOOST sum delta -16.59pp、OVERRIDE=0、2024-2026 tier attribution -3.26pp。结论：只能作为 V2 overlay/研究层继续，不进 paper sim，不动 V6AB 模拟盘。
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。
