@@ -1,5 +1,5 @@
 {
-  "asof": "2026-05-20",
+  "asof": "2026-05-21",
   "subject": "A股低频主线确认Radar观察计划 2026-05-18 · 主线 人形机器人 31",
   "summary": {
     "next_trade_date": "2026-05-18",
@@ -30,7 +30,8 @@
     "feedback_md": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.md",
     "feedback_json": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar复盘反哺_LATEST.json",
     "backfill_md": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.md",
-    "backfill_json": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.json"
+    "backfill_json": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar_K线补齐_LATEST.json",
+    "strict_tracker_json": "/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股短线Radar规则过严样本追踪_LATEST.json"
   },
   "email": {
     "attempted": false,

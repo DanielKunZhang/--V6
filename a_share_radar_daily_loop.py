@@ -51,6 +51,7 @@ def render_md(payload: dict[str, Any]) -> str:
         f"- 复盘：`{REPORT_ROOT / 'A股短线Radar复盘_LATEST.md'}`",
         f"- 反哺：`{REPORT_ROOT / 'A股短线Radar复盘反哺_LATEST.md'}`",
         f"- K线补齐：`{REPORT_ROOT / 'A股短线Radar_K线补齐_LATEST.md'}`",
+        f"- 规则过严样本追踪：`{REPORT_ROOT / 'A股短线Radar规则过严样本追踪_LATEST.md'}`",
         f"- 晚间指导：`{REPORT_ROOT / 'A股短线Radar晚间操作指导_LATEST.html'}`",
         "",
     ]
@@ -90,6 +91,7 @@ def main() -> int:
     if args.dry_run:
         backfill_cmd.append("--dry-run")
     steps.append(run_step("targeted_kline_backfill", backfill_cmd, skip=args.skip_backfill))
+    steps.append(run_step("strict_rule_tracker", [py, "a_share_radar_strict_rule_tracker.py", "--asof", args.asof]))
     guide_cmd = [py, "a_share_short_radar_evening_guide.py", "--asof", args.asof]
     if args.send_email:
         guide_cmd.append("--send-email")

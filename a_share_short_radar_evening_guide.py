@@ -26,6 +26,7 @@ FEEDBACK_MD = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.md"
 FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 BACKFILL_MD = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md"
 BACKFILL_JSON = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json"
+STRICT_TRACKER_JSON = REPORT_ROOT / "A股短线Radar规则过严样本追踪_LATEST.json"
 
 OUTPUT_DIR = ROOT / "backtest_results" / "a_share_short_radar_evening_guide"
 
@@ -120,6 +121,41 @@ def backfill_table(backfill: dict[str, Any]) -> str:
     return df_to_html_table(df[cols].rename(columns=labels), max_rows=6)
 
 
+def strict_tracker_table(tracker: dict[str, Any]) -> str:
+    rows = tracker.get("rows", []) if isinstance(tracker, dict) else []
+    if not rows:
+        return "<p class='muted'>暂无规则过严追踪样本。</p>"
+    df = pd.DataFrame(rows)
+    keep = [
+        "origin_date",
+        "symbol",
+        "name",
+        "theme",
+        "role",
+        "backfill_status",
+        "cached_kline_rows",
+        "d1_status",
+        "d1_return_pct",
+        "d1_touched_plan_buy",
+        "d1_gap_accel_unbuyable",
+    ]
+    cols = [col for col in keep if col in df.columns]
+    labels = {
+        "origin_date": "样本日",
+        "symbol": "代码",
+        "name": "名称",
+        "theme": "主线",
+        "role": "身份",
+        "backfill_status": "补K状态",
+        "cached_kline_rows": "K线数",
+        "d1_status": "D1状态",
+        "d1_return_pct": "D1收益",
+        "d1_touched_plan_buy": "D1计划买点",
+        "d1_gap_accel_unbuyable": "D1高开不可参与",
+    }
+    return df_to_html_table(df[cols].rename(columns=labels), max_rows=8)
+
+
 def compact_candidate_table(candidates: pd.DataFrame, tradable_only: bool) -> str:
     if candidates.empty:
         return "<p class='muted'>暂无候选。</p>"
@@ -193,6 +229,7 @@ def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     review = read_json(REVIEW_JSON)
     feedback = read_json(FEEDBACK_JSON)
     backfill = read_json(BACKFILL_JSON)
+    strict_tracker = read_json(STRICT_TRACKER_JSON)
     themes = read_csv(THEMES_CSV)
     candidates = read_csv(CANDIDATES_CSV)
     summary = summarize_plan(plan, themes, candidates)
@@ -242,6 +279,8 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 {feedback_table(feedback)}
 <h3>K线补齐状态</h3>
 {backfill_table(backfill)}
+<h3>规则过严样本追踪</h3>
+{strict_tracker_table(strict_tracker)}
 </div>
 
 <div class="box">
@@ -283,6 +322,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "feedback_json": str(FEEDBACK_JSON),
             "backfill_md": str(BACKFILL_MD),
             "backfill_json": str(BACKFILL_JSON),
+            "strict_tracker_json": str(STRICT_TRACKER_JSON),
         },
     }
     return subject, html_content, payload

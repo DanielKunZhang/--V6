@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import signal
+import sys
 import time
+from contextlib import contextmanager
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -17,6 +21,28 @@ REPORT_ROOT = DESKTOP_ROOT / "报表输出" / "LATEST"
 DEFAULT_FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 DEFAULT_CACHE_DIR = ROOT / "data" / "a_share_radar_kline_cache"
 DEFAULT_OUTPUT_DIR = ROOT / "backtest_results" / "a_share_radar_backfill"
+
+
+class RequestTimeoutError(RuntimeError):
+    pass
+
+
+@contextmanager
+def time_limit(seconds: int):
+    if seconds <= 0:
+        yield
+        return
+
+    def _handle_timeout(signum, frame):
+        raise RequestTimeoutError(f"request_timeout_{seconds}s")
+
+    old_handler = signal.signal(signal.SIGALRM, _handle_timeout)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -155,6 +181,7 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=11111)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--request-timeout-seconds", type=int, default=45)
     args = parser.parse_args()
 
     feedback = read_json(args.feedback_json)
@@ -186,7 +213,8 @@ def main() -> int:
             )
             continue
         try:
-            df = fetch_futu_kline(symbol, start, end, args.host, args.port)
+            with time_limit(args.request_timeout_seconds):
+                df = fetch_futu_kline(symbol, start, end, args.host, args.port)
             ok, message = validate_kline(df, args.min_rows)
             if ok:
                 df.to_csv(path, index=False)
@@ -222,9 +250,12 @@ def main() -> int:
     (args.output_dir / "latest_backfill.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     (REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md").write_text(md, encoding="utf-8")
     (REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(md)
+    print(md, flush=True)
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    exit_code = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(exit_code)

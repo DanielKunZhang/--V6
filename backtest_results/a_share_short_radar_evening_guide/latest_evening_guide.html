@@ -16,7 +16,7 @@ code { background:#f2f4f7; padding:2px 4px; border-radius:4px; }
 </head>
 <body>
 <h2>A股低频主线确认 Radar 晚间观察指导</h2>
-<p class="muted">生成日期：2026-05-20；计划交易日：<code>2026-05-18</code>；K线最新日期：<code>2026-05-15</code>；Level A 快照：<code>True</code></p>
+<p class="muted">生成日期：2026-05-21；计划交易日：<code>2026-05-18</code>；K线最新日期：<code>2026-05-15</code>；Level A 快照：<code>True</code></p>
 
 <div class="box warn">
 <h3>一页结论</h3>
@@ -36,7 +36,9 @@ code { background:#f2f4f7; padding:2px 4px; border-radius:4px; }
 <p class="muted">这里不是买入指令；只把收盘复盘暴露的规则过严和数据缺口转成明日系统动作。</p>
 <table><thead><tr><th>代码</th><th>名称</th><th>主线</th><th>身份</th><th>复盘涨跌</th><th>原模式</th><th>反哺模式</th><th>系统动作</th></tr></thead><tbody><tr><td>SH.688072</td><td>拓荆科技</td><td>半导体设备</td><td>中军</td><td>14.4072</td><td>WATCH_ONLY</td><td>WATCH_ONLY_PLUS</td><td>优先补齐最近60个交易日K线；若次日主题仍为主升且个股不高开加速，只记录模拟低吸/突破回踩触发，不给真实仓位。</td></tr></tbody></table>
 <h3>K线补齐状态</h3>
-<table><thead><tr><th>代码</th><th>名称</th><th>状态</th><th>K线数</th><th>开始</th><th>结束</th><th>缓存</th><th>说明</th></tr></thead><tbody><tr><td>SH.688072</td><td>拓荆科技</td><td>dry_run</td><td>0</td><td>2026-01-20</td><td>2026-05-20</td><td>/Users/zhangkun/WorkBuddy/程序化/量化程序/data/a_share_radar_kline_cache/SH_688072.csv</td><td>would_fetch_targeted_kline</td></tr></tbody></table>
+<table><thead><tr><th>代码</th><th>名称</th><th>状态</th><th>K线数</th><th>开始</th><th>结束</th><th>缓存</th><th>说明</th></tr></thead><tbody><tr><td>SH.688072</td><td>拓荆科技</td><td>error</td><td>0</td><td></td><td></td><td></td><td>RequestTimeoutError(&#x27;request_timeout_45s&#x27;)</td></tr></tbody></table>
+<h3>规则过严样本追踪</h3>
+<table><thead><tr><th>样本日</th><th>代码</th><th>名称</th><th>主线</th><th>身份</th><th>补K状态</th><th>K线数</th><th>D1状态</th><th>D1收益</th><th>D1计划买点</th><th>D1高开不可参与</th></tr></thead><tbody><tr><td>2026-05-20</td><td>SH.688072</td><td>拓荆科技</td><td>半导体设备</td><td>中军</td><td>error</td><td>77</td><td>pending_no_kline</td><td></td><td>False</td><td>False</td></tr></tbody></table>
 </div>
 
 <div class="box">
