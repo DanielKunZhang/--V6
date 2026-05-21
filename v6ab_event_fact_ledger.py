@@ -78,6 +78,64 @@ POSITIVE_REJECT_CONTEXT = [
     "not be sustainable",
     "decrease",
 ]
+GENERIC_CONTEXT = [
+    "table of contents",
+    "risk factor",
+    "we face risks",
+    "for example",
+    "as a result of fluctuations in foreign exchange",
+    "corresponds with",
+]
+NUMERIC_RE = re.compile(r"(\$?\d+(?:\.\d+)?\s?(?:%|bps|basis points|million|billion|bn|mm)?)", re.IGNORECASE)
+
+
+def numeric_present(text: str) -> bool:
+    return bool(NUMERIC_RE.search(text))
+
+
+def context_role(snippet: str, direction: str) -> str:
+    lower = snippet.lower()
+    if any(token in lower for token in ["risk factor", "we face risks", "could harm", "may not", "failure to", "fail to", "if too many"]):
+        return "risk_factor"
+    if any(token in lower for token in ["represents revenue", "revenue from the sale", "corresponds with", "as follows"]):
+        return "accounting_definition"
+    if any(token in lower for token in ["guidance", "outlook", "expects", "forecast"]):
+        return "guidance"
+    if direction in {"negative", "mixed"}:
+        return "risk_fact"
+    return "actual_result"
+
+
+def fact_quality(fact_type: str, direction: str, snippet: str, role: str) -> tuple[str, bool, float]:
+    lower = snippet.lower()
+    has_number = numeric_present(snippet)
+    if role in {"risk_factor", "accounting_definition"}:
+        return "LOW", False, 0.35
+    if any(token in lower for token in GENERIC_CONTEXT) and not has_number:
+        return "LOW", False, 0.45
+    if direction in {"negative", "mixed"}:
+        return ("HIGH" if has_number or fact_type in {"inventory_correction", "guidance_cut", "demand_slowdown"} else "MEDIUM", True, 1.0)
+    strong_positive = fact_type in {"revenue_acceleration", "guidance_raise", "margin_expansion", "cloud_data_center", "ai_accelerator"}
+    if has_number and strong_positive:
+        return "HIGH", True, 1.0
+    if has_number:
+        return "MEDIUM", True, 0.85
+    return "LOW", False, 0.45
+
+
+def remap_theme(original_theme: str, fact_type: str, snippet: str) -> str:
+    lower = snippet.lower()
+    if any(token in lower for token in ["aws", "cloud", "software", "e-commerce", "ecommerce"]):
+        return "technology"
+    if any(token in lower for token in ["hbm", "gpu", "ai accelerator", "high bandwidth memory"]):
+        return "semis_ai"
+    if any(token in lower for token in ["optical", "interconnect", "ethernet", "networking"]):
+        return "ai_networking"
+    if any(token in lower for token in ["wireless", "rf ", "radio-frequency", "mobile handset", "apple"]):
+        return "semis_ai"
+    if fact_type in {"inventory_correction", "demand_slowdown", "margin_pressure", "supply_constraint"}:
+        return original_theme
+    return original_theme
 
 
 class TextExtractor(HTMLParser):
@@ -162,14 +220,20 @@ def find_facts(text: str) -> list[dict[str, Any]]:
             snippet_lower = matched_snippet.lower()
             if direction == "positive" and any(token in snippet_lower for token in POSITIVE_REJECT_CONTEXT):
                 continue
+            role = context_role(matched_snippet, direction)
+            quality, actionable, quality_multiplier = fact_quality(fact_type, direction, matched_snippet, role)
             facts.append(
                 {
                     "fact_type": fact_type,
                     "direction": direction,
-                    "confidence": confidence,
-                    "weight": weight,
+                    "confidence": round(confidence * quality_multiplier, 4),
+                    "weight": round(weight * quality_multiplier, 4),
                     "matched_phrase": matched_phrase,
                     "snippet": matched_snippet.strip(),
+                    "fact_quality": quality,
+                    "context_role": role,
+                    "numeric_present": numeric_present(matched_snippet),
+                    "actionable": actionable,
                 }
             )
     return facts
@@ -204,11 +268,15 @@ def build_rows(args: argparse.Namespace) -> dict[str, Any]:
             failures.append(f"{row.get('ticker')}:{row.get('source_date')}:{exc!r}")
             continue
         for fact in facts:
+            if args.actionable_only and not fact.get("actionable", False):
+                continue
             source_date = str(row.get("source_date"))
+            mapped_theme = remap_theme(str(row.get("theme", "unclassified")), str(fact["fact_type"]), str(fact["snippet"]))
             rows.append(
                 {
                     "asof": source_date,
-                    "theme": row.get("theme", "unclassified"),
+                    "theme": mapped_theme,
+                    "original_theme": row.get("theme", "unclassified"),
                     "ticker": row.get("ticker", ""),
                     "source": "event_fact_ledger",
                     "source_path": url,
@@ -220,6 +288,10 @@ def build_rows(args: argparse.Namespace) -> dict[str, Any]:
                     "expiry_date": expiry_from_source(source_date, args.ttl_days),
                     "summary": f"{fact['fact_type']}: {fact['matched_phrase']}; {fact['snippet']}",
                     "weight": round(float(fact["weight"]), 4),
+                    "fact_quality": fact["fact_quality"],
+                    "context_role": fact["context_role"],
+                    "numeric_present": bool(fact["numeric_present"]),
+                    "actionable": bool(fact["actionable"]),
                 }
             )
 
@@ -272,12 +344,15 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Sample Rows",
         "",
-        "| date | ticker | theme | fact | direction | summary |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| date | ticker | theme | fact | quality | role | direction | summary |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows[:20]:
         summary = str(row.get("summary", "")).replace("|", "/")[:160]
-        lines.append(f"| {row['source_date']} | `{row['ticker']}` | {row['theme']} | {row['evidence_type']} | {row['direction']} | {summary} |")
+        lines.append(
+            f"| {row['source_date']} | `{row['ticker']}` | {row['theme']} | {row['evidence_type']} | "
+            f"{row.get('fact_quality')} | {row.get('context_role')} | {row['direction']} | {summary} |"
+        )
     lines.append("")
     return "\n".join(lines)
 
@@ -290,6 +365,7 @@ def main() -> int:
     parser.add_argument("--end", default="2026-05-19")
     parser.add_argument("--limit", type=int, default=0, help="0 means no limit")
     parser.add_argument("--ttl-days", type=int, default=365)
+    parser.add_argument("--actionable-only", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--sleep-sec", type=float, default=0.12)
     parser.add_argument("--refresh-docs", action="store_true")
     parser.add_argument("--sync-desktop", action="store_true")
