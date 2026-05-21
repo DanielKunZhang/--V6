@@ -43,6 +43,7 @@ def render_daily_report(
     gate_experiment: dict[str, Any],
     pit_bridge: dict[str, Any],
     override_readiness: dict[str, Any],
+    turnover_guard_experiment: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -59,6 +60,20 @@ def render_daily_report(
     boost_labels = boost_review.get("label_summary", []) if isinstance(boost_review.get("label_summary"), list) else []
     gate_ranked = gate_experiment.get("ranked", []) if isinstance(gate_experiment.get("ranked"), list) else []
     bridge_rows = pit_bridge.get("rows", []) if isinstance(pit_bridge.get("rows"), list) else []
+    threshold_ranked = (
+        turnover_guard_experiment.get("ranked", [])
+        if isinstance(turnover_guard_experiment.get("ranked"), list)
+        else []
+    )
+    best_threshold = threshold_ranked[0] if threshold_ranked else {}
+    current_threshold = next(
+        (
+            row
+            for row in turnover_guard_experiment.get("rows", [])
+            if abs(float(row.get("threshold", 0.0) or 0.0) - 1.40) < 1e-9
+        ),
+        {},
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -105,6 +120,7 @@ def render_daily_report(
         f"- 未通过 gate：{', '.join(failed_checks[:8]) if failed_checks else '无'}",
         f"- BOOST failure review：active={boost_review.get('active_boost_months', 0)}，negative={boost_review.get('negative_boost_months', 0)}，sum delta={float(boost_review.get('sum_tier_delta', 0.0)):+.2%}",
         f"- OVERRIDE readiness：decision=`{override_readiness.get('decision', 'UNKNOWN')}`，hard sum={float(override_readiness.get('hard_sum_delta', 0.0)):+.2%}",
+        f"- Turnover guard experiment：best active threshold={float(best_threshold.get('threshold', 0.0) or 0.0):.2f}，active={best_threshold.get('active_rebalances', 'n/a')}，ann delta={float(best_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}；current 1.40 active={current_threshold.get('active_rebalances', 'n/a')}，ann delta={float(current_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -127,6 +143,21 @@ def render_daily_report(
             f"| `{row.get('candidate')}` | {row.get('kept_months', 0)} | {row.get('dropped_months', 0)} | "
             f"{float(row.get('kept_sum_delta', 0.0)):+.2%} | {float(row.get('improvement_vs_baseline', 0.0)):+.2%} | "
             f"{float(row.get('positive_damage', 0.0)):+.2%} | {float(row.get('negative_removed', 0.0)):+.2%} |"
+        )
+    lines += [
+        "",
+        "## Turnover Guard 阈值实验",
+        "",
+        "| threshold | active | guarded out | ann delta | Sharpe delta | 2024-2026 delta |",
+        "| ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in threshold_ranked[:5]:
+        delta = row.get("delta", {})
+        lines.append(
+            f"| {float(row.get('threshold', 0.0) or 0.0):.2f} | {row.get('active_rebalances', 0)} | "
+            f"{row.get('guarded_out_rebalances', 0)} | {float(delta.get('ann_delta', 0.0) or 0.0):+.2%} | "
+            f"{float(delta.get('sharpe_delta', 0.0) or 0.0):+.2f} | "
+            f"{float(delta.get('ann_2024_2026_delta', 0.0) or 0.0):+.2%} |"
         )
     lines += [
         "",
@@ -191,6 +222,7 @@ def main() -> int:
         run_step("pit_boost_failure_review", [py, "v6ab_pit_boost_failure_review.py", "--asof", args.asof]),
         run_step("boost_gate_experiment", [py, "v6ab_boost_gate_experiment.py", "--asof", args.asof]),
         run_step("override_readiness_review", [py, "v6ab_override_readiness_review.py", "--asof", args.asof]),
+        run_step("turnover_guard_threshold_experiment", [py, "v6ab_turnover_guard_threshold_experiment.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -198,6 +230,9 @@ def main() -> int:
     gate_experiment = load_json(ROOT / "backtest_results" / "v6ab_boost_gate_experiment" / "latest.json")
     pit_bridge = load_json(OUT_DIR / "latest_pit_classifier_bridge_backtest.json")
     override_readiness = load_json(ROOT / "backtest_results" / "v6ab_override_readiness" / "latest.json")
+    turnover_guard_experiment = load_json(
+        ROOT / "backtest_results" / "v6ab_turnover_guard_threshold_experiment" / "latest.json"
+    )
     report = render_daily_report(
         args.asof,
         classifier,
@@ -207,6 +242,7 @@ def main() -> int:
         gate_experiment,
         pit_bridge,
         override_readiness,
+        turnover_guard_experiment,
     )
     payload = {
         "asof": args.asof,
@@ -217,6 +253,7 @@ def main() -> int:
         "boost_gate_experiment": gate_experiment,
         "pit_classifier_bridge_backtest": pit_bridge,
         "override_readiness": override_readiness,
+        "turnover_guard_threshold_experiment": turnover_guard_experiment,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
