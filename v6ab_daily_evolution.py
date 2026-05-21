@@ -40,6 +40,7 @@ def render_daily_report(
     steps: list[dict[str, Any]],
     promotion: dict[str, Any],
     boost_review: dict[str, Any],
+    gate_experiment: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -54,6 +55,7 @@ def render_daily_report(
         if isinstance(row, dict) and not row.get("passed", False)
     ]
     boost_labels = boost_review.get("label_summary", []) if isinstance(boost_review.get("label_summary"), list) else []
+    gate_ranked = gate_experiment.get("ranked", []) if isinstance(gate_experiment.get("ranked"), list) else []
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -111,6 +113,19 @@ def render_daily_report(
         lines.append(f"| `{row.get('label')}` | {row.get('count', 0)} | {float(row.get('sum_tier_delta', 0.0)):+.2%} |")
     lines += [
         "",
+        "## BOOST Gate 实验",
+        "",
+        "| candidate | kept | dropped | kept sum | improvement | positive damage | negative removed |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in gate_ranked[:5]:
+        lines.append(
+            f"| `{row.get('candidate')}` | {row.get('kept_months', 0)} | {row.get('dropped_months', 0)} | "
+            f"{float(row.get('kept_sum_delta', 0.0)):+.2%} | {float(row.get('improvement_vs_baseline', 0.0)):+.2%} | "
+            f"{float(row.get('positive_damage', 0.0)):+.2%} | {float(row.get('negative_removed', 0.0)):+.2%} |"
+        )
+    lines += [
+        "",
         "## 运行状态",
         "",
         "| step | status |",
@@ -146,17 +161,20 @@ def main() -> int:
         run_step("pit_vs_v2_attribution", [py, "v6ab_pit_vs_v2_attribution.py", "--asof", args.asof]),
         run_step("promotion_gate", [py, "v6ab_promotion_gate.py", "--asof", args.asof]),
         run_step("pit_boost_failure_review", [py, "v6ab_pit_boost_failure_review.py", "--asof", args.asof]),
+        run_step("boost_gate_experiment", [py, "v6ab_boost_gate_experiment.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
     boost_review = load_json(ROOT / "backtest_results" / "v6ab_pit_boost_failure_review" / "latest.json")
-    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review)
+    gate_experiment = load_json(ROOT / "backtest_results" / "v6ab_boost_gate_experiment" / "latest.json")
+    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review, gate_experiment)
     payload = {
         "asof": args.asof,
         "steps": steps,
         "classifier": classifier,
         "promotion_gate": promotion,
         "boost_failure_review": boost_review,
+        "boost_gate_experiment": gate_experiment,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
