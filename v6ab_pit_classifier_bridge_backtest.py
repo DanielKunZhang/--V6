@@ -81,6 +81,14 @@ def tier_themes_from_snapshot(snap: dict[str, Any]) -> tuple[dict[str, dict[str,
     return dict(bt.THEMES), "WATCH"
 
 
+def snapshot_active_for_mode(snap: dict[str, Any], mode: str) -> bool:
+    if not snap:
+        return False
+    if mode == "tier":
+        return bool(snap.get("boost_allowlist") or snap.get("override_allowlist"))
+    return bool(snap.get("theme_allowlist"))
+
+
 def run_pit_v6b(
     prices: pd.DataFrame,
     snapshots: list[dict[str, Any]],
@@ -94,7 +102,7 @@ def run_pit_v6b(
     equity = bt.INITIAL_CAPITAL
     peak = equity
     current_weights = {"CASH": 1.0}
-    preview: dict[pd.Timestamp, tuple[dict[str, float], list[dict[str, Any]], dict[str, Any]]] = {}
+    preview: dict[pd.Timestamp, tuple[dict[str, float], list[dict[str, Any]], dict[str, Any], str, bool]] = {}
     decisions: list[dict[str, Any]] = []
     pick_config = {key: value for key, value in config.items() if key != "dd_brake"}
     use_dd_brake = bool(config.get("dd_brake"))
@@ -105,9 +113,11 @@ def run_pit_v6b(
             dt = pd.Timestamp(dt)
             bt.THEMES = old_themes
             snap = snapshot_for_date(snapshots, dt)
+            pit_tier = "WATCH"
+            pit_active = snapshot_active_for_mode(snap, mode)
             if monthly.index.get_loc(dt) < 12:
                 weights, rows = {"CASH": 1.0}, []
-            elif not snap or not snap.get("theme_allowlist"):
+            elif not pit_active:
                 weights, rows = bt.pick_weights(monthly, dt, **pick_config)
             else:
                 pit_tier = "BOOST" if snap.get("theme_allowlist") else "WATCH"
@@ -123,7 +133,7 @@ def run_pit_v6b(
                 pit_config["top_n"] = max(1, min(3, len(themes)))
                 pit_config["stock_top_n"] = 3
                 weights, rows = bt.pick_weights(monthly, dt, **pit_config)
-            preview[dt] = (weights, rows, snap)
+            preview[dt] = (weights, rows, snap, pit_tier, pit_active)
 
         records: list[tuple[pd.Timestamp, float]] = []
         for dt in prices.index:
@@ -137,7 +147,7 @@ def run_pit_v6b(
             peak = max(peak, equity)
             dd = equity / peak - 1.0
             if dt in preview:
-                weights, rows, snap = preview[pd.Timestamp(dt)]
+                weights, rows, snap, pit_tier, pit_active = preview[pd.Timestamp(dt)]
                 if use_dd_brake:
                     if dd <= -0.25:
                         weights = bt.defensive_weights(monthly, pd.Timestamp(dt))
@@ -160,10 +170,11 @@ def run_pit_v6b(
                         "pit_boost_allowlist": snap.get("boost_allowlist", []),
                         "pit_override_allowlist": snap.get("override_allowlist", []),
                         "pit_mode": mode,
-                        "pit_signal_tier": pit_tier if snap and snap.get("theme_allowlist") else "WATCH",
+                        "pit_signal_tier": pit_tier,
+                        "pit_active_for_mode": pit_active,
                         "pit_confirmed": has_confirmed_theme(snap),
                         "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
-                        "fallback_to_v2": bool(not snap or not snap.get("theme_allowlist")),
+                        "fallback_to_v2": bool(not pit_active),
                         "turnover": round(float(turnover), 6),
                         "top_themes": [
                             {

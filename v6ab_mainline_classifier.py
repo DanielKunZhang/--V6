@@ -318,6 +318,13 @@ def signal_tier(row: dict[str, Any]) -> str:
     evidence_count = int(row.get("evidence_count", 0))
     risk_penalty = float(row.get("risk_penalty", 0.0))
     mainline = float(row.get("mainline_score", 0.0))
+    market_only = bool(row.get("market_only", False))
+    if market_only and evidence_count < 2:
+        if state in {"CONFIRMED", "STARTER"} and market >= 90 and breadth >= 0.75 and risk_penalty < 20:
+            return "BOOST"
+        if state in {"CONFIRMED", "STARTER", "CANDIDATE"} and (market >= 75 or breadth >= 0.50):
+            return "WATCH"
+        return "NONE"
     if state == "CONFIRMED" and mainline >= 72 and market >= 65 and breadth >= 0.66 and evidence_count >= 8 and risk_penalty < 20:
         return "OVERRIDE"
     if state in {"CONFIRMED", "STARTER"} and market >= 52 and risk_penalty < 30:
@@ -374,6 +381,7 @@ def build_classifier(ledger: dict[str, Any], asof: str, taxonomy: str = "ai") ->
         row = {
             "theme": theme_id,
             "label": theme["label"],
+            "market_only": bool(theme.get("market_only", False)),
             **m,
             **e,
             "mainline_score": round(clamp(mainline), 4),

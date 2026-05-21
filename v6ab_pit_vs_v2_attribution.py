@@ -68,9 +68,11 @@ def summarize_period(rows: list[dict[str, Any]], start: str, end: str) -> dict[s
     overlay_deltas = [float(row["overlay_minus_v2"]) for row in seg]
     tier_deltas = [float(row["tier_minus_v2"]) for row in seg]
     active = [row for row in seg if row.get("pit_active")]
+    tier_active = [row for row in seg if row.get("tier_active")]
     return {
         "count": len(seg),
         "pit_active": len(active),
+        "tier_active": len(tier_active),
         "hard_avg_delta": float(np.mean(deltas)),
         "hard_sum_delta": float(np.sum(deltas)),
         "overlay_avg_delta": float(np.mean(overlay_deltas)),
@@ -114,6 +116,7 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
         tier_row = tier_by_date.get(raw_date, {})
         v2_row = v2_by_date.get(raw_date, {})
         pit_active = bool(hard_row and not hard_row.get("fallback_to_v2", True))
+        tier_active = bool(tier_row and not tier_row.get("fallback_to_v2", True))
         v2_ret = float(v2_rets.get(raw_date, 0.0))
         hard_ret = float(hard_rets.get(raw_date, 0.0))
         overlay_ret = float(overlay_rets.get(raw_date, 0.0))
@@ -122,6 +125,7 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
             {
                 "date": raw_date,
                 "pit_active": pit_active,
+                "tier_active": tier_active,
                 "pit_allowlist": hard_row.get("pit_allowlist", []),
                 "pit_boost_allowlist": hard_row.get("pit_boost_allowlist", []),
                 "pit_override_allowlist": hard_row.get("pit_override_allowlist", []),
@@ -196,12 +200,12 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Period Summary",
         "",
-        "| period | months | PIT active | hard sum delta | hard win | overlay sum delta | overlay win | tier sum delta | tier win |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| period | months | PIT active | tier active | hard sum delta | hard win | overlay sum delta | overlay win | tier sum delta | tier win |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, row in payload["periods"].items():
         lines.append(
-            f"| {name} | {row.get('count', 0)} | {row.get('pit_active', 0)} | "
+            f"| {name} | {row.get('count', 0)} | {row.get('pit_active', 0)} | {row.get('tier_active', 0)} | "
             f"{fmt_pct(row.get('hard_sum_delta'))} | {fmt_pct(row.get('hard_win_rate'))} | "
             f"{fmt_pct(row.get('overlay_sum_delta'))} | {fmt_pct(row.get('overlay_win_rate'))} | "
             f"{fmt_pct(row.get('tier_sum_delta'))} | {fmt_pct(row.get('tier_win_rate'))} |"
