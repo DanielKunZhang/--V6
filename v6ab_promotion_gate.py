@@ -68,6 +68,25 @@ def hindsight_rows(hindsight: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {row.get("scenario", ""): row for row in hindsight.get("scenario_deltas", [])}
 
 
+def attribution_view(attribution: dict[str, Any], mode: str) -> dict[str, Any]:
+    if mode != "guarded":
+        return attribution
+    periods: dict[str, dict[str, Any]] = {}
+    for key, row in (attribution.get("periods", {}) or {}).items():
+        if not isinstance(row, dict):
+            continue
+        item = dict(row)
+        item["tier_sum_delta"] = item.get("guarded_sum_delta", item.get("tier_sum_delta", 0.0))
+        item["tier_avg_delta"] = item.get("guarded_avg_delta", item.get("tier_avg_delta", 0.0))
+        item["tier_win_rate"] = item.get("guarded_win_rate", item.get("tier_win_rate", 0.0))
+        item["tier_active"] = item.get("guarded_active", item.get("tier_active", 0))
+        periods[key] = item
+    out = dict(attribution)
+    out["periods"] = periods
+    out["tier_summary"] = attribution.get("guarded_tier_summary", attribution.get("tier_summary", {}))
+    return out
+
+
 def score_checks(candidate: dict[str, Any], baseline: dict[str, Any], attribution: dict[str, Any], hindsight: dict[str, Any]) -> list[dict[str, Any]]:
     delta = metric_delta(candidate, baseline)
     hrows = hindsight_rows(hindsight)
@@ -264,7 +283,9 @@ def main() -> int:
     parser.add_argument("--hindsight-json", type=Path, default=DEFAULT_HINDSIGHT)
     parser.add_argument("--candidate", default="pit_tier_v6ab_dynamic_b")
     parser.add_argument("--baseline", default="baseline_v2_v6ab_dynamic_b")
+    parser.add_argument("--attribution-mode", choices=["tier", "guarded"], default="tier")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR)
+    parser.add_argument("--report-stem", default="V6AB_Promotion_Gate_LATEST")
     args = parser.parse_args()
 
     backtest = load_json(args.backtest_json)
@@ -275,13 +296,15 @@ def main() -> int:
     if not baseline or not candidate:
         raise SystemExit(f"missing baseline/candidate in {args.backtest_json}")
 
-    checks = score_checks(candidate, baseline, attribution, hindsight)
+    attribution_for_checks = attribution_view(attribution, args.attribution_mode)
+    checks = score_checks(candidate, baseline, attribution_for_checks, hindsight)
     delta = metric_delta(candidate, baseline)
     decision = decide_tier(checks, candidate, baseline)
     payload = {
         "asof": args.asof,
         "backtest_json": str(args.backtest_json),
         "attribution_json": str(args.attribution_json),
+        "attribution_mode": args.attribution_mode,
         "hindsight_json": str(args.hindsight_json),
         "baseline": baseline,
         "candidate": candidate,
@@ -295,8 +318,8 @@ def main() -> int:
     (args.output_dir / "latest.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     (args.output_dir / "latest.md").write_text(md + "\n", encoding="utf-8")
     pd.DataFrame(checks).to_csv(args.output_dir / "latest_checks.csv", index=False)
-    (REPORT_ROOT / "V6AB_Promotion_Gate_LATEST.md").write_text(md + "\n", encoding="utf-8")
-    (REPORT_ROOT / "V6AB_Promotion_Gate_LATEST.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    (REPORT_ROOT / f"{args.report_stem}.md").write_text(md + "\n", encoding="utf-8")
+    (REPORT_ROOT / f"{args.report_stem}.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     print(md)
     return 0
 

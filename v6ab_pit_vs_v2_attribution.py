@@ -75,21 +75,27 @@ def summarize_period(rows: list[dict[str, Any]], start: str, end: str) -> dict[s
     deltas = [float(row["hard_minus_v2"]) for row in seg]
     overlay_deltas = [float(row["overlay_minus_v2"]) for row in seg]
     tier_deltas = [float(row["tier_minus_v2"]) for row in seg]
+    guarded_deltas = [float(row.get("guarded_minus_v2", 0.0)) for row in seg]
     active = [row for row in seg if row.get("pit_active")]
     tier_active = [row for row in seg if row.get("tier_active")]
+    guarded_active = [row for row in seg if row.get("guarded_active")]
     return {
         "count": len(seg),
         "pit_active": len(active),
         "tier_active": len(tier_active),
+        "guarded_active": len(guarded_active),
         "hard_avg_delta": float(np.mean(deltas)),
         "hard_sum_delta": float(np.sum(deltas)),
         "overlay_avg_delta": float(np.mean(overlay_deltas)),
         "overlay_sum_delta": float(np.sum(overlay_deltas)),
         "tier_avg_delta": float(np.mean(tier_deltas)),
         "tier_sum_delta": float(np.sum(tier_deltas)),
+        "guarded_avg_delta": float(np.mean(guarded_deltas)),
+        "guarded_sum_delta": float(np.sum(guarded_deltas)),
         "hard_win_rate": float(np.mean([x > 0 for x in deltas])),
         "overlay_win_rate": float(np.mean([x > 0 for x in overlay_deltas])),
         "tier_win_rate": float(np.mean([x > 0 for x in tier_deltas])),
+        "guarded_win_rate": float(np.mean([x > 0 for x in guarded_deltas])),
     }
 
 
@@ -104,15 +110,23 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
     hard_eq, hard_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="hard_replace")
     overlay_eq, overlay_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="overlay")
     tier_eq, tier_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="tier")
+    guarded_eq, guarded_decisions = pit_bridge.run_pit_v6b(
+        prices,
+        snapshots,
+        bridge.BASELINE_CONFIG,
+        mode="tier_turnover_guarded",
+    )
 
     decision_dates = [row["date"] for row in baseline_decisions]
     v2_rets = monthly_return(baseline_eq, decision_dates)
     hard_rets = monthly_return(hard_eq, decision_dates)
     overlay_rets = monthly_return(overlay_eq, decision_dates)
     tier_rets = monthly_return(tier_eq, decision_dates)
+    guarded_rets = monthly_return(guarded_eq, decision_dates)
     hard_by_date = {row["date"]: row for row in hard_decisions}
     overlay_by_date = {row["date"]: row for row in overlay_decisions}
     tier_by_date = {row["date"]: row for row in tier_decisions}
+    guarded_by_date = {row["date"]: row for row in guarded_decisions}
     v2_by_date = {row["date"]: row for row in baseline_decisions}
 
     rows: list[dict[str, Any]] = []
@@ -122,40 +136,51 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
         hard_row = hard_by_date.get(raw_date, {})
         overlay_row = overlay_by_date.get(raw_date, {})
         tier_row = tier_by_date.get(raw_date, {})
+        guarded_row = guarded_by_date.get(raw_date, {})
         v2_row = v2_by_date.get(raw_date, {})
         pit_active = bool(hard_row and not hard_row.get("fallback_to_v2", True))
         tier_active = bool(tier_row and not tier_row.get("fallback_to_v2", True))
+        guarded_active = bool(guarded_row and not guarded_row.get("fallback_to_v2", True))
         v2_ret = float(v2_rets.get(raw_date, 0.0))
         hard_ret = float(hard_rets.get(raw_date, 0.0))
         overlay_ret = float(overlay_rets.get(raw_date, 0.0))
         tier_ret = float(tier_rets.get(raw_date, 0.0))
+        guarded_ret = float(guarded_rets.get(raw_date, 0.0))
         rows.append(
             {
                 "date": raw_date,
                 "pit_active": pit_active,
                 "tier_active": tier_active,
+                "guarded_active": guarded_active,
                 "pit_allowlist": hard_row.get("pit_allowlist", []),
                 "pit_boost_allowlist": hard_row.get("pit_boost_allowlist", []),
                 "pit_override_allowlist": hard_row.get("pit_override_allowlist", []),
                 "pit_signal_tier": tier_row.get("pit_signal_tier", "WATCH"),
+                "guarded_signal_tier": guarded_row.get("pit_signal_tier", "WATCH"),
+                "guarded_guard_reason": guarded_row.get("pit_guard_reason", ""),
                 "v2_next_ret": v2_ret,
                 "hard_next_ret": hard_ret,
                 "overlay_next_ret": overlay_ret,
                 "tier_next_ret": tier_ret,
+                "guarded_next_ret": guarded_ret,
                 "hard_minus_v2": hard_ret - v2_ret,
                 "overlay_minus_v2": overlay_ret - v2_ret,
                 "tier_minus_v2": tier_ret - v2_ret,
+                "guarded_minus_v2": guarded_ret - v2_ret,
                 "v2_top": top_theme_labels(v2_row),
                 "hard_top": top_theme_labels(hard_row),
                 "overlay_top": top_theme_labels(overlay_row),
                 "tier_top": top_theme_labels(tier_row),
+                "guarded_top": top_theme_labels(guarded_row),
                 "v2_selected": selected_theme_labels(v2_row),
                 "hard_selected": selected_theme_labels(hard_row),
                 "overlay_selected": selected_theme_labels(overlay_row),
                 "tier_selected": selected_theme_labels(tier_row),
+                "guarded_selected": selected_theme_labels(guarded_row),
                 "hard_turnover": float(hard_row.get("turnover", 0.0)),
                 "overlay_turnover": float(overlay_row.get("turnover", 0.0)),
                 "tier_turnover": float(tier_row.get("turnover", 0.0)),
+                "guarded_turnover": float(guarded_row.get("turnover", 0.0)),
             }
         )
 
@@ -175,6 +200,19 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
             "avg_delta": float(np.mean(deltas)),
             "win_rate": float(np.mean([value > 0 for value in deltas])),
         }
+    guarded_by_tier: dict[str, dict[str, Any]] = {}
+    for tier in ["WATCH", "BOOST", "OVERRIDE"]:
+        tier_rows = [row for row in rows if row.get("guarded_signal_tier") == tier]
+        if not tier_rows:
+            guarded_by_tier[tier] = {"count": 0}
+            continue
+        deltas = [float(row["guarded_minus_v2"]) for row in tier_rows]
+        guarded_by_tier[tier] = {
+            "count": len(tier_rows),
+            "sum_delta": float(np.sum(deltas)),
+            "avg_delta": float(np.mean(deltas)),
+            "win_rate": float(np.mean([value > 0 for value in deltas])),
+        }
     periods = {
         "full": summarize_period(rows, args.start, args.end),
         "2020": summarize_period(rows, "2020-01-01", "2020-12-31"),
@@ -188,6 +226,7 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
         "replay_json": str(args.replay_json),
         "periods": periods,
         "tier_summary": by_tier,
+        "guarded_tier_summary": guarded_by_tier,
         "pit_active_count": len(active_rows),
         "rows": rows,
         "worst_hard_active_months": worst_hard,
@@ -212,15 +251,14 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Period Summary",
         "",
-        "| period | months | PIT active | tier active | hard sum delta | hard win | overlay sum delta | overlay win | tier sum delta | tier win |",
+        "| period | months | PIT active | tier active | guarded active | hard sum delta | overlay sum delta | tier sum delta | guarded sum delta | guarded win |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, row in payload["periods"].items():
         lines.append(
-            f"| {name} | {row.get('count', 0)} | {row.get('pit_active', 0)} | {row.get('tier_active', 0)} | "
-            f"{fmt_pct(row.get('hard_sum_delta'))} | {fmt_pct(row.get('hard_win_rate'))} | "
-            f"{fmt_pct(row.get('overlay_sum_delta'))} | {fmt_pct(row.get('overlay_win_rate'))} | "
-            f"{fmt_pct(row.get('tier_sum_delta'))} | {fmt_pct(row.get('tier_win_rate'))} |"
+            f"| {name} | {row.get('count', 0)} | {row.get('pit_active', 0)} | {row.get('tier_active', 0)} | {row.get('guarded_active', 0)} | "
+            f"{fmt_pct(row.get('hard_sum_delta'))} | {fmt_pct(row.get('overlay_sum_delta'))} | "
+            f"{fmt_pct(row.get('tier_sum_delta'))} | {fmt_pct(row.get('guarded_sum_delta'))} | {fmt_pct(row.get('guarded_win_rate'))} |"
         )
     lines += [
         "",
@@ -230,6 +268,18 @@ def render_md(payload: dict[str, Any]) -> str:
         "| --- | ---: | ---: | ---: | ---: |",
     ]
     for tier, row in payload.get("tier_summary", {}).items():
+        lines.append(
+            f"| `{tier}` | {row.get('count', 0)} | {fmt_pct(row.get('sum_delta'))} | "
+            f"{fmt_pct(row.get('avg_delta'))} | {fmt_pct(row.get('win_rate'))} |"
+        )
+    lines += [
+        "",
+        "## Guarded Tier Summary",
+        "",
+        "| tier | months | sum delta | avg delta | win rate |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for tier, row in payload.get("guarded_tier_summary", {}).items():
         lines.append(
             f"| `{tier}` | {row.get('count', 0)} | {fmt_pct(row.get('sum_delta'))} | "
             f"{fmt_pct(row.get('avg_delta'))} | {fmt_pct(row.get('win_rate'))} |"
