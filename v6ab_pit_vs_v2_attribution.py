@@ -66,6 +66,7 @@ def summarize_period(rows: list[dict[str, Any]], start: str, end: str) -> dict[s
         return {"count": 0}
     deltas = [float(row["hard_minus_v2"]) for row in seg]
     overlay_deltas = [float(row["overlay_minus_v2"]) for row in seg]
+    tier_deltas = [float(row["tier_minus_v2"]) for row in seg]
     active = [row for row in seg if row.get("pit_active")]
     return {
         "count": len(seg),
@@ -74,8 +75,11 @@ def summarize_period(rows: list[dict[str, Any]], start: str, end: str) -> dict[s
         "hard_sum_delta": float(np.sum(deltas)),
         "overlay_avg_delta": float(np.mean(overlay_deltas)),
         "overlay_sum_delta": float(np.sum(overlay_deltas)),
+        "tier_avg_delta": float(np.mean(tier_deltas)),
+        "tier_sum_delta": float(np.sum(tier_deltas)),
         "hard_win_rate": float(np.mean([x > 0 for x in deltas])),
         "overlay_win_rate": float(np.mean([x > 0 for x in overlay_deltas])),
+        "tier_win_rate": float(np.mean([x > 0 for x in tier_deltas])),
     }
 
 
@@ -89,13 +93,16 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
     baseline_eq, baseline_decisions = bridge.run_v6b(prices, bridge.BASELINE_CONFIG)
     hard_eq, hard_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="hard_replace")
     overlay_eq, overlay_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="overlay")
+    tier_eq, tier_decisions = pit_bridge.run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="tier")
 
     decision_dates = [row["date"] for row in baseline_decisions]
     v2_rets = monthly_return(baseline_eq, decision_dates)
     hard_rets = monthly_return(hard_eq, decision_dates)
     overlay_rets = monthly_return(overlay_eq, decision_dates)
+    tier_rets = monthly_return(tier_eq, decision_dates)
     hard_by_date = {row["date"]: row for row in hard_decisions}
     overlay_by_date = {row["date"]: row for row in overlay_decisions}
+    tier_by_date = {row["date"]: row for row in tier_decisions}
     v2_by_date = {row["date"]: row for row in baseline_decisions}
 
     rows: list[dict[str, Any]] = []
@@ -104,32 +111,54 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
             continue
         hard_row = hard_by_date.get(raw_date, {})
         overlay_row = overlay_by_date.get(raw_date, {})
+        tier_row = tier_by_date.get(raw_date, {})
         v2_row = v2_by_date.get(raw_date, {})
         pit_active = bool(hard_row and not hard_row.get("fallback_to_v2", True))
         v2_ret = float(v2_rets.get(raw_date, 0.0))
         hard_ret = float(hard_rets.get(raw_date, 0.0))
         overlay_ret = float(overlay_rets.get(raw_date, 0.0))
+        tier_ret = float(tier_rets.get(raw_date, 0.0))
         rows.append(
             {
                 "date": raw_date,
                 "pit_active": pit_active,
                 "pit_allowlist": hard_row.get("pit_allowlist", []),
+                "pit_boost_allowlist": hard_row.get("pit_boost_allowlist", []),
+                "pit_override_allowlist": hard_row.get("pit_override_allowlist", []),
+                "pit_signal_tier": tier_row.get("pit_signal_tier", "WATCH"),
                 "v2_next_ret": v2_ret,
                 "hard_next_ret": hard_ret,
                 "overlay_next_ret": overlay_ret,
+                "tier_next_ret": tier_ret,
                 "hard_minus_v2": hard_ret - v2_ret,
                 "overlay_minus_v2": overlay_ret - v2_ret,
+                "tier_minus_v2": tier_ret - v2_ret,
                 "v2_top": top_theme_labels(v2_row),
                 "hard_top": top_theme_labels(hard_row),
                 "overlay_top": top_theme_labels(overlay_row),
+                "tier_top": top_theme_labels(tier_row),
                 "hard_turnover": float(hard_row.get("turnover", 0.0)),
                 "overlay_turnover": float(overlay_row.get("turnover", 0.0)),
+                "tier_turnover": float(tier_row.get("turnover", 0.0)),
             }
         )
 
     active_rows = [row for row in rows if row["pit_active"]]
     worst_hard = sorted(active_rows, key=lambda row: row["hard_minus_v2"])[:12]
     best_hard = sorted(active_rows, key=lambda row: row["hard_minus_v2"], reverse=True)[:12]
+    by_tier: dict[str, dict[str, Any]] = {}
+    for tier in ["WATCH", "BOOST", "OVERRIDE"]:
+        tier_rows = [row for row in rows if row.get("pit_signal_tier") == tier]
+        if not tier_rows:
+            by_tier[tier] = {"count": 0}
+            continue
+        deltas = [float(row["tier_minus_v2"]) for row in tier_rows]
+        by_tier[tier] = {
+            "count": len(tier_rows),
+            "sum_delta": float(np.sum(deltas)),
+            "avg_delta": float(np.mean(deltas)),
+            "win_rate": float(np.mean([value > 0 for value in deltas])),
+        }
     periods = {
         "full": summarize_period(rows, args.start, args.end),
         "2020": summarize_period(rows, "2020-01-01", "2020-12-31"),
@@ -142,6 +171,7 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
         "end": args.end,
         "replay_json": str(args.replay_json),
         "periods": periods,
+        "tier_summary": by_tier,
         "pit_active_count": len(active_rows),
         "rows": rows,
         "worst_hard_active_months": worst_hard,
@@ -166,38 +196,53 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Period Summary",
         "",
-        "| period | months | PIT active | hard sum delta | hard win | overlay sum delta | overlay win |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| period | months | PIT active | hard sum delta | hard win | overlay sum delta | overlay win | tier sum delta | tier win |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, row in payload["periods"].items():
         lines.append(
             f"| {name} | {row.get('count', 0)} | {row.get('pit_active', 0)} | "
             f"{fmt_pct(row.get('hard_sum_delta'))} | {fmt_pct(row.get('hard_win_rate'))} | "
-            f"{fmt_pct(row.get('overlay_sum_delta'))} | {fmt_pct(row.get('overlay_win_rate'))} |"
+            f"{fmt_pct(row.get('overlay_sum_delta'))} | {fmt_pct(row.get('overlay_win_rate'))} | "
+            f"{fmt_pct(row.get('tier_sum_delta'))} | {fmt_pct(row.get('tier_win_rate'))} |"
+        )
+    lines += [
+        "",
+        "## Tier Summary",
+        "",
+        "| tier | months | sum delta | avg delta | win rate |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for tier, row in payload.get("tier_summary", {}).items():
+        lines.append(
+            f"| `{tier}` | {row.get('count', 0)} | {fmt_pct(row.get('sum_delta'))} | "
+            f"{fmt_pct(row.get('avg_delta'))} | {fmt_pct(row.get('win_rate'))} |"
         )
     lines += [
         "",
         "## Worst Active PIT Months",
         "",
-        "| date | allowlist | hard-v2 | overlay-v2 | V2 top | hard top | overlay top |",
-        "| --- | --- | ---: | ---: | --- | --- | --- |",
+        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 top | hard top | tier top |",
+        "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for row in payload["worst_hard_active_months"]:
         lines.append(
-            f"| {row['date']} | `{', '.join(row.get('pit_allowlist', []))}` | {fmt_pct(row['hard_minus_v2'])} | "
-            f"{fmt_pct(row['overlay_minus_v2'])} | {row['v2_top']} | {row['hard_top']} | {row['overlay_top']} |"
+            f"| {row['date']} | `{row.get('pit_signal_tier', '')}` | `{', '.join(row.get('pit_allowlist', []))}` | "
+            f"{fmt_pct(row['hard_minus_v2'])} | {fmt_pct(row['overlay_minus_v2'])} | {fmt_pct(row['tier_minus_v2'])} | "
+            f"{row['v2_top']} | {row['hard_top']} | {row['tier_top']} |"
         )
     lines += [
         "",
         "## Best Active PIT Months",
         "",
-        "| date | allowlist | hard-v2 | overlay-v2 | V2 top | hard top | overlay top |",
-        "| --- | --- | ---: | ---: | --- | --- | --- |",
+        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 top | hard top | tier top |",
+        "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for row in payload["best_hard_active_months"]:
         lines.append(
-            f"| {row['date']} | `{', '.join(row.get('pit_allowlist', []))}` | {fmt_pct(row['hard_minus_v2'])} | "
-            f"{fmt_pct(row['overlay_minus_v2'])} | {row['v2_top']} | {row['hard_top']} | {row['overlay_top']} |"
+            f"| {row['date']} | `{row.get('pit_signal_tier', '')}` | `{', '.join(row.get('pit_allowlist', []))}` | "
+            f"{fmt_pct(row['hard_minus_v2'])} | {fmt_pct(row['overlay_minus_v2'])} | {fmt_pct(row['tier_minus_v2'])} | "
+            f"{row['v2_top']} | {row['hard_top']} | {row['tier_top']} |"
         )
     lines += [
         "",
@@ -205,6 +250,7 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "- `hard` 表示 PIT allowlist 硬替换 V2 theme universe。",
         "- `overlay` 表示 STARTER 只扩展候选，不剥夺 V2 原有主线竞争权。",
+        "- `tier` 表示 WATCH 不影响、BOOST overlay、OVERRIDE hard replace。",
         "- 若 overlay 明显优于 hard，说明 PIT 证据还只能作为主线候选增强，不能作为排他性过滤器。",
         "",
     ]

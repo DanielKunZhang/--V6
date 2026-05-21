@@ -311,6 +311,22 @@ def classify_state(
     return "DORMANT"
 
 
+def signal_tier(row: dict[str, Any]) -> str:
+    state = str(row.get("state", "DORMANT"))
+    market = float(row.get("market_score", 0.0))
+    breadth = float(row.get("breadth", 0.0))
+    evidence_count = int(row.get("evidence_count", 0))
+    risk_penalty = float(row.get("risk_penalty", 0.0))
+    mainline = float(row.get("mainline_score", 0.0))
+    if state == "CONFIRMED" and mainline >= 72 and market >= 65 and breadth >= 0.66 and evidence_count >= 8 and risk_penalty < 20:
+        return "OVERRIDE"
+    if state in {"CONFIRMED", "STARTER"} and market >= 52 and risk_penalty < 30:
+        return "BOOST"
+    if state == "CANDIDATE" and (evidence_count >= 3 or market >= 75) and risk_penalty < 35:
+        return "WATCH"
+    return "NONE"
+
+
 def ticker_priority(rows: list[dict[str, Any]], theme_allowlist: list[str]) -> list[dict[str, Any]]:
     scores: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -355,18 +371,21 @@ def build_classifier(ledger: dict[str, Any], asof: str, taxonomy: str = "ai") ->
             breadth=float(m.get("breadth", 0.0)),
             market_only=bool(theme.get("market_only")),
         )
-        theme_rows.append(
-            {
-                "theme": theme_id,
-                "label": theme["label"],
-                **m,
-                **e,
-                "mainline_score": round(clamp(mainline), 4),
-                "state": state,
-            }
-        )
+        row = {
+            "theme": theme_id,
+            "label": theme["label"],
+            **m,
+            **e,
+            "mainline_score": round(clamp(mainline), 4),
+            "state": state,
+        }
+        row["signal_tier"] = signal_tier(row)
+        theme_rows.append(row)
     theme_rows = sorted(theme_rows, key=lambda row: row["mainline_score"], reverse=True)
     allowlist = [row["theme"] for row in theme_rows if row["state"] in {"CONFIRMED", "STARTER"}]
+    watchlist = [row["theme"] for row in theme_rows if row["signal_tier"] == "WATCH"]
+    boost_allowlist = [row["theme"] for row in theme_rows if row["signal_tier"] in {"BOOST", "OVERRIDE"}]
+    override_allowlist = [row["theme"] for row in theme_rows if row["signal_tier"] == "OVERRIDE"]
     confirmed = [row for row in theme_rows if row["state"] == "CONFIRMED"]
     starter = [row for row in theme_rows if row["state"] == "STARTER"]
     fallback = not confirmed
@@ -379,6 +398,9 @@ def build_classifier(ledger: dict[str, Any], asof: str, taxonomy: str = "ai") ->
         "fallback_to_v2": fallback,
         "b_sleeve_cap_hint": b_cap,
         "theme_allowlist": allowlist,
+        "watchlist": watchlist,
+        "boost_allowlist": boost_allowlist,
+        "override_allowlist": override_allowlist,
         "themes": theme_rows,
         "ticker_priority": priorities,
         "paper_sim_action": "NO_CHANGE_BACKTEST_ONLY",
@@ -401,12 +423,12 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Theme State",
         "",
-        "| theme | state | mainline | market | narrative | fundamental | institutional | history | risk | evidence | breadth |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| theme | state | tier | mainline | market | narrative | fundamental | institutional | history | risk | evidence | breadth |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in payload["themes"]:
         lines.append(
-            f"| {row['label']} | `{row['state']}` | {row['mainline_score']:.1f} | {row['market_score']:.1f} | "
+            f"| {row['label']} | `{row['state']}` | `{row['signal_tier']}` | {row['mainline_score']:.1f} | {row['market_score']:.1f} | "
             f"{row['narrative_score']:.1f} | {row['fundamental_score']:.1f} | {row['institutional_score']:.1f} | "
             f"{row['historical_depth_score']:.1f} | {row['risk_penalty']:.1f} | {row['evidence_count']} | {row['breadth']:.2f} |"
         )

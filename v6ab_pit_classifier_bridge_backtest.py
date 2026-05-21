@@ -67,6 +67,20 @@ def overlay_themes_from_snapshot(snap: dict[str, Any]) -> dict[str, dict[str, An
     return themes
 
 
+def tier_themes_from_snapshot(snap: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], str]:
+    if snap.get("override_allowlist"):
+        tier_snap = dict(snap)
+        tier_snap["theme_allowlist"] = list(snap.get("override_allowlist", []))
+        return bridge_themes_from_snapshot(tier_snap), "OVERRIDE"
+    if snap.get("boost_allowlist"):
+        tier_snap = dict(snap)
+        tier_snap["theme_allowlist"] = list(snap.get("boost_allowlist", []))
+        themes = dict(bt.THEMES)
+        themes.update(bridge_themes_from_snapshot(tier_snap))
+        return themes, "BOOST"
+    return dict(bt.THEMES), "WATCH"
+
+
 def run_pit_v6b(
     prices: pd.DataFrame,
     snapshots: list[dict[str, Any]],
@@ -96,9 +110,13 @@ def run_pit_v6b(
             elif not snap or not snap.get("theme_allowlist"):
                 weights, rows = bt.pick_weights(monthly, dt, **pick_config)
             else:
-                if mode == "overlay" and not has_confirmed_theme(snap):
+                pit_tier = "BOOST" if snap.get("theme_allowlist") else "WATCH"
+                if mode == "tier":
+                    themes, pit_tier = tier_themes_from_snapshot(snap)
+                elif mode == "overlay" and not has_confirmed_theme(snap):
                     themes = overlay_themes_from_snapshot(snap)
                 else:
+                    pit_tier = "OVERRIDE" if mode == "hard_replace" else pit_tier
                     themes = bridge_themes_from_snapshot(snap)
                 bt.THEMES = themes
                 pit_config = dict(pick_config)
@@ -139,7 +157,10 @@ def run_pit_v6b(
                         "drawdown": round(float(dd), 6),
                         "pit_asof": snap.get("asof"),
                         "pit_allowlist": snap.get("theme_allowlist", []),
+                        "pit_boost_allowlist": snap.get("boost_allowlist", []),
+                        "pit_override_allowlist": snap.get("override_allowlist", []),
                         "pit_mode": mode,
+                        "pit_signal_tier": pit_tier if snap and snap.get("theme_allowlist") else "WATCH",
                         "pit_confirmed": has_confirmed_theme(snap),
                         "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
                         "fallback_to_v2": bool(not snap or not snap.get("theme_allowlist")),
@@ -253,11 +274,13 @@ def main() -> int:
     baseline_eq, baseline_decisions = bridge.run_v6b(prices, bridge.BASELINE_CONFIG)
     pit_eq, pit_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="hard_replace")
     pit_overlay_eq, pit_overlay_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="overlay")
+    pit_tier_eq, pit_tier_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="tier")
     curves = {
         "V6A": load_v6a_composite(args.v6a_daily),
         "baseline_v2": baseline_eq,
         "pit_classifier": pit_eq,
         "pit_classifier_overlay": pit_overlay_eq,
+        "pit_classifier_tier": pit_tier_eq,
         "GLD": benchmark_equity(prices, "US.GLD"),
         "BIL": benchmark_equity(prices, "US.BIL"),
         "SPY": benchmark_equity(prices, "US.SPY"),
@@ -300,15 +323,32 @@ def main() -> int:
         start=args.start,
         end=args.end,
     )
+    pit_tier_v6ab, pit_tier_log = dynamic_b_sizing_equity(
+        curves,
+        b_key="pit_classifier_tier",
+        b_low=0.05,
+        b_mid=min(0.30, pit_cap),
+        b_high=max(0.05, min(0.45, pit_cap)),
+        b_strong_126d=0.08,
+        b_weak_63d=-0.08,
+        hedge_max=0.30,
+        vol_threshold=0.28,
+        corr_threshold=0.60,
+        dd_threshold=-0.12,
+        start=args.start,
+        end=args.end,
+    )
 
     rows = []
     for name, eq, decisions in [
         ("baseline_v2_standalone_v6b", baseline_eq, baseline_decisions),
         ("pit_classifier_standalone_v6b", pit_eq, pit_decisions),
         ("pit_overlay_standalone_v6b", pit_overlay_eq, pit_overlay_decisions),
+        ("pit_tier_standalone_v6b", pit_tier_eq, pit_tier_decisions),
         ("baseline_v2_v6ab_dynamic_b", baseline_v6ab, []),
         ("pit_classifier_v6ab_dynamic_b", pit_v6ab, pit_decisions),
         ("pit_overlay_v6ab_dynamic_b", pit_overlay_v6ab, pit_overlay_decisions),
+        ("pit_tier_v6ab_dynamic_b", pit_tier_v6ab, pit_tier_decisions),
     ]:
         rows.append(
             {
@@ -334,6 +374,7 @@ def main() -> int:
         "rows": rows,
         "recent_pit_decisions": pit_decisions[-12:],
         "recent_pit_overlay_decisions": pit_overlay_decisions[-12:],
+        "recent_pit_tier_decisions": pit_tier_decisions[-12:],
     }
     md = render_md(payload)
     args.output_dir.mkdir(parents=True, exist_ok=True)
