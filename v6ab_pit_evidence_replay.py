@@ -18,6 +18,7 @@ DESKTOP_ROOT = Path("/Users/zhangkun/Desktop/AI个人投资公司")
 REPORT_ROOT = DESKTOP_ROOT / "报表输出" / "LATEST"
 OUT_DIR = ROOT / "backtest_results" / "v6ab_daily_evolution" / "pit_replay"
 DEFAULT_HISTORICAL_EVIDENCE = ROOT / "backtest_results" / "v6ab_historical_evidence" / "latest.json"
+DEFAULT_EVENT_FACT_LEDGER = ROOT / "backtest_results" / "v6ab_event_facts" / "latest.json"
 
 
 def _parse_date(value: Any) -> pd.Timestamp | None:
@@ -34,8 +35,9 @@ def build_full_seed(args: argparse.Namespace) -> list[dict[str, Any]]:
     rows.extend(ledger_mod.parse_x_radar(args.x_radar, args.end))
     rows.extend(ledger_mod.parse_13f(args.__dict__["13f"], args.end))
     rows.extend(ledger_mod.parse_valuation(args.valuation, args.end))
-    if args.extra_evidence_json:
-        extra_path = Path(args.extra_evidence_json)
+    extra_paths = [item.strip() for item in str(args.extra_evidence_json or "").split(",") if item.strip()]
+    for extra in extra_paths:
+        extra_path = Path(extra)
         if extra_path.exists():
             payload = json.loads(extra_path.read_text(encoding="utf-8"))
             rows.extend(payload.get("rows", []))
@@ -154,7 +156,7 @@ def main() -> int:
     parser.add_argument("--x-radar", type=Path, default=ledger_mod.DEFAULT_X_RADAR)
     parser.add_argument("--13f", type=Path, default=ledger_mod.DEFAULT_13F)
     parser.add_argument("--valuation", type=Path, default=ledger_mod.DEFAULT_VALUATION)
-    parser.add_argument("--extra-evidence-json", default=str(DEFAULT_HISTORICAL_EVIDENCE))
+    parser.add_argument("--extra-evidence-json", default=f"{DEFAULT_HISTORICAL_EVIDENCE},{DEFAULT_EVENT_FACT_LEDGER}")
     parser.add_argument("--taxonomy", choices=["ai", "historical"], default="historical")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args()
