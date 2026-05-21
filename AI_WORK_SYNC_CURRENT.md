@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 00:33:34`
+- Last updated: `2026-05-21 11:53:02`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1053,3 +1053,8 @@ dc58870 feat: add V6 daily report automation
 - [00:32] [发现] 最新 PIT replay 区间 `2012-05-21 -> 2026-05-19`，seed evidence 73 条，但现有本地历史非价格证据覆盖不足：169 个历史快照中 active allowlist 为 0；2026-05-19 仅可见 56 条证据，且无 2026-05-20 的 13F seed，因此仍 fallback 到 V2。
 - [00:32] [回测] PIT classifier bridge 已接入 V6AB 回测并生成桌面 LATEST 报告。结果：`baseline_v2_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；`pit_classifier_v6ab_dynamic_b` 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；PIT active rebals = 0。结论：管线防泄漏接通，但当前 PIT 版本等同 V2，不能替换模拟盘。
 - [00:32] [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`，动作仍为 `NO_CHANGE_BACKTEST_ONLY`。下一步不是拉泛化 K 线，而是补更完整的历史 evidence ledger，尤其是 2020、2022、2024 前后的真实主线证据；若新增主题/ticker 缺价，再按最小清单拉 K 线。
+
+
+### Claude
+
+- [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。

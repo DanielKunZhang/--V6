@@ -8,6 +8,7 @@
   <array>
     <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
     <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/morning_brief.py</string>
+    <string>--no-email</string>
   </array>
   <key>WorkingDirectory</key>
   <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>

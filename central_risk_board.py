@@ -10,7 +10,17 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from morning_brief import HTML_PORTFOLIO, collect_events, collect_kline_quota, collect_portfolio_futu, collect_portfolio_html, collect_todos, collect_v6
+from morning_brief import (
+    HTML_PORTFOLIO,
+    collect_events,
+    collect_kline_quota,
+    collect_portfolio_futu,
+    collect_portfolio_html,
+    collect_stale_data_status,
+    collect_todos,
+    collect_v6,
+    collect_workflow_actions,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -848,6 +858,21 @@ def build_todo_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+def build_workflow_action_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in payload.get("workflow_actions", []) or []:
+        rows.append(
+            {
+                "priority": str(row.get("priority", "")),
+                "domain": str(row.get("domain", "")),
+                "item": str(row.get("item", "")),
+                "trigger": str(row.get("trigger", "")),
+                "reason": str(row.get("reason", "")),
+            }
+        )
+    return rows
+
+
 def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> list[str]:
     if not rows:
         return ["_None_"]
@@ -890,8 +915,10 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
     ledger_quality = build_ledger_quality(portfolio, portfolio_meta, base_positions, ledger_reconciliation)
     mapping_quality = build_mapping_quality(positions, config)
     radar_sample_loop = load_radar_sample_loop_summary()
-    morning_ops = build_morning_ops_summary()
     events = build_event_rows(config)
+    stale_status = collect_stale_data_status()
+    workflow_actions = collect_workflow_actions(events, stale_status=stale_status)
+    morning_ops = build_morning_ops_summary()
     status, reasons = classify_board_status(snapshot, themes, alerts, freshness, ledger_quality, mapping_quality)
     expansion_gate = build_expansion_gate(status, radar_sample_loop, v6)
     return {
@@ -914,6 +941,8 @@ def build_payload(requested_cadence: str) -> dict[str, Any]:
         "radar_sample_loop": radar_sample_loop,
         "expansion_gate": expansion_gate,
         "morning_ops": morning_ops,
+        "workflow_actions": workflow_actions,
+        "stale_status": stale_status,
         "freshness": freshness,
         "futu_snapshot": futu_snapshot,
         "target_alerts": alerts,
@@ -1063,6 +1092,13 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.append(f"- Unmapped weight: `{fmt_pct(payload['mapping_quality']['unmapped_weight'])}`")
     lines.extend(render_table(build_mapping_display_rows(payload), [("name", "name"), ("current_pct", "current"), ("theme", "theme")]))
 
+    lines.extend(["", "## Today's Workflow Actions", ""])
+    workflow_rows = build_workflow_action_rows(payload)
+    if workflow_rows:
+        lines.extend(render_table(workflow_rows, [("priority", "priority"), ("domain", "domain"), ("item", "item"), ("trigger", "say to AI"), ("reason", "reason")]))
+    else:
+        lines.append("- No required action today. Default action: wait.")
+
     lines.extend(["", "## Futu Broker Snapshot", ""])
     futu_snapshot = payload["futu_snapshot"]
     if futu_snapshot["available"]:
@@ -1140,6 +1176,7 @@ def build_html(payload: dict[str, Any]) -> str:
     event_rows = build_event_display_rows(payload)
     mapping_rows = build_mapping_display_rows(payload)
     todo_rows = build_todo_display_rows(payload)
+    workflow_rows = build_workflow_action_rows(payload)
     portfolio_meta = payload["portfolio_meta"]
     status_color = {"GREEN": "#16a34a", "YELLOW": "#d97706", "RED": "#dc2626"}.get(payload["status"], "#2563eb")
     quota = payload.get("morning_ops", {}).get("kline_quota", {}) or {}
@@ -1150,6 +1187,14 @@ def build_html(payload: dict[str, Any]) -> str:
         quota_text = f"{quota_used}/{quota_total} used ({quota_pct:.0f}%)"
     else:
         quota_text = "unavailable"
+
+    if workflow_rows:
+        workflow_html = render_html_table(
+            workflow_rows,
+            [("priority", "priority"), ("domain", "domain"), ("item", "item"), ("trigger", "say to AI"), ("reason", "reason")],
+        )
+    else:
+        workflow_html = '<div class="card"><p>No required action today. Default action: wait.</p></div>'
 
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -1318,13 +1363,16 @@ def build_html(payload: dict[str, Any]) -> str:
     </div>
     {render_html_table(mapping_rows, [('name', 'name'), ('current_pct', 'current'), ('theme', 'theme')]) if mapping_rows else ""}
 
+    <h2>Today's Workflow Actions</h2>
+    {workflow_html}
+
     <h2>Target Drift Alerts</h2>
     {render_html_table(alert_rows, [('name', 'name'), ('current_pct', 'current'), ('target', 'target'), ('action', 'action')])}
 
     <h2>Event Window</h2>
     {render_html_table(event_rows, [('date', 'date'), ('domain', 'domain'), ('days', 'days'), ('text', 'event'), ('action', 'action'), ('source', 'source')])}
 
-    <h2>System Morning Ops</h2>
+    <h2>Open Todos</h2>
     <div class="card">
       <ul>
         <li>Futu history K-line quota: {html.escape(quota_text)}</li>
