@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dingcle.v6a.guarded-auto</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+    <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/v6a_auto_guarded_executor.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key>
+      <integer>21</integer>
+      <key>Minute</key>
+      <integer>45</integer>
+    </dict>
+    <dict>
+      <key>Hour</key>
+      <integer>22</integer>
+      <key>Minute</key>
+      <integer>45</integer>
+    </dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/v6a_auto_guarded_executor/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zhangkun/WorkBuddy/程序化/量化程序/backtest_results/v6a_auto_guarded_executor/launchd.err.log</string>
+</dict>
+</plist>

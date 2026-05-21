@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "created_at": "2026-05-21",
+  "strategy": "V6-A ATTACK_EQUAL_REPLAY",
+  "auto_enabled": false,
+  "mode": "guarded_auto",
+  "runner_policy": "v6_strategy_lab/configs/v6a_guarded_runner_policy_v1.json",
+  "kill_switch_file": "backtest_results/v6a_state/AUTO_EXECUTION_DISABLED",
+  "state_file": "backtest_results/v6a_state/v6a_auto_execution_state.json",
+  "output_dir": "backtest_results/v6a_auto_guarded_executor",
+  "market_window": {
+    "timezone": "America/New_York",
+    "start": "09:40",
+    "end": "10:20",
+    "weekdays_only": true
+  },
+  "daily_limits": {
+    "max_real_executions_per_day": 1,
+    "max_total_notional_usd": 5000,
+    "max_order_count": 8
+  },
+  "preflight": {
+    "require_reconciliation_ok": true,
+    "require_pending_orders_zero": true,
+    "require_runner_plan_ready": true,
+    "allow_no_executable_orders": true
+  },
+  "postflight": {
+    "run_reconciliation_after_execution": true
+  },
+  "execution": {
+    "confirm_phrase": "EXECUTE_V6A_REAL_5000"
+  },
+  "boundaries": [
+    "This policy is disabled by default. Set auto_enabled=true only after manual review.",
+    "The auto executor never bypasses v6a_guarded_runner release gate, quote/account gates, managed-state sell guard, or notional limits.",
+    "The kill switch file blocks all real auto execution immediately.",
+    "Only one real auto execution is allowed per market date.",
+    "No executable orders is treated as a safe no-op, not a failure.",
+    "This mechanism is designed to be reusable by future mature V6AB execution once V6AB is promoted."
+  ]
+}

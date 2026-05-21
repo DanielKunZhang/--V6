@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 21:16:35`
+- Last updated: `2026-05-21 21:27:50`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1064,6 +1064,7 @@ dc58870 feat: add V6 daily report automation
 - [17:24] [代码] V6AB PIT tier 规则继续收紧并修复归因口径：market_only 历史主题如果缺少事实证据，最多 WATCH，只有极强市场确认或有证据才 BOOST；pit bridge 的 tier 模式改为只有 BOOST/OVERRIDE 才算 PIT active，WATCH 回到 V2 baseline；同时修复 `pit_signal_tier` 未随月度 preview 保存导致 attribution 误标的 bug，并在 attribution period summary 增加 tier active。最新结果仍不晋级但更接近 V2：V2 V6AB 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；PIT tier V6AB 年化 +30.92%、maxDD -16.44%、Sharpe 1.20，PIT tier active rebals 32，2024-2026 年化 +58.16% 略高于 V2 +57.40%，但全区间和回撤仍不足，模拟盘继续 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING` 不动。
 - [20:58] [代码] V6AB P0 后视镜暴露审计已实现：新增 `v6ab_v2_hindsight_audit.py`，输出 `backtest_results/v6ab_v2_hindsight_audit/latest.*` 与桌面 LATEST `V6AB_V2_Hindsight_Audit_LATEST.*`。审计复现 V2 baseline：V6AB 年化 +31.83%、maxDD -15.68%、Sharpe 1.23。压力测试显示 V2 结构底座有效但确有静态赢家依赖：去掉 `semis_ai` 后 V6AB 年化降至 +25.13%、Sharpe 1.06；proxy-only 降至 +22.12%、Sharpe 0.92；去掉 top5 贡献 ticker 后降至 +26.44%、Sharpe 1.09。结论：这不否定 V2 作为当前模拟盘版本，但强化了下一步 PIT 主线识别的必要性；PIT 候选晋级时应同时要求接近/超过 V2，并降低/解释 V2 的后视镜依赖。模拟盘继续不动。
 - [21:18] [代码] V6-A 真实 5k pilot 订单/仓位 reconciliation 已完成：修复 `v6a_real_reconciliation.py`，新增 broker 查询超时、历史订单查询、账户持仓快照和成交增量防重复入账；补回 `cash_alpha_v3_repo/futu_account_snapshot.py` 只读账户快照模块，修复 daily gate 缺依赖问题。通过本机 Futu OpenD 只读查询确认 2026-05-20 六笔订单全部 `FILLED_ALL`：AMZN 卖 3@260.10、AVGO 卖 1@412.88、BIL 卖 3@91.56、GLD 卖 1@412.20、GOOGL 买 1@387.66、NVDA 买 5@221.56。本地 V6-A managed state 已更新为 AMZN 1、AVGO 1、BIL 3、GOOGL 3、NVDA 5，pending=0。复跑 guarded runner plan-only：release gate PASS、live quote/account PASS、signal freshness PASS、无 executable orders，仅因 `no_executable_orders` BLOCKED，表示当前已在目标仓位且不会自动下单。V6-A 仍不是无人值守自动买卖；真实执行仍需 `--execute-real` + 手工确认短语。
+- [21:38] [代码] V6-A guarded auto-execution v1 已实现但默认关闭：新增 `v6a_auto_guarded_executor.py`、`v6_strategy_lab/configs/v6a_auto_execution_policy_v1.json` 和 launchd 草案 `launch_agents/com.dingcle.v6a.guarded-auto.plist`。机制：外层 auto wrapper 先检查 `auto_enabled`、底层 runner `auto_real_orders_allowed`、kill switch、交易窗口、美股工作日、每日执行次数、pending orders、pre-reconciliation；再跑 `v6a_guarded_runner` plan-only，只有 release/quote/account/managed-state/notional 全 PASS 且确有 executable orders 时才调用 `--execute-real` + confirm phrase；下单后自动 post-reconciliation。默认双开关均为 false，未加载 launchd，不会自动下单。验证：disabled 模式直接 `POLICY_DISABLED` 不连 broker；dry-run/force-window 可走完整只读链路，当前 V6-A 已在目标仓位，返回 `NO_OP_AT_TARGET`。
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。
