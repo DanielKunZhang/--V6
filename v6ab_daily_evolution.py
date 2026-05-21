@@ -42,6 +42,7 @@ def render_daily_report(
     boost_review: dict[str, Any],
     gate_experiment: dict[str, Any],
     pit_bridge: dict[str, Any],
+    override_readiness: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -103,6 +104,7 @@ def render_daily_report(
         f"- PIT promotion gate：`{promotion_decision.get('tier', 'UNKNOWN')}` — {promotion_decision.get('action', '未生成')}",
         f"- 未通过 gate：{', '.join(failed_checks[:8]) if failed_checks else '无'}",
         f"- BOOST failure review：active={boost_review.get('active_boost_months', 0)}，negative={boost_review.get('negative_boost_months', 0)}，sum delta={float(boost_review.get('sum_tier_delta', 0.0)):+.2%}",
+        f"- OVERRIDE readiness：decision=`{override_readiness.get('decision', 'UNKNOWN')}`，hard sum={float(override_readiness.get('hard_sum_delta', 0.0)):+.2%}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -188,13 +190,24 @@ def main() -> int:
         run_step("promotion_gate", [py, "v6ab_promotion_gate.py", "--asof", args.asof]),
         run_step("pit_boost_failure_review", [py, "v6ab_pit_boost_failure_review.py", "--asof", args.asof]),
         run_step("boost_gate_experiment", [py, "v6ab_boost_gate_experiment.py", "--asof", args.asof]),
+        run_step("override_readiness_review", [py, "v6ab_override_readiness_review.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
     boost_review = load_json(ROOT / "backtest_results" / "v6ab_pit_boost_failure_review" / "latest.json")
     gate_experiment = load_json(ROOT / "backtest_results" / "v6ab_boost_gate_experiment" / "latest.json")
     pit_bridge = load_json(OUT_DIR / "latest_pit_classifier_bridge_backtest.json")
-    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review, gate_experiment, pit_bridge)
+    override_readiness = load_json(ROOT / "backtest_results" / "v6ab_override_readiness" / "latest.json")
+    report = render_daily_report(
+        args.asof,
+        classifier,
+        steps,
+        promotion,
+        boost_review,
+        gate_experiment,
+        pit_bridge,
+        override_readiness,
+    )
     payload = {
         "asof": args.asof,
         "steps": steps,
@@ -203,6 +216,7 @@ def main() -> int:
         "boost_failure_review": boost_review,
         "boost_gate_experiment": gate_experiment,
         "pit_classifier_bridge_backtest": pit_bridge,
+        "override_readiness": override_readiness,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
