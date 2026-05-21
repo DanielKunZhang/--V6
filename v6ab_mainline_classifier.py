@@ -153,7 +153,13 @@ def market_score(theme_id: str, asof: str | None = None) -> dict[str, Any]:
 
 def evidence_scores(rows: list[dict[str, Any]], theme_id: str) -> dict[str, float]:
     theme_rows = [row for row in rows if row.get("theme") == theme_id]
-    buckets = {"narrative_score": [], "fundamental_score": [], "institutional_score": [], "risk_penalty": []}
+    buckets = {
+        "narrative_score": [],
+        "fundamental_score": [],
+        "institutional_score": [],
+        "historical_depth_score": [],
+        "risk_penalty": [],
+    }
     for row in theme_rows:
         conf = float(row.get("confidence", 0.5))
         fresh = float(row.get("freshness", 0.5))
@@ -166,18 +172,52 @@ def evidence_scores(rows: list[dict[str, Any]], theme_id: str) -> dict[str, floa
         if direction == "mixed":
             buckets["risk_penalty"].append(raw * 0.45)
             raw *= 0.75
-        etype = str(row.get("evidence_type", ""))
+        etype = str(row.get("evidence_type", "")).lower()
         if "institutional" in etype:
             buckets["institutional_score"].append(raw)
-        elif "valuation" in etype:
+        elif (
+            "valuation" in etype
+            or "earnings" in etype
+            or "10q" in etype
+            or "10-q" in etype
+            or "10k" in etype
+            or "10-k" in etype
+            or "20f" in etype
+            or "20-f" in etype
+            or "40f" in etype
+            or "40-f" in etype
+            or "annual_report" in etype
+            or "quarterly_report" in etype
+        ):
             buckets["fundamental_score"].append(raw)
         else:
             buckets["narrative_score"].append(raw)
+        if (
+            etype.startswith("sec_")
+            or etype
+            in {
+                "earnings_release",
+                "investor_presentation",
+                "business_update",
+                "material_agreement",
+                "quarterly_report",
+                "annual_report",
+            }
+        ):
+            buckets["historical_depth_score"].append(raw)
+
+    def bucket_score(values: list[float]) -> float:
+        if not values:
+            return 0.0
+        top = sorted(values, reverse=True)[:8]
+        return float(np.mean(top))
+
     return {
-        "narrative_score": round(float(np.mean(buckets["narrative_score"])) if buckets["narrative_score"] else 0.0, 4),
-        "fundamental_score": round(float(np.mean(buckets["fundamental_score"])) if buckets["fundamental_score"] else 0.0, 4),
-        "institutional_score": round(float(np.mean(buckets["institutional_score"])) if buckets["institutional_score"] else 0.0, 4),
-        "risk_penalty": round(float(np.mean(buckets["risk_penalty"])) if buckets["risk_penalty"] else 0.0, 4),
+        "narrative_score": round(bucket_score(buckets["narrative_score"]), 4),
+        "fundamental_score": round(bucket_score(buckets["fundamental_score"]), 4),
+        "institutional_score": round(bucket_score(buckets["institutional_score"]), 4),
+        "historical_depth_score": round(bucket_score(buckets["historical_depth_score"]), 4),
+        "risk_penalty": round(bucket_score(buckets["risk_penalty"]), 4),
         "evidence_count": len(theme_rows),
     }
 
@@ -225,6 +265,7 @@ def build_classifier(ledger: dict[str, Any], asof: str) -> dict[str, Any]:
             + e["narrative_score"] * 0.18
             + e["fundamental_score"] * 0.16
             + e["institutional_score"] * 0.16
+            + e["historical_depth_score"] * 0.18
             - e["risk_penalty"] * 0.16
             + offensive_bonus
         )
@@ -274,14 +315,14 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Theme State",
         "",
-        "| theme | state | mainline | market | narrative | fundamental | institutional | risk | evidence | breadth |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| theme | state | mainline | market | narrative | fundamental | institutional | history | risk | evidence | breadth |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in payload["themes"]:
         lines.append(
             f"| {row['label']} | `{row['state']}` | {row['mainline_score']:.1f} | {row['market_score']:.1f} | "
             f"{row['narrative_score']:.1f} | {row['fundamental_score']:.1f} | {row['institutional_score']:.1f} | "
-            f"{row['risk_penalty']:.1f} | {row['evidence_count']} | {row['breadth']:.2f} |"
+            f"{row['historical_depth_score']:.1f} | {row['risk_penalty']:.1f} | {row['evidence_count']} | {row['breadth']:.2f} |"
         )
     lines += ["", "## Ticker Priority", "", "| ticker | theme | score | evidence |", "| --- | --- | ---: | ---: |"]
     for row in payload["ticker_priority"][:20]:

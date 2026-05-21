@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 11:53:02`
+- Last updated: `2026-05-21 12:08:27`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1055,6 +1055,7 @@ dc58870 feat: add V6 daily report automation
 - [00:32] [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`，动作仍为 `NO_CHANGE_BACKTEST_ONLY`。下一步不是拉泛化 K 线，而是补更完整的历史 evidence ledger，尤其是 2020、2022、2024 前后的真实主线证据；若新增主题/ticker 缺价，再按最小清单拉 K 线。
 
 
+- [12:08] [代码] V6AB PIT historical evidence 管线继续推进：SEC historical harvest 已把 8-K items/6-K/10-Q/10-K 映射为 earnings_release、business_update、investor_presentation、material_agreement、quarterly_report、annual_report 等可解释 evidence；PIT replay 默认读取 backtest_results/v6ab_historical_evidence/latest.json；mainline classifier 新增 historical_depth_score（单独来自 SEC/历史公开文件，不伪装成 institutional）。最新 PIT replay seed evidence 1647，allowlist 快照 23/169，latest allowlist=semis_ai；PIT bridge 接入 V6AB 后 active rebals=24。结果仍未通过：V2 V6AB 年化 +31.83%、maxDD -15.68%、Sharpe 1.23；PIT V6AB 年化 +31.08%、maxDD -16.13%、Sharpe 1.15，2024-2026 年化 +55.40% vs V2 +57.40%。结论：PIT 管线进展有效但不晋级，模拟盘继续 V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING，不动。
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。

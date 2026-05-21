@@ -76,7 +76,7 @@ def run_pit_v6b(prices: pd.DataFrame, snapshots: list[dict[str, Any]], config: d
             snap = snapshot_for_date(snapshots, dt)
             if monthly.index.get_loc(dt) < 12:
                 weights, rows = {"CASH": 1.0}, []
-            elif not snap or snap.get("fallback_to_v2", True) or not snap.get("theme_allowlist"):
+            elif not snap or not snap.get("theme_allowlist"):
                 bt.THEMES = old_themes
                 weights, rows = bt.pick_weights(monthly, dt, **pick_config)
             else:
@@ -120,7 +120,8 @@ def run_pit_v6b(prices: pd.DataFrame, snapshots: list[dict[str, Any]], config: d
                         "drawdown": round(float(dd), 6),
                         "pit_asof": snap.get("asof"),
                         "pit_allowlist": snap.get("theme_allowlist", []),
-                        "fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
+                        "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
+                        "fallback_to_v2": bool(not snap or not snap.get("theme_allowlist")),
                         "turnover": round(float(turnover), 6),
                         "top_themes": [
                             {
@@ -215,6 +216,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Backtest PIT classifier replay through V6AB without touching paper sim.")
     parser.add_argument("--asof", default=str(date.today()))
     parser.add_argument("--replay-json", type=Path, default=DEFAULT_REPLAY)
+    parser.add_argument("--extra-evidence-json", default="")
     parser.add_argument("--v6a-daily", type=Path, default=DEFAULT_V6A_DAILY)
     parser.add_argument("--start", default="2012-05-21")
     parser.add_argument("--end", default="2026-05-19")
