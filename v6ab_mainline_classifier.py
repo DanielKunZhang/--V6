@@ -69,6 +69,72 @@ THEMES: dict[str, dict[str, Any]] = {
     },
     "unclassified": {"label": "Unclassified", "proxies": ["US.SPY"], "stocks": [], "offensive": False},
 }
+HISTORICAL_THEMES: dict[str, dict[str, Any]] = {
+    "broad_beta": {
+        "label": "Broad Beta",
+        "proxies": ["US.SPY", "US.QQQ", "US.IWM"],
+        "stocks": ["US.AMZN", "US.MSFT", "US.GOOGL", "US.META", "US.TSLA"],
+        "offensive": True,
+        "market_only": True,
+    },
+    "technology": {
+        "label": "Technology / Software",
+        "proxies": ["US.XLK", "US.IGV", "US.FDN", "US.ARKK"],
+        "stocks": ["US.MSFT", "US.GOOGL", "US.META", "US.AMZN", "US.NFLX"],
+        "offensive": True,
+        "market_only": True,
+    },
+    "precious_metals": {
+        "label": "Gold / Precious Metals",
+        "proxies": ["US.GLD", "US.SLV", "US.GDX"],
+        "stocks": [],
+        "offensive": False,
+        "market_only": True,
+    },
+    "energy_resources": {
+        "label": "Energy / Resources",
+        "proxies": ["US.XLE", "US.XOP", "US.DBC"],
+        "stocks": [],
+        "offensive": False,
+        "market_only": True,
+    },
+    "financials": {
+        "label": "Financials",
+        "proxies": ["US.XLF", "US.KRE"],
+        "stocks": ["US.JPM", "US.BRK.B"],
+        "offensive": False,
+        "market_only": True,
+    },
+    "industrials_infra": {
+        "label": "Industrials / Infrastructure",
+        "proxies": ["US.XLI"],
+        "stocks": ["US.ROK", "US.ETN", "US.HON", "US.IR", "US.TER"],
+        "offensive": False,
+        "market_only": True,
+    },
+    "utilities_power": {
+        "label": "Utilities / Power",
+        "proxies": ["US.XLU"],
+        "stocks": [],
+        "offensive": False,
+        "market_only": True,
+    },
+    "consumer_discretionary": {
+        "label": "Consumer Discretionary",
+        "proxies": ["US.XLY"],
+        "stocks": ["US.AMZN", "US.TSLA", "US.NFLX"],
+        "offensive": True,
+        "market_only": True,
+    },
+}
+
+
+def theme_defs_for_taxonomy(taxonomy: str) -> dict[str, dict[str, Any]]:
+    if taxonomy == "historical":
+        merged = dict(HISTORICAL_THEMES)
+        merged.update(THEMES)
+        return merged
+    return THEMES
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -115,8 +181,9 @@ def clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, value))
 
 
-def market_score(theme_id: str, asof: str | None = None) -> dict[str, Any]:
-    theme = THEMES.get(theme_id, THEMES["unclassified"])
+def market_score(theme_id: str, asof: str | None = None, theme_defs: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    theme_defs = theme_defs or THEMES
+    theme = theme_defs.get(theme_id, THEMES["unclassified"])
     spy = load_price("US.SPY", asof=asof)
     spy_ret_63 = ret(spy, 63) or 0.0
     proxy_scores = []
@@ -222,10 +289,20 @@ def evidence_scores(rows: list[dict[str, Any]], theme_id: str) -> dict[str, floa
     }
 
 
-def classify_state(mainline_score: float, market: float, evidence_count: int, risk_penalty: float) -> str:
+def classify_state(
+    mainline_score: float,
+    market: float,
+    evidence_count: int,
+    risk_penalty: float,
+    *,
+    breadth: float = 0.0,
+    market_only: bool = False,
+) -> str:
     if mainline_score >= 68 and market >= 58 and evidence_count >= 6 and risk_penalty < 25:
         return "CONFIRMED"
     if mainline_score >= 58 and market >= 52 and evidence_count >= 3:
+        return "STARTER"
+    if market_only and market >= 82 and breadth >= 0.66 and risk_penalty < 25:
         return "STARTER"
     if mainline_score >= 48 or evidence_count >= 3:
         return "CANDIDATE"
@@ -253,11 +330,12 @@ def ticker_priority(rows: list[dict[str, Any]], theme_allowlist: list[str]) -> l
     return ranked[:30]
 
 
-def build_classifier(ledger: dict[str, Any], asof: str) -> dict[str, Any]:
+def build_classifier(ledger: dict[str, Any], asof: str, taxonomy: str = "ai") -> dict[str, Any]:
     rows = ledger.get("rows", [])
     theme_rows = []
-    for theme_id, theme in THEMES.items():
-        m = market_score(theme_id, asof=asof)
+    theme_defs = theme_defs_for_taxonomy(taxonomy)
+    for theme_id, theme in theme_defs.items():
+        m = market_score(theme_id, asof=asof, theme_defs=theme_defs)
         e = evidence_scores(rows, theme_id)
         offensive_bonus = 3.0 if theme.get("offensive") else -4.0
         mainline = (
@@ -269,7 +347,14 @@ def build_classifier(ledger: dict[str, Any], asof: str) -> dict[str, Any]:
             - e["risk_penalty"] * 0.16
             + offensive_bonus
         )
-        state = classify_state(mainline, m["market_score"], int(e["evidence_count"]), e["risk_penalty"])
+        state = classify_state(
+            mainline,
+            m["market_score"],
+            int(e["evidence_count"]),
+            e["risk_penalty"],
+            breadth=float(m.get("breadth", 0.0)),
+            market_only=bool(theme.get("market_only")),
+        )
         theme_rows.append(
             {
                 "theme": theme_id,
@@ -289,6 +374,7 @@ def build_classifier(ledger: dict[str, Any], asof: str) -> dict[str, Any]:
     priorities = ticker_priority(rows, allowlist or ["semis_ai", "ai_infra"])
     return {
         "asof": asof,
+        "taxonomy": taxonomy,
         "active_baseline": "V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING",
         "fallback_to_v2": fallback,
         "b_sleeve_cap_hint": b_cap,
@@ -343,11 +429,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build V6AB mainline classifier v1 from evidence ledger and local prices.")
     parser.add_argument("--asof", default=str(date.today()))
     parser.add_argument("--ledger-json", type=Path, default=DEFAULT_LEDGER)
+    parser.add_argument("--taxonomy", choices=["ai", "historical"], default="ai")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args()
 
     ledger = load_json(args.ledger_json)
-    payload = build_classifier(ledger, args.asof)
+    payload = build_classifier(ledger, args.asof, taxonomy=args.taxonomy)
     md = render_md(payload)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     REPORT_ROOT.mkdir(parents=True, exist_ok=True)

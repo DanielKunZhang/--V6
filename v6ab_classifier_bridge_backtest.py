@@ -68,7 +68,7 @@ def build_bridge_themes(classifier: dict[str, Any]) -> dict[str, dict[str, Any]]
         original_theme = original.get(theme_id, {})
         proxies = list(original_theme.get("proxies", [])) or THEME_PROXY_FALLBACKS.get(theme_id, ["US.SPY"])
         stocks = list(dict.fromkeys(ranked_by_theme.get(theme_id, []) + list(original_theme.get("stocks", []))))
-        if not stocks:
+        if not stocks and not proxies:
             continue
         bridge[theme_id] = {
             "label": str(original_theme.get("label", theme_id)),

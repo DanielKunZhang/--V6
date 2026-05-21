@@ -75,7 +75,7 @@ def replay(args: argparse.Namespace) -> dict[str, Any]:
     for asof in replay_dates(args.start, args.end, args.freq):
         rows = visible_rows(seed_rows, asof)
         ledger = {"asof": asof, "rows": rows}
-        classifier = clf_mod.build_classifier(ledger, asof)
+        classifier = clf_mod.build_classifier(ledger, asof, taxonomy=args.taxonomy)
         snapshots.append(
             {
                 "asof": asof,
@@ -92,6 +92,7 @@ def replay(args: argparse.Namespace) -> dict[str, Any]:
         "start": args.start,
         "end": args.end,
         "freq": args.freq,
+        "taxonomy": args.taxonomy,
         "source_boundary": "local_seed_visible_asof_only",
         "source_files": {
             "x_radar": str(args.x_radar),
@@ -149,6 +150,7 @@ def main() -> int:
     parser.add_argument("--13f", type=Path, default=ledger_mod.DEFAULT_13F)
     parser.add_argument("--valuation", type=Path, default=ledger_mod.DEFAULT_VALUATION)
     parser.add_argument("--extra-evidence-json", default=str(DEFAULT_HISTORICAL_EVIDENCE))
+    parser.add_argument("--taxonomy", choices=["ai", "historical"], default="historical")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args()
 

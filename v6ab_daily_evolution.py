@@ -118,6 +118,7 @@ def main() -> int:
         run_step("classifier_bridge_backtest", [py, "v6ab_classifier_bridge_backtest.py", "--asof", args.asof]),
         run_step("pit_evidence_classifier_replay", [py, "v6ab_pit_evidence_replay.py", "--asof", args.asof]),
         run_step("pit_classifier_bridge_backtest", [py, "v6ab_pit_classifier_bridge_backtest.py", "--asof", args.asof]),
+        run_step("pit_vs_v2_attribution", [py, "v6ab_pit_vs_v2_attribution.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     report = render_daily_report(args.asof, classifier, steps)
