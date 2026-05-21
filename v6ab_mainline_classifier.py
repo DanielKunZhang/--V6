@@ -70,6 +70,13 @@ THEMES: dict[str, dict[str, Any]] = {
     "unclassified": {"label": "Unclassified", "proxies": ["US.SPY"], "stocks": [], "offensive": False},
 }
 HISTORICAL_THEMES: dict[str, dict[str, Any]] = {
+    "liquidity_growth": {
+        "label": "Liquidity Growth / High Beta Growth",
+        "proxies": ["US.ARKK", "US.QQQ", "US.IWM"],
+        "stocks": ["US.TSLA", "US.AMZN", "US.NFLX", "US.NVDA", "US.AMD", "US.META"],
+        "offensive": True,
+        "market_only": True,
+    },
     "broad_beta": {
         "label": "Broad Beta",
         "proxies": ["US.SPY", "US.QQQ", "US.IWM"],

@@ -33,6 +33,7 @@ BASELINE_CONFIG = {
 
 
 THEME_PROXY_FALLBACKS = {
+    "liquidity_growth": ["US.ARKK", "US.QQQ", "US.IWM"],
     "semis_ai": ["US.SMH", "US.SOXX"],
     "ai_memory": ["US.SMH", "US.SOXX"],
     "ai_networking": ["US.SMH", "US.XLK"],
@@ -41,6 +42,10 @@ THEME_PROXY_FALLBACKS = {
     "ai_power_datacenter": ["US.XLU", "US.XLI"],
     "ai_platform": ["US.QQQ", "US.XLK", "US.FDN"],
     "robotics_automation": ["US.XLI", "US.XLK"],
+}
+
+THEME_STOCK_FALLBACKS = {
+    "liquidity_growth": ["US.TSLA", "US.AMZN", "US.NFLX", "US.NVDA", "US.AMD", "US.META"],
 }
 
 
@@ -67,7 +72,13 @@ def build_bridge_themes(classifier: dict[str, Any]) -> dict[str, dict[str, Any]]
     for theme_id in allowed:
         original_theme = original.get(theme_id, {})
         proxies = list(original_theme.get("proxies", [])) or THEME_PROXY_FALLBACKS.get(theme_id, ["US.SPY"])
-        stocks = list(dict.fromkeys(ranked_by_theme.get(theme_id, []) + list(original_theme.get("stocks", []))))
+        stocks = list(
+            dict.fromkeys(
+                ranked_by_theme.get(theme_id, [])
+                + list(original_theme.get("stocks", []))
+                + THEME_STOCK_FALLBACKS.get(theme_id, [])
+            )
+        )
         if not stocks and not proxies:
             continue
         bridge[theme_id] = {
