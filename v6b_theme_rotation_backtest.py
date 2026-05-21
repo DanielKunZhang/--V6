@@ -389,6 +389,9 @@ def pick_weights(
         chosen = candidates[:top_n]
     if not chosen:
         return defensive_weights(monthly, date), rows
+    chosen_ids = {row["theme_id"] for row in chosen}
+    for row in rows:
+        row["selected"] = row["theme_id"] in chosen_ids
     effective_risk = risk_weight
     if vol_target is not None:
         vols = [realized_vol(monthly, date, row["selected_proxy"]) for row in chosen]

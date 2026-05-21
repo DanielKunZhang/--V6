@@ -60,6 +60,14 @@ def top_theme_labels(row: dict[str, Any], limit: int = 3) -> str:
     return ", ".join(f"{item.get('theme_id')}:{item.get('selected_proxy')}" for item in themes)
 
 
+def selected_theme_labels(row: dict[str, Any], limit: int = 3) -> str:
+    themes = row.get("selected_themes") or [item for item in row.get("top_themes", []) if item.get("selected")]
+    themes = themes[:limit]
+    if not themes:
+        return top_theme_labels(row, limit=limit)
+    return ", ".join(f"{item.get('theme_id')}:{item.get('selected_proxy')}" for item in themes)
+
+
 def summarize_period(rows: list[dict[str, Any]], start: str, end: str) -> dict[str, Any]:
     seg = [row for row in rows if start <= row["date"] <= end]
     if not seg:
@@ -141,6 +149,10 @@ def build_attribution(args: argparse.Namespace) -> dict[str, Any]:
                 "hard_top": top_theme_labels(hard_row),
                 "overlay_top": top_theme_labels(overlay_row),
                 "tier_top": top_theme_labels(tier_row),
+                "v2_selected": selected_theme_labels(v2_row),
+                "hard_selected": selected_theme_labels(hard_row),
+                "overlay_selected": selected_theme_labels(overlay_row),
+                "tier_selected": selected_theme_labels(tier_row),
                 "hard_turnover": float(hard_row.get("turnover", 0.0)),
                 "overlay_turnover": float(overlay_row.get("turnover", 0.0)),
                 "tier_turnover": float(tier_row.get("turnover", 0.0)),
@@ -226,27 +238,27 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Worst Active PIT Months",
         "",
-        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 top | hard top | tier top |",
+        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 selected | hard selected | tier selected |",
         "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for row in payload["worst_hard_active_months"]:
         lines.append(
             f"| {row['date']} | `{row.get('pit_signal_tier', '')}` | `{', '.join(row.get('pit_allowlist', []))}` | "
             f"{fmt_pct(row['hard_minus_v2'])} | {fmt_pct(row['overlay_minus_v2'])} | {fmt_pct(row['tier_minus_v2'])} | "
-            f"{row['v2_top']} | {row['hard_top']} | {row['tier_top']} |"
+            f"{row.get('v2_selected', row['v2_top'])} | {row.get('hard_selected', row['hard_top'])} | {row.get('tier_selected', row['tier_top'])} |"
         )
     lines += [
         "",
         "## Best Active PIT Months",
         "",
-        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 top | hard top | tier top |",
+        "| date | tier | allowlist | hard-v2 | overlay-v2 | tier-v2 | V2 selected | hard selected | tier selected |",
         "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for row in payload["best_hard_active_months"]:
         lines.append(
             f"| {row['date']} | `{row.get('pit_signal_tier', '')}` | `{', '.join(row.get('pit_allowlist', []))}` | "
             f"{fmt_pct(row['hard_minus_v2'])} | {fmt_pct(row['overlay_minus_v2'])} | {fmt_pct(row['tier_minus_v2'])} | "
-            f"{row['v2_top']} | {row['hard_top']} | {row['tier_top']} |"
+            f"{row.get('v2_selected', row['v2_top'])} | {row.get('hard_selected', row['hard_top'])} | {row.get('tier_selected', row['tier_top'])} |"
         )
     lines += [
         "",

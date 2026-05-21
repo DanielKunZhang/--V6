@@ -216,8 +216,20 @@ def run_pit_v6b(
                                 "selected_proxy": row["selected_proxy"],
                                 "theme_score": round(float(row["theme_score"]), 6),
                                 "breadth": round(float(row["breadth"]), 6),
+                                "selected": bool(row.get("selected", False)),
                             }
                             for row in rows[:5]
+                        ],
+                        "selected_themes": [
+                            {
+                                "theme_id": row["theme_id"],
+                                "label": row["label"],
+                                "selected_proxy": row["selected_proxy"],
+                                "theme_score": round(float(row["theme_score"]), 6),
+                                "breadth": round(float(row["breadth"]), 6),
+                            }
+                            for row in rows
+                            if row.get("selected", False)
                         ],
                     }
                 )

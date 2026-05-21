@@ -42,6 +42,10 @@ def parse_theme_ids(top_text: str) -> list[str]:
     return out
 
 
+def selected_text(row: dict[str, Any], key: str, fallback_key: str) -> str:
+    return str(row.get(key) or row.get(fallback_key) or "")
+
+
 def snapshot_index(snapshots: list[dict[str, Any]]) -> tuple[list[str], list[dict[str, Any]]]:
     ordered = sorted(snapshots, key=lambda row: row.get("asof", ""))
     return [str(row.get("asof", "")) for row in ordered], ordered
@@ -68,9 +72,9 @@ def classify_failure(row: dict[str, Any], boosted: list[str], theme_details: lis
     labels: list[str] = []
     date_year = int(str(row.get("date", "1900"))[:4])
     tier_delta = float(row.get("tier_minus_v2", 0.0) or 0.0)
-    v2_top = set(parse_theme_ids(row.get("v2_top", "")))
-    tier_top = set(parse_theme_ids(row.get("tier_top", "")))
-    hard_top = set(parse_theme_ids(row.get("hard_top", "")))
+    v2_top = set(parse_theme_ids(selected_text(row, "v2_selected", "v2_top")))
+    tier_top = set(parse_theme_ids(selected_text(row, "tier_selected", "tier_top")))
+    hard_top = set(parse_theme_ids(selected_text(row, "hard_selected", "hard_top")))
     boost_set = set(boosted)
 
     if tier_delta >= 0:
@@ -157,6 +161,9 @@ def build_review(args: argparse.Namespace) -> dict[str, Any]:
                 "v2_top": row.get("v2_top", ""),
                 "tier_top": row.get("tier_top", ""),
                 "hard_top": row.get("hard_top", ""),
+                "v2_selected": row.get("v2_selected", row.get("v2_top", "")),
+                "tier_selected": row.get("tier_selected", row.get("tier_top", "")),
+                "hard_selected": row.get("hard_selected", row.get("hard_top", "")),
                 "tier_turnover": float(row.get("tier_turnover", 0.0) or 0.0),
                 "theme_details": theme_details,
                 "top_ticker_priority": ticker_priority_for(snap, boosted),
@@ -224,14 +231,14 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Worst BOOST Months",
         "",
-        "| date | snapshot | tier-v2 | boosted | labels | V2 top | tier top | turnover |",
+        "| date | snapshot | tier-v2 | boosted | labels | V2 selected | tier selected | turnover |",
         "| --- | --- | ---: | --- | --- | --- | --- | ---: |",
     ]
     for row in payload["worst_months"]:
         lines.append(
             f"| {row['date']} | {row.get('snapshot_asof')} | {fmt_pct(row['tier_minus_v2'])} | "
             f"`{', '.join(row.get('boost_allowlist', []))}` | `{', '.join(row.get('failure_labels', []))}` | "
-            f"{row.get('v2_top', '')} | {row.get('tier_top', '')} | {row.get('tier_turnover', 0):.2f} |"
+            f"{row.get('v2_selected', row.get('v2_top', ''))} | {row.get('tier_selected', row.get('tier_top', ''))} | {row.get('tier_turnover', 0):.2f} |"
         )
 
     lines += [
@@ -245,8 +252,8 @@ def render_md(payload: dict[str, Any]) -> str:
             "",
             f"- BOOST：`{', '.join(row.get('boost_allowlist', []))}`",
             f"- labels：`{', '.join(row.get('failure_labels', []))}`",
-            f"- V2 top：{row.get('v2_top', '')}",
-            f"- tier top：{row.get('tier_top', '')}",
+            f"- V2 selected：{row.get('v2_selected', row.get('v2_top', ''))}",
+            f"- tier selected：{row.get('tier_selected', row.get('tier_top', ''))}",
             "- theme scores：",
         ]
         for detail in row.get("theme_details", []):
@@ -269,13 +276,13 @@ def render_md(payload: dict[str, Any]) -> str:
     lines += [
         "## Positive BOOST Control Samples",
         "",
-        "| date | tier-v2 | boosted | V2 top | tier top |",
+        "| date | tier-v2 | boosted | V2 selected | tier selected |",
         "| --- | ---: | --- | --- | --- |",
     ]
     for row in payload["best_months"][:8]:
         lines.append(
             f"| {row['date']} | {fmt_pct(row['tier_minus_v2'])} | `{', '.join(row.get('boost_allowlist', []))}` | "
-            f"{row.get('v2_top', '')} | {row.get('tier_top', '')} |"
+            f"{row.get('v2_selected', row.get('v2_top', ''))} | {row.get('tier_selected', row.get('tier_top', ''))} |"
         )
 
     lines += [
