@@ -34,7 +34,13 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[str, Any]], promotion: dict[str, Any]) -> str:
+def render_daily_report(
+    asof: str,
+    classifier: dict[str, Any],
+    steps: list[dict[str, Any]],
+    promotion: dict[str, Any],
+    boost_review: dict[str, Any],
+) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
     starter = [row for row in themes if row.get("state") == "STARTER"]
@@ -47,6 +53,7 @@ def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[
         for row in promotion.get("checks", [])
         if isinstance(row, dict) and not row.get("passed", False)
     ]
+    boost_labels = boost_review.get("label_summary", []) if isinstance(boost_review.get("label_summary"), list) else []
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -91,8 +98,18 @@ def render_daily_report(asof: str, classifier: dict[str, Any], steps: list[dict[
         "- 不替换 V6AB 模拟盘版本；继续使用 V2 作为 fallback/active paper sim。",
         f"- PIT promotion gate：`{promotion_decision.get('tier', 'UNKNOWN')}` — {promotion_decision.get('action', '未生成')}",
         f"- 未通过 gate：{', '.join(failed_checks[:8]) if failed_checks else '无'}",
+        f"- BOOST failure review：active={boost_review.get('active_boost_months', 0)}，negative={boost_review.get('negative_boost_months', 0)}，sum delta={float(boost_review.get('sum_tier_delta', 0.0)):+.2%}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
+        "",
+        "## BOOST 失败归因",
+        "",
+        "| label | count | sum tier delta |",
+        "| --- | ---: | ---: |",
+    ]
+    for row in boost_labels[:8]:
+        lines.append(f"| `{row.get('label')}` | {row.get('count', 0)} | {float(row.get('sum_tier_delta', 0.0)):+.2%} |")
+    lines += [
         "",
         "## 运行状态",
         "",
@@ -128,11 +145,19 @@ def main() -> int:
         run_step("pit_classifier_bridge_backtest", [py, "v6ab_pit_classifier_bridge_backtest.py", "--asof", args.asof]),
         run_step("pit_vs_v2_attribution", [py, "v6ab_pit_vs_v2_attribution.py", "--asof", args.asof]),
         run_step("promotion_gate", [py, "v6ab_promotion_gate.py", "--asof", args.asof]),
+        run_step("pit_boost_failure_review", [py, "v6ab_pit_boost_failure_review.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
-    report = render_daily_report(args.asof, classifier, steps, promotion)
-    payload = {"asof": args.asof, "steps": steps, "classifier": classifier, "promotion_gate": promotion}
+    boost_review = load_json(ROOT / "backtest_results" / "v6ab_pit_boost_failure_review" / "latest.json")
+    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review)
+    payload = {
+        "asof": args.asof,
+        "steps": steps,
+        "classifier": classifier,
+        "promotion_gate": promotion,
+        "boost_failure_review": boost_review,
+    }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     (REPORT_ROOT / "V6AB_Daily_Mainline_Report_LATEST.md").write_text(report, encoding="utf-8")
