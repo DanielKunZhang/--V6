@@ -84,7 +84,7 @@ def tier_themes_from_snapshot(snap: dict[str, Any]) -> tuple[dict[str, dict[str,
 def snapshot_active_for_mode(snap: dict[str, Any], mode: str) -> bool:
     if not snap:
         return False
-    if mode == "tier":
+    if mode in {"tier", "tier_turnover_guarded"}:
         return bool(snap.get("boost_allowlist") or snap.get("override_allowlist"))
     return bool(snap.get("theme_allowlist"))
 
@@ -95,6 +95,7 @@ def run_pit_v6b(
     config: dict[str, Any],
     *,
     mode: str = "hard_replace",
+    turnover_guard_threshold: float = 1.4,
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in bt.month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -102,7 +103,18 @@ def run_pit_v6b(
     equity = bt.INITIAL_CAPITAL
     peak = equity
     current_weights = {"CASH": 1.0}
-    preview: dict[pd.Timestamp, tuple[dict[str, float], list[dict[str, Any]], dict[str, Any], str, bool]] = {}
+    preview: dict[
+        pd.Timestamp,
+        tuple[
+            dict[str, float],
+            list[dict[str, Any]],
+            dict[str, Any],
+            str,
+            bool,
+            dict[str, float],
+            list[dict[str, Any]],
+        ],
+    ] = {}
     decisions: list[dict[str, Any]] = []
     pick_config = {key: value for key, value in config.items() if key != "dd_brake"}
     use_dd_brake = bool(config.get("dd_brake"))
@@ -117,11 +129,15 @@ def run_pit_v6b(
             pit_active = snapshot_active_for_mode(snap, mode)
             if monthly.index.get_loc(dt) < 12:
                 weights, rows = {"CASH": 1.0}, []
+                baseline_weights, baseline_rows = weights, rows
             elif not pit_active:
                 weights, rows = bt.pick_weights(monthly, dt, **pick_config)
+                baseline_weights, baseline_rows = weights, rows
             else:
+                bt.THEMES = old_themes
+                baseline_weights, baseline_rows = bt.pick_weights(monthly, dt, **pick_config)
                 pit_tier = "BOOST" if snap.get("theme_allowlist") else "WATCH"
-                if mode == "tier":
+                if mode in {"tier", "tier_turnover_guarded"}:
                     themes, pit_tier = tier_themes_from_snapshot(snap)
                 elif mode == "overlay" and not has_confirmed_theme(snap):
                     themes = overlay_themes_from_snapshot(snap)
@@ -133,7 +149,7 @@ def run_pit_v6b(
                 pit_config["top_n"] = max(1, min(3, len(themes)))
                 pit_config["stock_top_n"] = 3
                 weights, rows = bt.pick_weights(monthly, dt, **pit_config)
-            preview[dt] = (weights, rows, snap, pit_tier, pit_active)
+            preview[dt] = (weights, rows, snap, pit_tier, pit_active, baseline_weights, baseline_rows)
 
         records: list[tuple[pd.Timestamp, float]] = []
         for dt in prices.index:
@@ -147,7 +163,23 @@ def run_pit_v6b(
             peak = max(peak, equity)
             dd = equity / peak - 1.0
             if dt in preview:
-                weights, rows, snap, pit_tier, pit_active = preview[pd.Timestamp(dt)]
+                weights, rows, snap, pit_tier, pit_active, baseline_weights, baseline_rows = preview[pd.Timestamp(dt)]
+                guard_reason = ""
+                proposed_turnover = sum(
+                    abs(weights.get(k, 0.0) - current_weights.get(k, 0.0))
+                    for k in set(weights) | set(current_weights)
+                    if k != "CASH"
+                )
+                if (
+                    mode == "tier_turnover_guarded"
+                    and pit_active
+                    and not snap.get("override_allowlist")
+                    and proposed_turnover > turnover_guard_threshold
+                ):
+                    weights, rows = baseline_weights, baseline_rows
+                    pit_active = False
+                    pit_tier = "WATCH"
+                    guard_reason = f"turnover_guard>{turnover_guard_threshold:.2f}"
                 if use_dd_brake:
                     if dd <= -0.25:
                         weights = bt.defensive_weights(monthly, pd.Timestamp(dt))
@@ -173,6 +205,7 @@ def run_pit_v6b(
                         "pit_signal_tier": pit_tier,
                         "pit_active_for_mode": pit_active,
                         "pit_confirmed": has_confirmed_theme(snap),
+                        "pit_guard_reason": guard_reason,
                         "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
                         "fallback_to_v2": bool(not pit_active),
                         "turnover": round(float(turnover), 6),
@@ -286,12 +319,19 @@ def main() -> int:
     pit_eq, pit_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="hard_replace")
     pit_overlay_eq, pit_overlay_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="overlay")
     pit_tier_eq, pit_tier_decisions = run_pit_v6b(prices, snapshots, bridge.BASELINE_CONFIG, mode="tier")
+    pit_tier_guarded_eq, pit_tier_guarded_decisions = run_pit_v6b(
+        prices,
+        snapshots,
+        bridge.BASELINE_CONFIG,
+        mode="tier_turnover_guarded",
+    )
     curves = {
         "V6A": load_v6a_composite(args.v6a_daily),
         "baseline_v2": baseline_eq,
         "pit_classifier": pit_eq,
         "pit_classifier_overlay": pit_overlay_eq,
         "pit_classifier_tier": pit_tier_eq,
+        "pit_classifier_tier_turnover_guarded": pit_tier_guarded_eq,
         "GLD": benchmark_equity(prices, "US.GLD"),
         "BIL": benchmark_equity(prices, "US.BIL"),
         "SPY": benchmark_equity(prices, "US.SPY"),
@@ -349,6 +389,21 @@ def main() -> int:
         start=args.start,
         end=args.end,
     )
+    pit_tier_guarded_v6ab, pit_tier_guarded_log = dynamic_b_sizing_equity(
+        curves,
+        b_key="pit_classifier_tier_turnover_guarded",
+        b_low=0.05,
+        b_mid=min(0.30, pit_cap),
+        b_high=max(0.05, min(0.45, pit_cap)),
+        b_strong_126d=0.08,
+        b_weak_63d=-0.08,
+        hedge_max=0.30,
+        vol_threshold=0.28,
+        corr_threshold=0.60,
+        dd_threshold=-0.12,
+        start=args.start,
+        end=args.end,
+    )
 
     rows = []
     for name, eq, decisions in [
@@ -356,10 +411,12 @@ def main() -> int:
         ("pit_classifier_standalone_v6b", pit_eq, pit_decisions),
         ("pit_overlay_standalone_v6b", pit_overlay_eq, pit_overlay_decisions),
         ("pit_tier_standalone_v6b", pit_tier_eq, pit_tier_decisions),
+        ("pit_tier_turnover_guarded_standalone_v6b", pit_tier_guarded_eq, pit_tier_guarded_decisions),
         ("baseline_v2_v6ab_dynamic_b", baseline_v6ab, []),
         ("pit_classifier_v6ab_dynamic_b", pit_v6ab, pit_decisions),
         ("pit_overlay_v6ab_dynamic_b", pit_overlay_v6ab, pit_overlay_decisions),
         ("pit_tier_v6ab_dynamic_b", pit_tier_v6ab, pit_tier_decisions),
+        ("pit_tier_turnover_guarded_v6ab_dynamic_b", pit_tier_guarded_v6ab, pit_tier_guarded_decisions),
     ]:
         rows.append(
             {
@@ -386,6 +443,7 @@ def main() -> int:
         "recent_pit_decisions": pit_decisions[-12:],
         "recent_pit_overlay_decisions": pit_overlay_decisions[-12:],
         "recent_pit_tier_decisions": pit_tier_decisions[-12:],
+        "recent_pit_tier_turnover_guarded_decisions": pit_tier_guarded_decisions[-12:],
     }
     md = render_md(payload)
     args.output_dir.mkdir(parents=True, exist_ok=True)

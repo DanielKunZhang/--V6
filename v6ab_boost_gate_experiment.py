@@ -85,13 +85,20 @@ def narrow_weak_fact(row: dict[str, Any]) -> bool:
 
 
 def defensive_conflict(row: dict[str, Any]) -> bool:
-    labels = set(row.get("failure_labels", []))
-    return "defensive_or_commodity_missed" in labels and "theme_dilution" in labels
+    defensive = {"precious_metals", "energy_resources"}
+    v2_top = {part.split(":", 1)[0].strip() for part in str(row.get("v2_top", "")).split(",") if ":" in part}
+    tier_top = {part.split(":", 1)[0].strip() for part in str(row.get("tier_top", "")).split(",") if ":" in part}
+    boosted = set(row.get("boost_allowlist", []))
+    defensive_v2 = v2_top & defensive
+    if not defensive_v2:
+        return False
+    if defensive_v2 & tier_top:
+        return False
+    return not (boosted & defensive)
 
 
 def high_turnover_expression(row: dict[str, Any]) -> bool:
-    labels = set(row.get("failure_labels", []))
-    return float(row.get("tier_turnover", 0.0) or 0.0) > 1.0 and "expression_dilution" in labels
+    return float(row.get("tier_turnover", 0.0) or 0.0) > 1.0 and not row.get("override_allowlist")
 
 
 def weak_fact_precision(row: dict[str, Any]) -> bool:
@@ -132,8 +139,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         ("drop_all_market_only_without_facts", all_market_only_without_facts),
         ("drop_weak_pre2022_ai", has_weak_pre2022_ai),
         ("drop_narrow_weak_fact", narrow_weak_fact),
-        ("drop_defensive_conflict", defensive_conflict),
-        ("drop_high_turnover_expression", high_turnover_expression),
+        ("drop_ex_ante_defensive_displacement", defensive_conflict),
+        ("drop_ex_ante_high_turnover_no_override", high_turnover_expression),
         ("drop_weak_fact_precision", weak_fact_precision),
         (
             "drop_balanced_risk_set",
@@ -192,7 +199,8 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         f"- {payload['decision_rule']}",
         "- 如果一个规则通过减少 active 月份让结果更差，说明它太严或切错样本，必须回退。",
-        "- 下一步应优先选择“低误伤、真减少负贡献”的门控，再进入完整 PIT replay / bridge / promotion gate。",
+        "- 候选规则只能使用当时可见的市场结构、theme scores、evidence scores、proposed turnover 和 override 状态；不能使用事后 failure label。",
+        "- 下一步应优先选择“低误伤、真减少负贡献”的 ex-ante 门控，再进入完整 PIT replay / bridge / promotion gate。",
         "",
     ]
     return "\n".join(lines)

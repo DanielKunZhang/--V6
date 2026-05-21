@@ -41,6 +41,7 @@ def render_daily_report(
     promotion: dict[str, Any],
     boost_review: dict[str, Any],
     gate_experiment: dict[str, Any],
+    pit_bridge: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -56,6 +57,7 @@ def render_daily_report(
     ]
     boost_labels = boost_review.get("label_summary", []) if isinstance(boost_review.get("label_summary"), list) else []
     gate_ranked = gate_experiment.get("ranked", []) if isinstance(gate_experiment.get("ranked"), list) else []
+    bridge_rows = pit_bridge.get("rows", []) if isinstance(pit_bridge.get("rows"), list) else []
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -126,6 +128,30 @@ def render_daily_report(
         )
     lines += [
         "",
+        "## PIT 候选对比",
+        "",
+        "| candidate | ann | maxDD | Sharpe | 2024-2026 ann | 2020 ann | active rebals |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in bridge_rows:
+        if row.get("candidate") not in {
+            "baseline_v2_v6ab_dynamic_b",
+            "pit_tier_v6ab_dynamic_b",
+            "pit_tier_turnover_guarded_v6ab_dynamic_b",
+        }:
+            continue
+        stats = row.get("stats", {})
+        periods = row.get("periods", {})
+        turnover = row.get("turnover_cost", {})
+        lines.append(
+            f"| `{row.get('candidate')}` | {float(stats.get('ann_ret', 0.0)):+.2%} | "
+            f"{float(stats.get('max_dd', 0.0)):+.2%} | {float(stats.get('sharpe', 0.0)):.2f} | "
+            f"{float(periods.get('2024_2026', {}).get('ann_ret', 0.0)):+.2%} | "
+            f"{float(periods.get('2020', {}).get('ann_ret', 0.0)):+.2%} | "
+            f"{int(turnover.get('pit_active_rebalances', 0) or 0)} |"
+        )
+    lines += [
+        "",
         "## 运行状态",
         "",
         "| step | status |",
@@ -167,7 +193,8 @@ def main() -> int:
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
     boost_review = load_json(ROOT / "backtest_results" / "v6ab_pit_boost_failure_review" / "latest.json")
     gate_experiment = load_json(ROOT / "backtest_results" / "v6ab_boost_gate_experiment" / "latest.json")
-    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review, gate_experiment)
+    pit_bridge = load_json(OUT_DIR / "latest_pit_classifier_bridge_backtest.json")
+    report = render_daily_report(args.asof, classifier, steps, promotion, boost_review, gate_experiment, pit_bridge)
     payload = {
         "asof": args.asof,
         "steps": steps,
@@ -175,6 +202,7 @@ def main() -> int:
         "promotion_gate": promotion,
         "boost_failure_review": boost_review,
         "boost_gate_experiment": gate_experiment,
+        "pit_classifier_bridge_backtest": pit_bridge,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
