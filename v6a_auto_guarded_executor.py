@@ -311,7 +311,7 @@ def main() -> int:
         decision = "DRY_RUN_READY_TO_EXECUTE"
 
     if blockers:
-        decision = "BLOCKED" if decision not in {"NO_OP_AT_TARGET"} else decision
+        decision = "BLOCKED"
 
     payload = {
         "generated_at": now_text(),

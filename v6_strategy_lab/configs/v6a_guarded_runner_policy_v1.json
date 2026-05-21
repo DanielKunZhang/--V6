@@ -33,7 +33,7 @@
     "min_quote_count": 5
   },
   "execution": {
-    "auto_real_orders_allowed": false,
+    "auto_real_orders_allowed": true,
     "manual_confirm_phrase": "EXECUTE_V6A_REAL_5000",
     "allow_sell_orders": true,
     "allow_buy_orders": true,
