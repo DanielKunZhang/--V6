@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 21:35:54`
+- Last updated: `2026-05-21 21:41:17`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1066,6 +1066,7 @@ dc58870 feat: add V6 daily report automation
 - [21:18] [代码] V6-A 真实 5k pilot 订单/仓位 reconciliation 已完成：修复 `v6a_real_reconciliation.py`，新增 broker 查询超时、历史订单查询、账户持仓快照和成交增量防重复入账；补回 `cash_alpha_v3_repo/futu_account_snapshot.py` 只读账户快照模块，修复 daily gate 缺依赖问题。通过本机 Futu OpenD 只读查询确认 2026-05-20 六笔订单全部 `FILLED_ALL`：AMZN 卖 3@260.10、AVGO 卖 1@412.88、BIL 卖 3@91.56、GLD 卖 1@412.20、GOOGL 买 1@387.66、NVDA 买 5@221.56。本地 V6-A managed state 已更新为 AMZN 1、AVGO 1、BIL 3、GOOGL 3、NVDA 5，pending=0。复跑 guarded runner plan-only：release gate PASS、live quote/account PASS、signal freshness PASS、无 executable orders，仅因 `no_executable_orders` BLOCKED，表示当前已在目标仓位且不会自动下单。V6-A 仍不是无人值守自动买卖；真实执行仍需 `--execute-real` + 手工确认短语。
 - [21:38] [代码] V6-A guarded auto-execution v1 已实现但默认关闭：新增 `v6a_auto_guarded_executor.py`、`v6_strategy_lab/configs/v6a_auto_execution_policy_v1.json` 和 launchd 草案 `launch_agents/com.dingcle.v6a.guarded-auto.plist`。机制：外层 auto wrapper 先检查 `auto_enabled`、底层 runner `auto_real_orders_allowed`、kill switch、交易窗口、美股工作日、每日执行次数、pending orders、pre-reconciliation；再跑 `v6a_guarded_runner` plan-only，只有 release/quote/account/managed-state/notional 全 PASS 且确有 executable orders 时才调用 `--execute-real` + confirm phrase；下单后自动 post-reconciliation。默认双开关均为 false，未加载 launchd，不会自动下单。验证：disabled 模式直接 `POLICY_DISABLED` 不连 broker；dry-run/force-window 可走完整只读链路，当前 V6-A 已在目标仓位，返回 `NO_OP_AT_TARGET`。
 - [21:45] [代码] V6-A 5k guarded auto-execution 已正式打开：用户确认 5k cash 本身就是测试金，希望避免错过买卖点。执行前验收：临时 auto-enabled dry-run 通过，无 blockers，当前 `NO_OP_AT_TARGET`；kill switch dry-run 修正后可明确 `BLOCKED`；真实配置 dry-run 通过，无 blockers。随后将 `v6a_auto_execution_policy_v1.json:auto_enabled=true`、`v6a_guarded_runner_policy_v1.json:execution.auto_real_orders_allowed=true`，安装并加载 `com.dingcle.v6a.guarded-auto` 到 `gui/501`。触发时间：北京时间 21:45、22:10（当前美股夏令时约 09:45、10:10），脚本窗口 `America/New_York 09:40-10:20`。自动执行仍受 release gate、live quote/account、pending=0、managed-state sell guard、notional/order count、每日一次真实执行、post-reconciliation 和 kill switch 约束；关闭方式：创建 `backtest_results/v6a_state/AUTO_EXECUTION_DISABLED` 或把 auto_enabled 改回 false。
+- [21:50] [代码] V6 daily 邮件已接入 V6-A guarded auto 状态：`v6_reporting.py` 新增 `auto_execution` 摘要，日报/HTML 现在显示自动执行开关、底层真钱权限、kill switch、执行窗口、每日上限、最近 auto decision、blockers、最近订单数/金额、LaunchAgent 和关闭文件。日报 action 也会在 pending=0 且 auto 开启时显示“自动化已开启”；最新预览已修正为读取最新 gate 对应 preview，当前显示 gate 通过、预览订单数 0、pending 0、auto 最近 `NO_OP_AT_TARGET`。
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。

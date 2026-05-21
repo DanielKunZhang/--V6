@@ -21,6 +21,10 @@ DEFAULT_POLICY = ROOT / "v6_strategy_lab" / "configs" / "v6_reporting_policy_v1.
 DEFAULT_OUTPUT_DIR = ROOT / "backtest_results" / "v6_reporting"
 DEFAULT_V6A_REAL_STATE = ROOT / "backtest_results" / "v6a_state" / "v6a_managed_positions_real_281756481449956811.json"
 RELEASE_GATE_DIR = ROOT / "backtest_results" / "attack_engine_release_gate"
+DEFAULT_V6A_AUTO_POLICY = ROOT / "v6_strategy_lab" / "configs" / "v6a_auto_execution_policy_v1.json"
+DEFAULT_V6A_RUNNER_POLICY = ROOT / "v6_strategy_lab" / "configs" / "v6a_guarded_runner_policy_v1.json"
+DEFAULT_V6A_AUTO_LATEST = ROOT / "backtest_results" / "v6a_auto_guarded_executor" / "latest_run.json"
+DEFAULT_V6A_AUTO_PLIST = ROOT / "launch_agents" / "com.dingcle.v6a.guarded-auto.plist"
 
 
 def now_text() -> str:
@@ -64,14 +68,10 @@ def latest_file(directory: Path, pattern: str) -> Path | None:
 
 
 def latest_daily_release_gate_path(fallback: Path) -> Path:
-    """Prefer production daily PLAN_ONLY gate over static launch evidence."""
+    """Prefer the freshest V6-A gate over static launch evidence."""
     if not RELEASE_GATE_DIR.exists():
         return fallback
-    files = sorted(
-        RELEASE_GATE_DIR.glob("attack_engine_release_gate_v6_daily_auto_*_plan_only_gate.json"),
-        key=lambda item: item.stat().st_mtime,
-        reverse=True,
-    )
+    files = sorted(RELEASE_GATE_DIR.glob("attack_engine_release_gate_*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
     return files[0] if files else fallback
 
 
@@ -207,6 +207,7 @@ def summarize_preview(report_path: Path, orders_path: Path) -> dict[str, Any]:
     orders = read_csv_rows(orders_path, limit=50)
     buy_notional = 0.0
     symbols: list[str] = []
+    executable_count = 0
     for row in orders:
         symbol = row.get("symbol") or row.get("code") or row.get("ticker") or ""
         if symbol:
@@ -217,14 +218,16 @@ def summarize_preview(report_path: Path, orders_path: Path) -> dict[str, Any]:
         notional = as_float(row.get("estimated_notional_usd") or row.get("notional_usd") or row.get("preview_order_value") or row.get("target_value"))
         if notional <= 0 and qty > 0 and price > 0:
             notional = qty * price
-        if "BUY" in side or side in {"", "LONG"}:
+        if side in {"BUY", "SELL"} and (abs(qty) > 0 or abs(notional) > 0):
+            executable_count += 1
+        if "BUY" in side:
             buy_notional += max(notional, 0.0)
     return {
         "report_path": rel(report_path),
         "orders_path": rel(orders_path),
         "report_exists": report_path.exists(),
         "orders_exists": orders_path.exists(),
-        "order_count": len(orders),
+        "order_count": executable_count,
         "symbols": symbols,
         "estimated_buy_notional_usd": round(buy_notional, 2),
         "report_excerpt": read_text(report_path, limit=1800),
@@ -278,6 +281,35 @@ def summarize_managed_state(path: Path) -> dict[str, Any]:
     }
 
 
+def summarize_auto_execution() -> dict[str, Any]:
+    auto_policy = read_json(DEFAULT_V6A_AUTO_POLICY)
+    runner_policy = read_json(DEFAULT_V6A_RUNNER_POLICY)
+    latest = read_json(DEFAULT_V6A_AUTO_LATEST)
+    kill_switch = resolve_path(auto_policy.get("kill_switch_file", "backtest_results/v6a_state/AUTO_EXECUTION_DISABLED"))
+    window = auto_policy.get("market_window", {}) if isinstance(auto_policy, dict) else {}
+    latest_plan = latest.get("plan", {}) if isinstance(latest, dict) else {}
+    latest_orders = latest_plan.get("order_summary", {}) if isinstance(latest_plan, dict) else {}
+    return {
+        "policy_path": rel(DEFAULT_V6A_AUTO_POLICY),
+        "runner_policy_path": rel(DEFAULT_V6A_RUNNER_POLICY),
+        "latest_path": rel(DEFAULT_V6A_AUTO_LATEST),
+        "launch_agent_path": rel(DEFAULT_V6A_AUTO_PLIST),
+        "launch_agent_exists": DEFAULT_V6A_AUTO_PLIST.exists(),
+        "auto_enabled": bool(auto_policy.get("auto_enabled", False)) if isinstance(auto_policy, dict) else False,
+        "runner_auto_real_orders_allowed": bool((runner_policy.get("execution", {}) or {}).get("auto_real_orders_allowed", False)) if isinstance(runner_policy, dict) else False,
+        "kill_switch_path": rel(kill_switch),
+        "kill_switch_active": kill_switch.exists(),
+        "window": f"{window.get('timezone', '')} {window.get('start', '')}-{window.get('end', '')}".strip(),
+        "daily_limit": (auto_policy.get("daily_limits", {}) or {}).get("max_real_executions_per_day", ""),
+        "latest_decision": str(latest.get("decision", "")) if isinstance(latest, dict) else "",
+        "latest_generated_at": str(latest.get("generated_at", "")) if isinstance(latest, dict) else "",
+        "latest_blockers": latest.get("blockers", []) if isinstance(latest, dict) else [],
+        "latest_order_count": int(latest_orders.get("count", 0) or 0),
+        "latest_total_notional": as_float(latest_orders.get("total_notional"), 0.0),
+        "latest_market": latest.get("market", {}) if isinstance(latest, dict) else {},
+    }
+
+
 def summarize_v6b(scorecard_path: Path, live_forward_path: Path) -> dict[str, Any]:
     scorecard = read_json(scorecard_path)
     live_forward = read_json(live_forward_path)
@@ -324,6 +356,8 @@ def run_allocator(policy_path: Path, metrics_path: Path) -> dict[str, Any]:
 def decide_action(payload: dict[str, Any]) -> str:
     gate = payload["v6a"]["release_gate"]
     real = payload["v6a"]["real_pilot"]
+    auto = payload["v6a"].get("auto_execution", {})
+    managed = payload["v6a"].get("managed_state", {})
     allocator = payload["allocator"]
     if not gate.get("exists"):
         return "禁止实盘：缺少 V6-A release gate。"
@@ -333,10 +367,14 @@ def decide_action(payload: dict[str, Any]) -> str:
         if gate.get("buy_order_count", 0) > 0:
             return f"无需操作：STALE_DATA_MODE 下 {gate.get('buy_order_count', 0)} 笔 BUY 已被阻断，等待 K 线额度恢复。"
         return "无需操作：V6-A 处于 STALE_DATA_MODE，未发现需人工处理的风险退出。"
-    if real.get("armed"):
+    if real.get("armed") and int(managed.get("pending_count", 0) or 0) > 0:
         return "需要用户确认：检测到 armed 执行记录，复核订单和仓位。"
     if not gate.get("overall_passed"):
         return "禁止实盘：V6-A release gate 未通过。"
+    if auto.get("auto_enabled") and auto.get("runner_auto_real_orders_allowed") and not auto.get("kill_switch_active"):
+        if auto.get("latest_decision") == "EXECUTED_REAL":
+            return "需要复核：V6-A guarded auto 今日已执行真实订单，检查 post-reconciliation。"
+        return "自动化已开启：V6-A guarded auto 将在开盘窗口按 gate 自动执行；V6-B 仅研究/模拟。"
     if allocator.get("weights", {}).get("V6-B", 0) not in {0, 0.0, "0", "0.0"}:
         return "需要用户确认：allocator 给 V6-B 非零权重，必须人工复核。"
     return "需要用户确认：V6-A 可继续小额 pilot 流程；V6-B 仅研究/模拟。"
@@ -349,8 +387,14 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     evidence = launch_policy.get("latest_real_pilot_evidence", {})
 
     release_gate_path = latest_daily_release_gate_path(resolve_path(evidence.get("release_gate") or policy["artifacts"]["release_gate"]))
-    preview_report_path = resolve_path(evidence.get("live_preview_report") or policy["artifacts"]["live_preview_report"])
-    preview_orders_path = resolve_path(evidence.get("live_preview_orders") or policy["artifacts"]["live_preview_orders"])
+    release_gate_payload = read_json(release_gate_path)
+    gate_orders_path = extract_orders_path_from_gate(release_gate_payload)
+    preview_orders_path = gate_orders_path or resolve_path(evidence.get("live_preview_orders") or policy["artifacts"]["live_preview_orders"])
+    preview_report_path = (
+        Path(str(preview_orders_path).replace("attack_live_order_preview_orders_", "attack_live_order_preview_report_")).with_suffix(".md")
+        if gate_orders_path
+        else resolve_path(evidence.get("live_preview_report") or policy["artifacts"]["live_preview_report"])
+    )
 
     real_pilot_dir = resolve_path(policy["artifacts"]["real_pilot_dir"])
     real_pilot_latest = latest_file(real_pilot_dir, "v6a_real_pilot_results_*.json")
@@ -380,6 +424,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "preview": summarize_preview(preview_report_path, preview_orders_path),
             "real_pilot": summarize_real_pilot(real_pilot_latest) if real_pilot_latest else {"exists": False, "path": ""},
             "managed_state": summarize_managed_state(DEFAULT_V6A_REAL_STATE),
+            "auto_execution": summarize_auto_execution(),
         },
         "v6b": summarize_v6b(scorecard_path, live_forward_path),
         "allocator": run_allocator(allocator_policy_path, allocator_metrics_path),
@@ -403,6 +448,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     gate = v6a["release_gate"]
     preview = v6a["preview"]
     managed = v6a.get("managed_state", {})
+    auto = v6a.get("auto_execution", {})
     allocator = payload["allocator"]
     v6b = payload["v6b"]
     mainline = payload.get("mainline_intelligence", {})
@@ -494,6 +540,25 @@ def render_markdown(payload: dict[str, Any]) -> str:
             "### V6-A 待处理订单",
             "",
             md_table(["标的", "方向", "数量", "状态", "订单号"], pending_rows),
+            "",
+            "### V6-A Guarded Auto",
+            "",
+            md_table(
+                ["项目", "状态"],
+                [
+                    ["自动执行开关", "ON" if auto.get("auto_enabled") else "OFF"],
+                    ["底层真钱权限", "ON" if auto.get("runner_auto_real_orders_allowed") else "OFF"],
+                    ["Kill switch", "ACTIVE" if auto.get("kill_switch_active") else "inactive"],
+                    ["执行窗口", auto.get("window", "")],
+                    ["每日真实执行上限", auto.get("daily_limit", "")],
+                    ["最近决策", auto.get("latest_decision", "")],
+                    ["最近运行时间", auto.get("latest_generated_at", "")],
+                    ["最近 blockers", "; ".join(str(item) for item in auto.get("latest_blockers", [])) or "-"],
+                    ["最近订单数/金额", f"{auto.get('latest_order_count', 0)} / ${auto.get('latest_total_notional', 0):,.2f}"],
+                    ["LaunchAgent", "installed" if auto.get("launch_agent_exists") else "missing"],
+                    ["关闭文件", auto.get("kill_switch_path", "")],
+                ],
+            ),
             "",
             "## V6-B / 动态候选池",
             "",
@@ -653,6 +718,7 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     preview = v6a["preview"]
     real_pilot = v6a.get("real_pilot", {})
     managed = v6a.get("managed_state", {})
+    auto = v6a.get("auto_execution", {})
     v6b = payload["v6b"]
     allocator = payload["allocator"]
     mainline = payload.get("mainline_intelligence", {})
@@ -685,6 +751,7 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
         ]
         for row in managed.get("pending_orders", [])
     ] or [["-", "-", "-", "-", "-"]]
+    auto_tone = "bad" if auto.get("kill_switch_active") else "good" if auto.get("auto_enabled") and auto.get("runner_auto_real_orders_allowed") else "warn"
     boundary_items = "".join(
         f'<li style="margin:6px 0;color:#374151;line-height:1.45;">{html_escape(item)}</li>'
         for item in payload.get("boundaries", [])
@@ -755,6 +822,21 @@ def render_html(payload: dict[str, Any], markdown: str) -> str:
     <div style="height:14px;"></div>
     <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">待处理订单</h3>
     {html_table(["标的", "方向", "数量", "状态", "订单号"], managed_pending_rows)}
+    <div style="height:14px;"></div>
+    <h3 style="font-size:15px;margin:0 0 8px;color:#111827;">V6-A Guarded Auto</h3>
+    {html_table(["项目", "状态"], [
+        ["自动执行开关", html_badge("ON" if auto.get("auto_enabled") else "OFF", auto_tone)],
+        ["底层真钱权限", html_badge("ON" if auto.get("runner_auto_real_orders_allowed") else "OFF", auto_tone)],
+        ["Kill switch", html_badge("ACTIVE" if auto.get("kill_switch_active") else "inactive", "bad" if auto.get("kill_switch_active") else "good")],
+        ["执行窗口", auto.get("window", "")],
+        ["每日真实执行上限", auto.get("daily_limit", "")],
+        ["最近决策", html_badge(auto.get("latest_decision", "") or "-", "good" if auto.get("latest_decision") in {"NO_OP_AT_TARGET", "EXECUTED_REAL"} else "warn")],
+        ["最近运行时间", auto.get("latest_generated_at", "")],
+        ["最近 blockers", "; ".join(str(item) for item in auto.get("latest_blockers", [])) or "-"],
+        ["最近订单数/金额", f"{auto.get('latest_order_count', 0)} / ${auto.get('latest_total_notional', 0):,.2f}"],
+        ["LaunchAgent", "installed" if auto.get("launch_agent_exists") else "missing"],
+        ["关闭文件", auto.get("kill_switch_path", "")],
+    ])}
   </div>
 
   <div style="margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;">
