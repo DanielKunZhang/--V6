@@ -45,6 +45,7 @@ def render_daily_report(
     override_readiness: dict[str, Any],
     turnover_guard_experiment: dict[str, Any],
     boost_near_miss: dict[str, Any],
+    risk_skill_gate: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -81,6 +82,8 @@ def render_daily_report(
         if near_miss_cohorts
         else {}
     )
+    risk_skill_ranked = risk_skill_gate.get("ranked", []) if isinstance(risk_skill_gate.get("ranked"), list) else []
+    best_risk_skill = risk_skill_ranked[0] if risk_skill_ranked else {}
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -133,6 +136,7 @@ def render_daily_report(
         f"- OVERRIDE readiness：decision=`{override_readiness.get('decision', 'UNKNOWN')}`，hard sum={float(override_readiness.get('hard_sum_delta', 0.0)):+.2%}",
         f"- Turnover guard experiment：best active threshold={float(best_threshold.get('threshold', 0.0) or 0.0):.2f}，active={best_threshold.get('active_rebalances', 'n/a')}，ann delta={float(best_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}；current 1.40 active={current_threshold.get('active_rebalances', 'n/a')}，ann delta={float(current_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
         f"- BOOST near-miss：months={boost_near_miss.get('near_miss_months', 0)}，all overlay sum={float(boost_near_miss.get('overlay_sum_delta_all', 0.0) or 0.0):+.2%}，best cohort=`{best_near_miss.get('candidate', 'n/a')}` {float(best_near_miss.get('sum_overlay_delta', 0.0) or 0.0):+.2%}",
+        f"- Risk skill gate：decision=`{risk_skill_gate.get('decision', 'UNKNOWN')}`，best=`{best_risk_skill.get('candidate', 'n/a')}`，ann vs guarded={float(best_risk_skill.get('ann_vs_baseline_guarded', 0.0) or 0.0):+.2%}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -185,6 +189,22 @@ def render_daily_report(
             f"{float(row.get('win_rate', 0.0) or 0.0):+.2%} | "
             f"{float(row.get('positive_sum', 0.0) or 0.0):+.2%} | "
             f"{float(row.get('negative_sum', 0.0) or 0.0):+.2%} |"
+        )
+    lines += [
+        "",
+        "## Risk Skill Gate 实验",
+        "",
+        "| candidate | active | changed | ann vs guarded | Sharpe vs guarded | 2020 delta | 2024-2026 delta |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in risk_skill_ranked[:6]:
+        delta = row.get("delta", {})
+        lines.append(
+            f"| `{row.get('candidate')}` | {row.get('active_rebalances', 0)} | {row.get('changed_snapshots', 0)} | "
+            f"{float(row.get('ann_vs_baseline_guarded', 0.0) or 0.0):+.2%} | "
+            f"{float(row.get('sharpe_vs_baseline_guarded', 0.0) or 0.0):+.2f} | "
+            f"{float(delta.get('ann_2020_delta', 0.0) or 0.0):+.2%} | "
+            f"{float(delta.get('ann_2024_2026_delta', 0.0) or 0.0):+.2%} |"
         )
     lines += [
         "",
@@ -251,6 +271,7 @@ def main() -> int:
         run_step("override_readiness_review", [py, "v6ab_override_readiness_review.py", "--asof", args.asof]),
         run_step("turnover_guard_threshold_experiment", [py, "v6ab_turnover_guard_threshold_experiment.py", "--asof", args.asof]),
         run_step("boost_near_miss_review", [py, "v6ab_boost_near_miss_review.py", "--asof", args.asof]),
+        run_step("risk_skill_gate_experiment", [py, "v6ab_risk_skill_gate_experiment.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -262,6 +283,7 @@ def main() -> int:
         ROOT / "backtest_results" / "v6ab_turnover_guard_threshold_experiment" / "latest.json"
     )
     boost_near_miss = load_json(ROOT / "backtest_results" / "v6ab_boost_near_miss_review" / "latest.json")
+    risk_skill_gate = load_json(ROOT / "backtest_results" / "v6ab_risk_skill_gate_experiment" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -273,6 +295,7 @@ def main() -> int:
         override_readiness,
         turnover_guard_experiment,
         boost_near_miss,
+        risk_skill_gate,
     )
     payload = {
         "asof": args.asof,
@@ -285,6 +308,7 @@ def main() -> int:
         "override_readiness": override_readiness,
         "turnover_guard_threshold_experiment": turnover_guard_experiment,
         "boost_near_miss_review": boost_near_miss,
+        "risk_skill_gate_experiment": risk_skill_gate,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
