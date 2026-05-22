@@ -287,3 +287,11 @@
 - [20:51] [发现] A股 Radar: added V6AB transfer review diagnostic. It applies PIT boundary, fact precision, mainline/expression separation, and promotion gates to A-share Radar. Current tier PAPER_TRADE_ONLY, not real-money: mainline/expression pass initial simulation readiness, but blockers remain sample_size_lt20 and strict_tracker_evaluated_lt20.
 - [20:55] [发现] System principle added: V6AB and A-share Radar may share methodology/engineering framework but must not directly share market-specific rules, thresholds, signal meanings, or trading actions. Cross-market transfer defaults to RESEARCH_TRANSFER and requires source/target/scope/not_allowed_scope/local validation before any promotion. Canonical doc: /Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/V6AB_A股Radar_双线迁移防污染原则_20260522.md
 - [21:00] [发现] Cross-market sync mechanism added. New cross_market_research_sync.py generates SHARE / QUARANTINE / VALIDATION_QUEUE plus a reusable prompt. It reads latest V6AB daily and A-share transfer review, syncs transferable methodology, and quarantines market-specific rules/thresholds. Integrated into A-share daily loop; output: 报表输出/LATEST/跨市场研究同步_LATEST.md.
+
+---
+
+## 2026-05-23
+
+### GPT
+
+- [00:02] [发现] PDD 主仓压力点已启动处理：用户反馈 PDD 跌至约93美元并后悔中概持仓。已新增公司研究/PDD/PDD_财报前压力复盘_20260522.md，结论为 NO_ADD_PRE_EARNINGS / HOLD / POST_EARNINGS_REUNDERWRITE：财报前不加仓、不卖CSP、不因后悔情绪直接清仓；财报后若收入失速+利润率恶化+管理层解释差，按既有规则减仓300-400股至风险预算内。已将 events_calendar PDD Q1重估日期修正到 2026-05-27，并修正 decision_log 目标日期，保留原始 2026-05-17 HOLD 决策不变。
