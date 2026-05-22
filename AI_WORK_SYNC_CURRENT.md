@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-22 14:22:22`
+- Last updated: `2026-05-22 17:06:55`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1080,3 +1080,4 @@ dc58870 feat: add V6 daily report automation
 - [代码] V6AB 父/子主题冲突映射实验取得更明确进展，提交 `a91c7fa feat: test V6AB parent theme conflict mapping`。新增候选：当 `ai_platform` 与父主题 `technology` 同时在 BOOST 且无 OVERRIDE 时，把 `ai_platform` 合并回 `technology`；泛化版则把 AI 子主题与父主题冲突时回父主题。最新 theme mapping 实验：`platform_parent_conflict_to_technology` 年化 +32.30%，maxDD -15.68%，Sharpe 1.25，较 guarded +0.36pp，2020 vs V2 +4.62pp，2024-2026 vs V2 +3.38pp，active 29，changed snapshots 5；日报 decision=`REVIEW_THEME_MAPPING_CANDIDATE`。映射命中 2020-06、2020-07、2023-07、2024-01、2025-07，正好对应此前 gap review 暴露的 technology 被 ai_platform 挤掉问题。仍不动模拟盘；下一步应为该候选单独跑 attribution/promotion gate，检查是否只是修 5 个历史月份、是否有隐性损伤。
 - [代码] 同步新增 `v6ab_macro_regime_evidence_seed.py`，生成 2020 liquidity/technology/precious metals、2022 energy/rate shock、2023 broad technology/AI transition 的 date-stamped macro regime evidence。试验默认接入后没有净提升，guarded 年化基本不变且 2020 小幅回落，因此未接入默认 PIT replay，仅保留为研究输入，后续需和主题映射/主线强弱排序组合验证。
 - [代码] V6AB 父/子主题冲突候选已升级为正式候选审查，并新增 Theme Hierarchy Diagnostics。`v6ab_theme_mapping_candidate_review.py` 单独评估 `platform_parent_conflict_to_technology`：年化 +32.30% vs V2 +31.83%，maxDD -15.68% 持平，Sharpe 1.25 vs 1.23，2020 +34.20% vs +29.58%，2024-2026 +60.78% vs +57.40%；但 active rebals=29<30 且 OVERRIDE=0，decision=`RESEARCH_OVERLAY`，模拟盘 `NO_CHANGE`。新增 `v6ab_theme_hierarchy_diagnostics.py` 并接入 daily evolution：child BOOST 样本 22，merge_to_parent 4，override_ready_research 1；诊断要求子主题独立必须有相对父主题的市场/趋势领先，不能只因证据多就 OVERRIDE。完整 daily 通过，新增步骤 `theme_mapping_candidate_review` 与 `theme_hierarchy_diagnostics` 均 OK。下一步不是放宽 gate，而是补 date-stamped、可差异化的主线证据，让真正独立的 child theme 能产生 OVERRIDE。
+- [代码] V6AB 新增 `v6ab_override_evidence_candidate_review.py` 并接入 daily evolution，用来审查 child theme 是否有可差异化、PIT 可见的 OVERRIDE 事实证据。规则要求 actionable event facts、主题关键词命中、跨 ticker 广度、相对父主题市场领先和证据质量优势；不再把 AMZN North America sales 这类泛化收入增长误算为 `ai_platform` 事实。最新完整 daily 通过：reviewed child rows=22，`override_candidates=0`、`watch=0`、`metadata_reject=22`。结论：当前 child theme BOOST 大多仍由 filing metadata 和非差异化事实支撑，不能产生 OVERRIDE；下一步应定向补 HBM/AI memory、AWS/Azure/cloud AI、optical/networking/datacenter 等带日期、带经营事实、跨公司验证的 evidence，而不是放宽 gate 或继续堆复杂风控。

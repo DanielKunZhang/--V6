@@ -51,6 +51,7 @@ def render_daily_report(
     theme_mapping: dict[str, Any],
     theme_mapping_candidate: dict[str, Any],
     theme_hierarchy: dict[str, Any],
+    override_evidence: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -128,6 +129,11 @@ def render_daily_report(
         if isinstance(theme_hierarchy.get("child_summary"), list)
         else []
     )
+    override_evidence_counts = (
+        override_evidence.get("decision_counts", {})
+        if isinstance(override_evidence.get("decision_counts"), dict)
+        else {}
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -187,6 +193,7 @@ def render_daily_report(
         f"- Theme mapping experiment：decision=`{theme_mapping.get('decision', 'UNKNOWN')}`，best=`{best_theme_mapping.get('candidate', 'n/a')}`，ann vs guarded={float(best_theme_mapping.get('delta_vs_guarded', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
         f"- Theme mapping candidate：decision=`{theme_mapping_candidate_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(theme_mapping_candidate_delta.get('ann_delta', 0.0) or 0.0):+.2%}，2020 vs V2={float(theme_mapping_candidate_delta.get('ann_2020_delta', 0.0) or 0.0):+.2%}",
         f"- Theme hierarchy diagnostics：child rows={theme_hierarchy.get('total_child_boost_rows', 0)}，merge_to_parent={hierarchy_decisions.get('MERGE_TO_PARENT', 0)}，override_ready={hierarchy_decisions.get('OVERRIDE_READY_RESEARCH', 0)}",
+        f"- Override evidence review：override_candidates={override_evidence_counts.get('OVERRIDE_EVIDENCE_CANDIDATE', 0)}，watch={override_evidence_counts.get('WATCH_OVERRIDE_EVIDENCE', 0)}，metadata_reject={override_evidence_counts.get('METADATA_HEAVY_REJECT', 0)}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -327,6 +334,30 @@ def render_daily_report(
             f"| `{row.get('child_theme')}` | {row.get('count', 0)} | {row.get('merge_to_parent', 0)} | "
             f"{row.get('override_ready', 0)} | {float(row.get('avg_score', 0.0) or 0.0):+.2f} |"
         )
+    override_rows = override_evidence.get("rows", []) if isinstance(override_evidence.get("rows"), list) else []
+    lines += [
+        "",
+        "## Override Evidence 审查",
+        "",
+        "| asof | child | parent | decision | market adv | actionable | tickers | score adv |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in sorted(
+        override_rows,
+        key=lambda item: (
+            item.get("review_decision") == "OVERRIDE_EVIDENCE_CANDIDATE",
+            item.get("review_decision") == "WATCH_OVERRIDE_EVIDENCE",
+            float(item.get("quality_score_advantage", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )[:8]:
+        child = row.get("child", {}) if isinstance(row.get("child"), dict) else {}
+        lines.append(
+            f"| `{row.get('asof')}` | `{row.get('child_theme')}` | `{row.get('parent_theme')}` | "
+            f"`{row.get('review_decision')}` | {float(row.get('market_advantage', 0.0) or 0.0):+.1f} | "
+            f"{child.get('actionable_rows', 0)} | {child.get('actionable_unique_tickers', 0)} | "
+            f"{float(row.get('quality_score_advantage', 0.0) or 0.0):+.2f} |"
+        )
     lines += [
         "",
         "## PIT 候选对比",
@@ -398,6 +429,7 @@ def main() -> int:
         run_step("theme_mapping_experiment", [py, "v6ab_theme_mapping_experiment.py", "--asof", args.asof]),
         run_step("theme_mapping_candidate_review", [py, "v6ab_theme_mapping_candidate_review.py", "--asof", args.asof]),
         run_step("theme_hierarchy_diagnostics", [py, "v6ab_theme_hierarchy_diagnostics.py", "--asof", args.asof]),
+        run_step("override_evidence_candidate_review", [py, "v6ab_override_evidence_candidate_review.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -415,6 +447,7 @@ def main() -> int:
     theme_mapping = load_json(ROOT / "backtest_results" / "v6ab_theme_mapping_experiment" / "latest.json")
     theme_mapping_candidate = load_json(ROOT / "backtest_results" / "v6ab_theme_mapping_candidate_review" / "latest.json")
     theme_hierarchy = load_json(ROOT / "backtest_results" / "v6ab_theme_hierarchy_diagnostics" / "latest.json")
+    override_evidence = load_json(ROOT / "backtest_results" / "v6ab_override_evidence_candidate_review" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -432,6 +465,7 @@ def main() -> int:
         theme_mapping,
         theme_mapping_candidate,
         theme_hierarchy,
+        override_evidence,
     )
     payload = {
         "asof": args.asof,
@@ -450,6 +484,7 @@ def main() -> int:
         "theme_mapping_experiment": theme_mapping,
         "theme_mapping_candidate_review": theme_mapping_candidate,
         "theme_hierarchy_diagnostics": theme_hierarchy,
+        "override_evidence_candidate_review": override_evidence,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
