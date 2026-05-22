@@ -116,6 +116,7 @@ def run_guarded_v6b(
             pit_tier = "WATCH"
             guard_reason = ""
             preserved: list[str] = []
+            preservation_candidates: list[str] = []
             if monthly.index.get_loc(dt) < 12 or not pit_active:
                 weights, rows = bt.pick_weights(monthly, dt, **pick_config) if monthly.index.get_loc(dt) >= 12 else ({"CASH": 1.0}, [])
             else:
@@ -126,13 +127,14 @@ def run_guarded_v6b(
                 pit_config["top_n"] = max(1, min(3, len(themes)))
                 pit_config["stock_top_n"] = 3
                 weights, rows = bt.pick_weights(monthly, dt, **pit_config)
-                preserve, preserved = should_preserve_baseline(snap, baseline_rows, rows, policy=policy)
+                preserve, preservation_candidates = should_preserve_baseline(snap, baseline_rows, rows, policy=policy)
                 proposed_turnover = sum(
                     abs(weights.get(k, 0.0) - current_weights.get(k, 0.0))
                     for k in set(weights) | set(current_weights)
                     if k != "CASH"
                 )
                 if preserve:
+                    preserved = list(preservation_candidates)
                     weights, rows = baseline_weights, baseline_rows
                     pit_active = False
                     pit_tier = "WATCH"
@@ -184,6 +186,8 @@ def run_guarded_v6b(
                         "pit_confirmed": pit_bridge.has_confirmed_theme(snap),
                         "pit_guard_reason": guard_reason,
                         "legacy_preserved_themes": preserved,
+                        "legacy_preservation_candidates": preservation_candidates,
+                        "legacy_preservation_applied": bool(preserved),
                         "legacy_preservation_policy": policy,
                         "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
                         "fallback_to_v2": bool(not pit_active),
@@ -269,7 +273,7 @@ def build_month_review(
     guarded_by_date = {row["date"]: row for row in guarded_decisions}
     rows: list[dict[str, Any]] = []
     for row in guarded_decisions:
-        if not row.get("legacy_preserved_themes"):
+        if not row.get("legacy_preservation_applied"):
             continue
         raw_date = str(row.get("date"))
         if raw_date not in baseline_rets:
