@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-22 21:00:44`
+- Last updated: `2026-05-22 22:34:50`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1083,6 +1083,7 @@ dc58870 feat: add V6 daily report automation
 - [代码] V6AB 新增 `v6ab_override_evidence_candidate_review.py` 并接入 daily evolution，用来审查 child theme 是否有可差异化、PIT 可见的 OVERRIDE 事实证据。规则要求 actionable event facts、主题关键词命中、跨 ticker 广度、相对父主题市场领先和证据质量优势；不再把 AMZN North America sales 这类泛化收入增长误算为 `ai_platform` 事实。最新完整 daily 通过：reviewed child rows=22，`override_candidates=0`、`watch=0`、`metadata_reject=22`。结论：当前 child theme BOOST 大多仍由 filing metadata 和非差异化事实支撑，不能产生 OVERRIDE；下一步应定向补 HBM/AI memory、AWS/Azure/cloud AI、optical/networking/datacenter 等带日期、带经营事实、跨公司验证的 evidence，而不是放宽 gate 或继续堆复杂风控。
 
 
+- [22:34] [发现] 长期目标已确认：V6AB 与 A股 Radar 都要演进为小型、可用、持续进化的主线识别/表达/复盘系统；共同链路为 当期可见信息 -> 判断真实主线 -> 选择表达工具 -> 控制替换风险 -> 复盘归因 -> 晋级/降级。V6AB 负责美股/海外主线轮动，A股 Radar 负责 A股市场实现。两者共享方法论、工程机制和复盘框架，但不共享具体规则、阈值、交易动作；跨市场迁移默认 RESEARCH_TRANSFER，必须本市场独立验证。已归档到 系统优化升级依据/V6AB_A股Radar_长期目标_可持续进化主线系统_20260522.md。
 ### Claude
 
 - [18:39] [发现] V6AB PIT: added override evidence gap review; improved event fact extraction for ai_memory/ai_platform; reran SEC fact ledger with short timeout; override evidence improved from 0 to 3 candidates + 1 watch in daily, PIT guarded ann now 32.05% vs V2 31.83%, still RESEARCH_OVERLAY/no sim change.
