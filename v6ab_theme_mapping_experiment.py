@@ -126,6 +126,19 @@ def ai_child_no_entry_to_parent(theme: str, detail: dict[str, Any], snap: dict[s
     return theme
 
 
+def parent_conflict_to_parent(theme: str, detail: dict[str, Any], snap: dict[str, Any]) -> str:
+    parent = PARENT_THEME.get(theme)
+    if parent and parent in set(snap.get("boost_allowlist", [])) and not snap.get("override_allowlist"):
+        return parent
+    return theme
+
+
+def platform_parent_conflict_to_technology(theme: str, detail: dict[str, Any], snap: dict[str, Any]) -> str:
+    if theme == "ai_platform" and "technology" in set(snap.get("boost_allowlist", [])) and not snap.get("override_allowlist"):
+        return "technology"
+    return theme
+
+
 def summarize(
     name: str,
     standalone_eq: pd.Series,
@@ -211,6 +224,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         apply_mapping(snapshots, "platform_low_fact_to_technology", platform_low_fact_to_technology),
         apply_mapping(snapshots, "ai_child_low_fact_to_parent", ai_child_low_fact_to_parent),
         apply_mapping(snapshots, "ai_child_no_entry_to_parent", ai_child_no_entry_to_parent),
+        apply_mapping(snapshots, "platform_parent_conflict_to_technology", platform_parent_conflict_to_technology),
+        apply_mapping(snapshots, "parent_conflict_to_parent", parent_conflict_to_parent),
         apply_mapping(snapshots, "ai_child_no_override_to_parent", ai_child_no_override_to_parent),
     ]
     rows = []
