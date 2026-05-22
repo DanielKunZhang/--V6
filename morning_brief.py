@@ -753,6 +753,17 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "美股 Radar/V6-B 是周度或事件驱动复盘，不需要每天人工处理",
         )
 
+    # 跨市场同步防污染检查：定期提醒用户让 AI 审查 V6AB / A股 Radar 的共享成果。
+    # 只同步方法论与验证结论；具体阈值、买点、市场结构信号默认隔离。
+    if today.weekday() == 4:
+        add(
+            "MED",
+            "跨市场同步",
+            "检查 V6AB / A股 Radar 最近成果是否正确同步，是否存在规则污染",
+            "检查跨市场同步污染：请审查最近 V6AB 和 A股 Radar 的成果，哪些方法论可以共享，哪些具体规则/阈值/信号必须隔离，是否有污染风险。",
+            "每周一次；读取 跨市场研究同步_LATEST.md，只同步 SHARE，隔离 QUARANTINE，迁移项必须留在 VALIDATION_QUEUE",
+        )
+
     # Seeking Alpha 输入源试验：交易日每日提醒，用户按 X Radar 节奏整理前一日公开信号。
     # 只有在试验规格文件存在时才提醒（避免试验结束后继续噪音）。
     if today.weekday() < 5 and SA_TRIAL_SPEC.exists():
