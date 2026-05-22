@@ -58,6 +58,7 @@ def render_daily_report(
     legacy_winner_preservation: dict[str, Any],
     legacy_false_negative_audit: dict[str, Any],
     legacy_promotion_gate: dict[str, Any],
+    legacy_forward_watch: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -175,6 +176,11 @@ def render_daily_report(
         if isinstance(legacy_promotion_gate.get("decision"), dict)
         else {}
     )
+    legacy_watch_obs = (
+        legacy_forward_watch.get("latest_observation", {})
+        if isinstance(legacy_forward_watch.get("latest_observation"), dict)
+        else {}
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -241,6 +247,7 @@ def render_daily_report(
         f"- Legacy winner preservation：decision=`{legacy_winner_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(legacy_winner_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，ann vs PIT={float(legacy_winner_decision.get('ann_delta_vs_original_pit', 0.0) or 0.0):+.2%}，bad months={legacy_winner_decision.get('bad_preserved_months', 0)}；qualified=`{legacy_winner_decision.get('qualified_tier', 'UNKNOWN')}`，ann vs PIT={float(legacy_winner_decision.get('qualified_ann_delta_vs_original_pit', 0.0) or 0.0):+.2%}，bad={legacy_winner_decision.get('qualified_bad_preserved_months', 0)}",
         f"- Legacy false-negative audit：decision=`{legacy_fn_decision.get('tier', 'UNKNOWN')}`，skipped={legacy_fn_decision.get('false_negative_count', 0)}，risk={legacy_fn_decision.get('false_negative_risk_count', 0)}",
         f"- Legacy promotion gate：decision=`{legacy_promotion_decision.get('tier', 'UNKNOWN')}`，failed={', '.join(legacy_promotion_decision.get('failed_checks', [])[:4]) if isinstance(legacy_promotion_decision.get('failed_checks'), list) else 'n/a'}",
+        f"- Legacy forward WATCH：status=`{legacy_watch_obs.get('status', 'UNKNOWN')}`，decision_date=`{legacy_watch_obs.get('decision_date', 'n/a')}`，triggered={legacy_watch_obs.get('legacy_preservation_applied', False)}，blocked={', '.join(legacy_watch_obs.get('blocked_replacements', [])[:4]) if isinstance(legacy_watch_obs.get('blocked_replacements'), list) and legacy_watch_obs.get('blocked_replacements') else '-'}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -578,6 +585,32 @@ def render_daily_report(
             lines.append(
                 f"| `{row.get('check')}` | {'PASS' if row.get('passed') else 'FAIL'} | {value_text} | {row.get('threshold')} |"
             )
+    if legacy_watch_obs:
+        lines += [
+            "",
+            "### Legacy Preservation Forward WATCH",
+            "",
+            "| sleeve | tier | active | fallback V2 | selected |",
+            "| --- | --- | ---: | ---: | --- |",
+        ]
+        for key, label in [
+            ("v2", "V2 baseline"),
+            ("original_pit", "Original PIT"),
+            ("qualified_preservation", "Qualified preservation"),
+        ]:
+            row = legacy_watch_obs.get(key, {}) if isinstance(legacy_watch_obs.get(key), dict) else {}
+            lines.append(
+                f"| {label} | `{row.get('pit_signal_tier', 'WATCH')}` | {row.get('pit_active_for_mode', False)} | "
+                f"{row.get('fallback_to_v2', True)} | {', '.join(row.get('selected', [])) or '-'} |"
+            )
+        lines += [
+            "",
+            f"- protection triggered：`{legacy_watch_obs.get('legacy_preservation_applied', False)}`",
+            f"- preserved：`{', '.join(legacy_watch_obs.get('legacy_preserved_themes', [])) or '-'}`",
+            f"- reason：`{legacy_watch_obs.get('trigger_reason') or '-'}`",
+            f"- blocked replacement：`{', '.join(legacy_watch_obs.get('blocked_replacements', [])) or '-'}`",
+            "- 该 WATCH 观察不改变当前 V2 模拟盘。",
+        ]
     lines += [
         "",
         "## PIT 候选对比",
@@ -656,6 +689,7 @@ def main() -> int:
         run_step("legacy_winner_preservation", [py, "v6ab_legacy_winner_preservation_experiment.py", "--asof", args.asof]),
         run_step("legacy_false_negative_audit", [py, "v6ab_legacy_preservation_false_negative_audit.py", "--asof", args.asof]),
         run_step("legacy_promotion_gate", [py, "v6ab_legacy_preservation_promotion_gate.py", "--asof", args.asof]),
+        run_step("legacy_forward_watch", [py, "v6ab_legacy_preservation_forward_watch.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -682,6 +716,7 @@ def main() -> int:
         ROOT / "backtest_results" / "v6ab_legacy_preservation_false_negative_audit" / "latest.json"
     )
     legacy_promotion_gate = load_json(ROOT / "backtest_results" / "v6ab_legacy_preservation_promotion_gate" / "latest.json")
+    legacy_forward_watch = load_json(ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -706,6 +741,7 @@ def main() -> int:
         legacy_winner_preservation,
         legacy_false_negative_audit,
         legacy_promotion_gate,
+        legacy_forward_watch,
     )
     payload = {
         "asof": args.asof,
@@ -731,6 +767,7 @@ def main() -> int:
         "legacy_winner_preservation": legacy_winner_preservation,
         "legacy_false_negative_audit": legacy_false_negative_audit,
         "legacy_promotion_gate": legacy_promotion_gate,
+        "legacy_forward_watch": legacy_forward_watch,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
