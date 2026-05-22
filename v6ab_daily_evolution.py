@@ -54,6 +54,7 @@ def render_daily_report(
     override_evidence: dict[str, Any],
     override_evidence_gap: dict[str, Any],
     override_candidate_backtest: dict[str, Any],
+    parent_child_tilt_backtest: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -151,6 +152,11 @@ def render_daily_report(
         if isinstance(override_candidate_backtest.get("decision"), dict)
         else {}
     )
+    parent_child_tilt_decision = (
+        parent_child_tilt_backtest.get("decision", {})
+        if isinstance(parent_child_tilt_backtest.get("decision"), dict)
+        else {}
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -213,6 +219,7 @@ def render_daily_report(
         f"- Override evidence review：override_candidates={override_evidence_counts.get('OVERRIDE_EVIDENCE_CANDIDATE', 0)}，watch={override_evidence_counts.get('WATCH_OVERRIDE_EVIDENCE', 0)}，metadata_reject={override_evidence_counts.get('METADATA_HEAVY_REJECT', 0)}",
         f"- Override evidence gap：P0={override_gap_counts.get('P0_HARVEST_AND_FACT_RULE_REVIEW', 0)}，P1={override_gap_counts.get('P1_FACT_PRECISION_REVIEW', 0)}，P2={override_gap_counts.get('P2_COVERAGE_REVIEW', 0)}",
         f"- Override candidate backtest：decision=`{override_candidate_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(override_candidate_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，quality flags={override_candidate_decision.get('quality_flagged_overrides', 0)}",
+        f"- Parent+child tilt：decision=`{parent_child_tilt_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(parent_child_tilt_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，bad months={parent_child_tilt_decision.get('bad_months', 0)}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -417,6 +424,48 @@ def render_daily_report(
             f"{float(periods.get('2021', {}).get('ann_ret', 0.0) or 0.0):+.2%} | "
             f"{float(periods.get('2020', {}).get('ann_ret', 0.0) or 0.0):+.2%} |"
         )
+    tilt_rows = parent_child_tilt_backtest.get("rows", []) if isinstance(parent_child_tilt_backtest.get("rows"), list) else []
+    lines += [
+        "",
+        "## Parent + Child Tilt Backtest",
+        "",
+        "| candidate | ann | maxDD | Sharpe | 2024-2026 ann | 2021 ann | 2020 ann |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in tilt_rows:
+        if row.get("candidate") not in {
+            "baseline_v2_v6ab_dynamic_b",
+            "original_pit_guarded_v6ab_dynamic_b",
+            "parent_child_tilt_guarded_v6ab_dynamic_b",
+        }:
+            continue
+        stats = row.get("stats", {})
+        periods = row.get("periods", {})
+        lines.append(
+            f"| `{row.get('candidate')}` | {float(stats.get('ann_ret', 0.0) or 0.0):+.2%} | "
+            f"{float(stats.get('max_dd', 0.0) or 0.0):+.2%} | {float(stats.get('sharpe', 0.0) or 0.0):.2f} | "
+            f"{float(periods.get('2024_2026', {}).get('ann_ret', 0.0) or 0.0):+.2%} | "
+            f"{float(periods.get('2021', {}).get('ann_ret', 0.0) or 0.0):+.2%} | "
+            f"{float(periods.get('2020', {}).get('ann_ret', 0.0) or 0.0):+.2%} |"
+        )
+    month_review = (
+        parent_child_tilt_backtest.get("month_review", [])
+        if isinstance(parent_child_tilt_backtest.get("month_review"), list)
+        else []
+    )
+    if month_review:
+        lines += [
+            "",
+            "### Parent + Child Tilt 月度复盘",
+            "",
+            "| date | review | vs V2 | selected |",
+            "| --- | --- | ---: | --- |",
+        ]
+        for row in month_review[:8]:
+            lines.append(
+                f"| `{row.get('date')}` | `{row.get('review_reason')}` | "
+                f"{float(row.get('tilt_minus_v2', 0.0) or 0.0):+.2%} | {row.get('tilt_selected', '')} |"
+            )
     lines += [
         "",
         "## PIT 候选对比",
@@ -491,6 +540,7 @@ def main() -> int:
         run_step("override_evidence_candidate_review", [py, "v6ab_override_evidence_candidate_review.py", "--asof", args.asof]),
         run_step("override_evidence_gap_review", [py, "v6ab_override_evidence_gap_review.py", "--asof", args.asof]),
         run_step("override_candidate_backtest", [py, "v6ab_override_candidate_backtest.py", "--asof", args.asof]),
+        run_step("parent_child_tilt_backtest", [py, "v6ab_parent_child_tilt_backtest.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -511,6 +561,7 @@ def main() -> int:
     override_evidence = load_json(ROOT / "backtest_results" / "v6ab_override_evidence_candidate_review" / "latest.json")
     override_evidence_gap = load_json(ROOT / "backtest_results" / "v6ab_override_evidence_gap_review" / "latest.json")
     override_candidate_backtest = load_json(ROOT / "backtest_results" / "v6ab_override_candidate_backtest" / "latest.json")
+    parent_child_tilt_backtest = load_json(ROOT / "backtest_results" / "v6ab_parent_child_tilt_backtest" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -531,6 +582,7 @@ def main() -> int:
         override_evidence,
         override_evidence_gap,
         override_candidate_backtest,
+        parent_child_tilt_backtest,
     )
     payload = {
         "asof": args.asof,
@@ -552,6 +604,7 @@ def main() -> int:
         "override_evidence_candidate_review": override_evidence,
         "override_evidence_gap_review": override_evidence_gap,
         "override_candidate_backtest": override_candidate_backtest,
+        "parent_child_tilt_backtest": parent_child_tilt_backtest,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
