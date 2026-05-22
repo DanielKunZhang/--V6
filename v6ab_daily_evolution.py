@@ -49,6 +49,8 @@ def render_daily_report(
     signal_sizing: dict[str, Any],
     mainline_gap: dict[str, Any],
     theme_mapping: dict[str, Any],
+    theme_mapping_candidate: dict[str, Any],
+    theme_hierarchy: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -106,6 +108,26 @@ def render_daily_report(
     worst_missed_theme = missed_theme_summary[0] if missed_theme_summary else {}
     theme_mapping_ranked = theme_mapping.get("ranked", []) if isinstance(theme_mapping.get("ranked"), list) else []
     best_theme_mapping = theme_mapping_ranked[0] if theme_mapping_ranked else {}
+    theme_mapping_candidate_decision = (
+        theme_mapping_candidate.get("decision", {})
+        if isinstance(theme_mapping_candidate.get("decision"), dict)
+        else {}
+    )
+    theme_mapping_candidate_delta = (
+        theme_mapping_candidate.get("delta", {})
+        if isinstance(theme_mapping_candidate.get("delta"), dict)
+        else {}
+    )
+    hierarchy_decisions = (
+        theme_hierarchy.get("decision_counts", {})
+        if isinstance(theme_hierarchy.get("decision_counts"), dict)
+        else {}
+    )
+    hierarchy_child_summary = (
+        theme_hierarchy.get("child_summary", [])
+        if isinstance(theme_hierarchy.get("child_summary"), list)
+        else []
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -163,6 +185,8 @@ def render_daily_report(
         f"- Signal sizing：decision=`{signal_sizing.get('decision', 'UNKNOWN')}`，best=`{best_signal_sizing.get('candidate', 'n/a')}`，ann vs guarded={float(best_signal_sizing.get('delta_vs_guarded', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
         f"- Historical mainline gap：negative={mainline_gap.get('negative_months', 0)}，neg sum={float(mainline_gap.get('negative_sum_delta', 0.0) or 0.0):+.2%}，worst missed=`{worst_missed_theme.get('missed_v2_themes', 'n/a')}` {float(worst_missed_theme.get('sum_delta', 0.0) or 0.0):+.2%}",
         f"- Theme mapping experiment：decision=`{theme_mapping.get('decision', 'UNKNOWN')}`，best=`{best_theme_mapping.get('candidate', 'n/a')}`，ann vs guarded={float(best_theme_mapping.get('delta_vs_guarded', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
+        f"- Theme mapping candidate：decision=`{theme_mapping_candidate_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(theme_mapping_candidate_delta.get('ann_delta', 0.0) or 0.0):+.2%}，2020 vs V2={float(theme_mapping_candidate_delta.get('ann_2020_delta', 0.0) or 0.0):+.2%}",
+        f"- Theme hierarchy diagnostics：child rows={theme_hierarchy.get('total_child_boost_rows', 0)}，merge_to_parent={hierarchy_decisions.get('MERGE_TO_PARENT', 0)}，override_ready={hierarchy_decisions.get('OVERRIDE_READY_RESEARCH', 0)}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -293,6 +317,18 @@ def render_daily_report(
         )
     lines += [
         "",
+        "## Theme Hierarchy 诊断",
+        "",
+        "| child | count | merge | override ready | avg score |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in hierarchy_child_summary[:8]:
+        lines.append(
+            f"| `{row.get('child_theme')}` | {row.get('count', 0)} | {row.get('merge_to_parent', 0)} | "
+            f"{row.get('override_ready', 0)} | {float(row.get('avg_score', 0.0) or 0.0):+.2f} |"
+        )
+    lines += [
+        "",
         "## PIT 候选对比",
         "",
         "| candidate | ann | maxDD | Sharpe | 2024-2026 ann | 2020 ann | active rebals |",
@@ -360,6 +396,8 @@ def main() -> int:
         run_step("signal_sizing_experiment", [py, "v6ab_signal_sizing_experiment.py", "--asof", args.asof]),
         run_step("historical_mainline_gap_review", [py, "v6ab_historical_mainline_gap_review.py", "--asof", args.asof]),
         run_step("theme_mapping_experiment", [py, "v6ab_theme_mapping_experiment.py", "--asof", args.asof]),
+        run_step("theme_mapping_candidate_review", [py, "v6ab_theme_mapping_candidate_review.py", "--asof", args.asof]),
+        run_step("theme_hierarchy_diagnostics", [py, "v6ab_theme_hierarchy_diagnostics.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -375,6 +413,8 @@ def main() -> int:
     signal_sizing = load_json(ROOT / "backtest_results" / "v6ab_signal_sizing_experiment" / "latest.json")
     mainline_gap = load_json(ROOT / "backtest_results" / "v6ab_historical_mainline_gap_review" / "latest.json")
     theme_mapping = load_json(ROOT / "backtest_results" / "v6ab_theme_mapping_experiment" / "latest.json")
+    theme_mapping_candidate = load_json(ROOT / "backtest_results" / "v6ab_theme_mapping_candidate_review" / "latest.json")
+    theme_hierarchy = load_json(ROOT / "backtest_results" / "v6ab_theme_hierarchy_diagnostics" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -390,6 +430,8 @@ def main() -> int:
         signal_sizing,
         mainline_gap,
         theme_mapping,
+        theme_mapping_candidate,
+        theme_hierarchy,
     )
     payload = {
         "asof": args.asof,
@@ -406,6 +448,8 @@ def main() -> int:
         "signal_sizing_experiment": signal_sizing,
         "historical_mainline_gap_review": mainline_gap,
         "theme_mapping_experiment": theme_mapping,
+        "theme_mapping_candidate_review": theme_mapping_candidate,
+        "theme_hierarchy_diagnostics": theme_hierarchy,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
