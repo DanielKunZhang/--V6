@@ -31,8 +31,12 @@ FACT_RULES = [
     ("margin_expansion", "positive", 0.66, 0.78, ["gross margin increased", "operating margin increased", "margin expansion", "expanded margins"]),
     ("orders_backlog", "positive", 0.68, 0.80, ["backlog increased", "bookings increased", "order growth", "strong order", "strong demand", "increased demand"]),
     ("capex_capacity", "positive", 0.64, 0.76, ["capital expenditures increased", "increase in capital expenditures", "capacity expansion", "new capacity", "manufacturing capacity", "foundry capacity"]),
-    ("cloud_data_center", "positive", 0.68, 0.82, ["cloud revenue", "aws revenue", "data center demand", "datacenter demand", "hyperscale demand", "server demand"]),
+    ("cloud_data_center", "positive", 0.68, 0.82, ["cloud revenue", "cloud revenues", "aws revenue", "aws sales", "azure revenue", "google cloud revenues", "data center demand", "datacenter demand", "hyperscale demand", "server demand"]),
+    ("ai_platform_adoption", "positive", 0.70, 0.82, ["copilot", "gemini", "generative ai", "ai services", "ai assistant", "ai infrastructure"]),
     ("ai_accelerator", "positive", 0.72, 0.86, ["ai accelerator", "gpu demand", "hbm demand", "high bandwidth memory", "optical interconnect"]),
+    ("memory_pricing_cycle", "positive", 0.68, 0.80, ["dram pricing", "nand pricing", "average selling prices increased", "average selling price increased", "asps increased", "pricing improved"]),
+    ("memory_bit_growth", "positive", 0.66, 0.78, ["bit shipments increased", "bit shipment growth", "bit demand", "dram bit", "nand bit"]),
+    ("memory_inventory_recovery", "positive", 0.64, 0.76, ["customer inventories normalized", "inventory levels improved", "inventory correction is complete", "supply demand balance", "demand supply balance"]),
     ("inventory_correction", "negative", 0.70, 0.84, ["inventory correction", "elevated inventory", "inventory digestion", "channel inventory", "customer inventory"]),
     ("demand_slowdown", "negative", 0.72, 0.84, ["weak demand", "demand weakness", "lower demand", "soft demand", "slowdown in demand", "macroeconomic weakness"]),
     ("guidance_cut", "negative", 0.74, 0.86, ["lower guidance", "reduced guidance", "below our prior outlook", "cut guidance", "withdraw guidance"]),
@@ -115,7 +119,17 @@ def fact_quality(fact_type: str, direction: str, snippet: str, role: str) -> tup
         return "LOW", False, 0.45
     if direction in {"negative", "mixed"}:
         return ("HIGH" if has_number or fact_type in {"inventory_correction", "guidance_cut", "demand_slowdown"} else "MEDIUM", True, 1.0)
-    strong_positive = fact_type in {"revenue_acceleration", "guidance_raise", "margin_expansion", "cloud_data_center", "ai_accelerator"}
+    strong_positive = fact_type in {
+        "revenue_acceleration",
+        "guidance_raise",
+        "margin_expansion",
+        "cloud_data_center",
+        "ai_platform_adoption",
+        "ai_accelerator",
+        "memory_pricing_cycle",
+        "memory_bit_growth",
+        "memory_inventory_recovery",
+    }
     if has_number and strong_positive:
         return "HIGH", True, 1.0
     if has_number:
@@ -125,7 +139,25 @@ def fact_quality(fact_type: str, direction: str, snippet: str, role: str) -> tup
 
 def remap_theme(original_theme: str, fact_type: str, snippet: str) -> str:
     lower = snippet.lower()
-    if any(token in lower for token in ["aws", "cloud", "software", "e-commerce", "ecommerce"]):
+    if original_theme == "ai_platform" and any(
+        token in lower
+        for token in ["aws", "azure", "google cloud", "copilot", "gemini", "cloud", "generative ai", "ai services"]
+    ):
+        return "ai_platform"
+    if original_theme == "ai_memory" and any(
+        token in lower
+        for token in ["hbm", "high bandwidth memory", "dram", "nand", "memory", "storage", "ssd", "bit shipments"]
+    ):
+        return "ai_memory"
+    if original_theme == "ai_optical" and any(
+        token in lower for token in ["optical", "transceiver", "coherent", "interconnect", "ethernet", "datacenter"]
+    ):
+        return "ai_optical"
+    if original_theme == "ai_networking" and any(
+        token in lower for token in ["ethernet", "networking", "switch", "fabric", "custom ai", "asic", "hyperscale"]
+    ):
+        return "ai_networking"
+    if any(token in lower for token in ["software", "e-commerce", "ecommerce"]):
         return "technology"
     if any(token in lower for token in ["hbm", "gpu", "ai accelerator", "high bandwidth memory"]):
         return "semis_ai"
@@ -165,14 +197,14 @@ def cache_path_for_url(url: str) -> Path:
     return DOC_CACHE / f"{digest}{suffix}"
 
 
-def fetch_text(url: str, refresh: bool = False, sleep_sec: float = 0.12) -> str:
+def fetch_text(url: str, refresh: bool = False, sleep_sec: float = 0.12, timeout: float = 45.0) -> str:
     DOC_CACHE.mkdir(parents=True, exist_ok=True)
     cache_path = cache_path_for_url(url)
     if cache_path.exists() and not refresh:
         raw = cache_path.read_text(encoding="utf-8", errors="ignore")
     else:
         time.sleep(sleep_sec)
-        resp = requests.get(url, headers=sec_headers(), timeout=45)
+        resp = requests.get(url, headers=sec_headers(), timeout=timeout)
         resp.raise_for_status()
         raw = resp.text
         cache_path.write_text(raw, encoding="utf-8", errors="ignore")
@@ -247,12 +279,16 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def build_rows(args: argparse.Namespace) -> dict[str, Any]:
     source = load_json(args.historical_evidence_json)
+    theme_filter = {item.strip() for item in str(args.themes or "").split(",") if item.strip()}
+    ticker_filter = {item.strip().upper() for item in str(args.tickers or "").split(",") if item.strip()}
     source_rows = [
         row
         for row in source.get("rows", [])
         if row.get("source_path")
         and row.get("evidence_type") in SOURCE_TYPES
         and args.start <= str(row.get("source_date", "")) <= args.end
+        and (not theme_filter or row.get("theme") in theme_filter)
+        and (not ticker_filter or str(row.get("ticker", "")).upper() in ticker_filter)
     ]
     if args.limit > 0:
         source_rows = source_rows[: args.limit]
@@ -262,7 +298,7 @@ def build_rows(args: argparse.Namespace) -> dict[str, Any]:
     for row in source_rows:
         url = str(row.get("source_path", ""))
         try:
-            text = fetch_text(url, refresh=args.refresh_docs, sleep_sec=args.sleep_sec)
+            text = fetch_text(url, refresh=args.refresh_docs, sleep_sec=args.sleep_sec, timeout=args.request_timeout)
             facts = find_facts(text)
         except Exception as exc:
             failures.append(f"{row.get('ticker')}:{row.get('source_date')}:{exc!r}")
@@ -364,21 +400,25 @@ def main() -> int:
     parser.add_argument("--start", default="2012-05-21")
     parser.add_argument("--end", default="2026-05-19")
     parser.add_argument("--limit", type=int, default=0, help="0 means no limit")
+    parser.add_argument("--themes", default="", help="comma-separated theme filter for targeted research runs")
+    parser.add_argument("--tickers", default="", help="comma-separated ticker filter for targeted research runs")
     parser.add_argument("--ttl-days", type=int, default=365)
     parser.add_argument("--actionable-only", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--sleep-sec", type=float, default=0.12)
+    parser.add_argument("--request-timeout", type=float, default=45.0)
     parser.add_argument("--refresh-docs", action="store_true")
     parser.add_argument("--sync-desktop", action="store_true")
+    parser.add_argument("--output-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args()
 
     payload = build_rows(args)
     md = render_md(payload)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     json_text = json.dumps(payload, ensure_ascii=False, indent=2)
-    (OUT_DIR / "latest.json").write_text(json_text, encoding="utf-8")
-    (OUT_DIR / "latest.md").write_text(md, encoding="utf-8")
-    pd.DataFrame(payload["rows"]).to_csv(OUT_DIR / "latest.csv", index=False)
+    (args.output_dir / "latest.json").write_text(json_text, encoding="utf-8")
+    (args.output_dir / "latest.md").write_text(md, encoding="utf-8")
+    pd.DataFrame(payload["rows"]).to_csv(args.output_dir / "latest.csv", index=False)
     if args.sync_desktop:
         (REPORT_ROOT / "V6AB_Event_Fact_Ledger_LATEST.json").write_text(json_text, encoding="utf-8")
         (REPORT_ROOT / "V6AB_Event_Fact_Ledger_LATEST.md").write_text(md, encoding="utf-8")

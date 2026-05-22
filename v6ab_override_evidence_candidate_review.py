@@ -25,7 +25,11 @@ ACTIONABLE_TYPES = {
     "event_fact_orders_backlog",
     "event_fact_capex_capacity",
     "event_fact_cloud_data_center",
+    "event_fact_ai_platform_adoption",
     "event_fact_ai_accelerator",
+    "event_fact_memory_pricing_cycle",
+    "event_fact_memory_bit_growth",
+    "event_fact_memory_inventory_recovery",
 }
 NEGATIVE_TYPES = {
     "event_fact_inventory_correction",
