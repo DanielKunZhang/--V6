@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-22 12:46:57`
+- Last updated: `2026-05-22 13:05:46`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1076,3 +1076,4 @@ dc58870 feat: add V6 daily report automation
 - [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。当前最强研究候选仍是 `pit_tier_turnover_guarded_v6ab_dynamic_b`：年化约 +31.93%、maxDD -15.68%、Sharpe 1.24、2020 +30.51%、2024-2026 +60.09%，但 active rebalances=29<30 且 OVERRIDE=0，不能晋级。下一步优先做 fact precision / historical mainline mapping，而不是继续叠加低收益风控规则。
 - [代码] Daily email 降噪已完成并提交 `4a868be fix: reduce daily workflow email noise`：13F 系统输入默认只显示 3 天内到期项且固定为 MED，估值路由只跟随 3 天内事件，不再因为远期横向比较/近期研究文件把 CEG/DUK/ETN/GEV/SO/VST/XEL 等推到 Today's HIGH；早间简报 HTML/文本只把 HIGH 放在“必须处理”，MED/LOW 放入“建议准备/研究队列”；Central Risk Board 的 Today's Workflow Actions 也只展示 HIGH。验证今天从 24 条噪音任务收敛为 2 条必须处理：PDD 日志遗留、GOOGL AI Search thesis watch。
 - [代码] V6AB Historical Mainline Gap Review 已实现并接入 daily evolution，提交 `b4ad272 feat: add V6AB historical mainline gap review`。新增 `v6ab_historical_mainline_gap_review.py`，只做诊断，不改交易规则：从 PIT guarded vs V2 月度 attribution 中定位负贡献月份里 V2 被挤掉的主题和 PIT 替换进去的主题。最新结果：guarded active months 28，negative 15，negative sum -40.08%；负贡献最集中在 missed V2 themes：`technology` 7次 / -23.98%，`precious_metals` 4次 / -17.87%；added guarded 负贡献集中在 `ai_platform` -21.99%、`ai_memory` -11.50%、`ai_optical` -9.09%。结论：下一步应优先补 2020/2023/2024/2026 相关的 technology / precious_metals / defensive-or-commodity 历史主线证据和映射，而不是继续简单给 AI BOOST 加风控。
+- [代码] V6AB Theme Mapping Experiment 已实现并接入 daily evolution，提交 `7f1f325 feat: test V6AB historical theme mapping`。新增 `v6ab_theme_mapping_experiment.py`，离线测试“AI 子主题证据不足时回到父主题”的候选映射，不改正式 classifier/PIT replay/模拟盘。结果：`ai_child_low_fact_to_parent` 年化 +32.00%，较 guarded +0.07pp，Sharpe +0.00，2020 相对 V2 优势从 +0.92pp 提升到 +1.83pp，active 29，changed snapshots 4；但提升低于晋级阈值，decision=`NO_THEME_MAPPING_PROMOTION`。结论：方向有效但证据不足，保留为 WATCH/研究候选；下一步应把它和更完整的 historical evidence/fact precision 合并验证，而不是单独晋级。
