@@ -50,6 +50,8 @@ def build_tilt_snapshots(
     snapshots: list[dict[str, Any]],
     candidates: list[dict[str, Any]],
     rebalance_dates: list[pd.Timestamp],
+    *,
+    overlap_policy: str = "allow_child",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     by_effective: dict[str, list[dict[str, Any]]] = {}
     for row in candidates:
@@ -72,21 +74,33 @@ def build_tilt_snapshots(
 
         children = sorted({str(row.get("child_theme")) for row in rows if row.get("child_theme")})
         parents = sorted({str(row.get("parent_theme")) for row in rows if row.get("parent_theme")})
-        tilt_allowlist = sorted(set(children) | set(parents))
+        suppressed_children: set[str] = set()
+        if overlap_policy == "parent_only_on_proxy_overlap":
+            for row in rows:
+                child = str(row.get("child_theme", ""))
+                parent = str(row.get("parent_theme", ""))
+                if child and parent and set(theme_proxies(child)) & set(theme_proxies(parent)):
+                    suppressed_children.add(child)
+        active_children = [child for child in children if child not in suppressed_children]
+        tilt_allowlist = sorted(set(active_children) | set(parents))
         item["override_allowlist"] = []
         item["boost_allowlist"] = sorted(set(item.get("boost_allowlist", [])) | set(tilt_allowlist))
         item["theme_allowlist"] = sorted(set(item.get("theme_allowlist", [])) | set(tilt_allowlist))
         item["fallback_to_v2"] = False
         item["parent_child_tilt_research_only"] = True
+        item["parent_child_tilt_overlap_policy"] = overlap_policy
 
         for row in rows:
+            child_theme = str(row.get("child_theme", ""))
             applied.append(
                 {
                     "asof": row.get("asof"),
                     "effective_trade_date": effective,
-                    "child_theme": row.get("child_theme"),
+                    "child_theme": child_theme,
                     "parent_theme": row.get("parent_theme"),
-                    "tilt_allowlist": sorted({str(row.get("child_theme")), str(row.get("parent_theme"))}),
+                    "tilt_allowlist": sorted(set(tilt_allowlist)),
+                    "overlap_policy": overlap_policy,
+                    "child_suppressed_by_overlap_guard": child_theme in suppressed_children,
                     "market_advantage": row.get("market_advantage"),
                     "quality_score_advantage": row.get("quality_score_advantage"),
                     "actionable_rows": row.get("child", {}).get("actionable_rows", 0),
@@ -219,11 +233,15 @@ def decision_for_payload(rows: list[dict[str, Any]], month_rows: list[dict[str, 
     base = by_name.get("baseline_v2_v6ab_dynamic_b", {})
     original = by_name.get("original_pit_guarded_v6ab_dynamic_b", {})
     tilt = by_name.get("parent_child_tilt_guarded_v6ab_dynamic_b", {})
+    overlap_guarded = by_name.get("overlap_guarded_tilt_v6ab_dynamic_b", {})
     base_stats = base.get("stats", {})
     original_stats = original.get("stats", {})
     tilt_stats = tilt.get("stats", {})
+    overlap_guarded_stats = overlap_guarded.get("stats", {})
     ann_delta_vs_v2 = float(tilt_stats.get("ann_ret", 0.0) or 0.0) - float(base_stats.get("ann_ret", 0.0) or 0.0)
     ann_delta_vs_original = float(tilt_stats.get("ann_ret", 0.0) or 0.0) - float(original_stats.get("ann_ret", 0.0) or 0.0)
+    overlap_ann_delta_vs_v2 = float(overlap_guarded_stats.get("ann_ret", 0.0) or 0.0) - float(base_stats.get("ann_ret", 0.0) or 0.0)
+    overlap_ann_delta_vs_original = float(overlap_guarded_stats.get("ann_ret", 0.0) or 0.0) - float(original_stats.get("ann_ret", 0.0) or 0.0)
     sharpe_delta_vs_v2 = float(tilt_stats.get("sharpe", 0.0) or 0.0) - float(base_stats.get("sharpe", 0.0) or 0.0)
     maxdd_delta_vs_v2 = float(tilt_stats.get("max_dd", 0.0) or 0.0) - float(base_stats.get("max_dd", 0.0) or 0.0)
     bad_months = [row for row in month_rows if float(row.get("tilt_minus_v2", 0.0) or 0.0) < -0.02]
@@ -243,6 +261,8 @@ def decision_for_payload(rows: list[dict[str, Any]], month_rows: list[dict[str, 
         "action": action,
         "ann_delta_vs_v2": ann_delta_vs_v2,
         "ann_delta_vs_original_pit": ann_delta_vs_original,
+        "overlap_guarded_ann_delta_vs_v2": overlap_ann_delta_vs_v2,
+        "overlap_guarded_ann_delta_vs_original_pit": overlap_ann_delta_vs_original,
         "sharpe_delta_vs_v2": sharpe_delta_vs_v2,
         "maxdd_delta_vs_v2": maxdd_delta_vs_v2,
         "active_tilt_months": len(month_rows),
@@ -259,6 +279,7 @@ def render_md(payload: dict[str, Any]) -> str:
         "- 模拟盘动作：`NO_CHANGE`。",
         "- 目的：验证 evidence-approved 子主题是否适合作为父主题旁边的倾斜，而不是 hard override。",
         f"- 决策：`{payload['decision']['tier']}` — {payload['decision']['action']}",
+        f"- overlap guard：ann vs V2 `{fmt_pct(payload['decision'].get('overlap_guarded_ann_delta_vs_v2'))}`，ann vs original PIT `{fmt_pct(payload['decision'].get('overlap_guarded_ann_delta_vs_original_pit'))}`。",
         "",
         "## Results",
         "",
@@ -302,6 +323,35 @@ def render_md(payload: dict[str, Any]) -> str:
             f"`{row.get('review_reason')}` | `{flags}` | {risk} | {row.get('tilt_selected', '')} |"
         )
 
+    overlap_rows = payload.get("overlap_guarded_month_review", [])
+    if overlap_rows:
+        lines += [
+            "",
+            "## Overlap Guard Month Review",
+            "",
+            "| trade date | policy | v2 next | original PIT next | guarded next | vs V2 | flags | risky exp V2/PIT/guarded | selected |",
+            "| --- | --- | ---: | ---: | ---: | ---: | --- | ---: | --- |",
+        ]
+        for row in overlap_rows:
+            policies = ", ".join(
+                str(item.get("overlap_policy", ""))
+                for item in row.get("applied_tilts", [])
+            )
+            suppressed = any(bool(item.get("child_suppressed_by_overlap_guard")) for item in row.get("applied_tilts", []))
+            flags = ", ".join(row.get("expression_flags", [])) or "-"
+            if suppressed:
+                flags = f"{flags}, child_suppressed_by_overlap_guard" if flags != "-" else "child_suppressed_by_overlap_guard"
+            risk = (
+                f"{float(row.get('v2_risky_exposure', 0.0) or 0.0):.0%}/"
+                f"{float(row.get('original_guarded_risky_exposure', 0.0) or 0.0):.0%}/"
+                f"{float(row.get('tilt_risky_exposure', 0.0) or 0.0):.0%}"
+            )
+            lines.append(
+                f"| `{row['date']}` | `{policies}` | {fmt_pct(row.get('v2_next_ret'))} | "
+                f"{fmt_pct(row.get('original_guarded_next_ret'))} | {fmt_pct(row.get('tilt_next_ret'))} | "
+                f"{fmt_pct(row.get('tilt_minus_v2'))} | `{flags}` | {risk} | {row.get('tilt_selected', '')} |"
+            )
+
     lines += [
         "",
         "## Interpretation",
@@ -336,6 +386,12 @@ def main() -> int:
     prices = bt.build_price_matrix(pit_bridge.required_tickers_for_replay(snapshots), args.start, args.end).ffill(limit=3)
     rebalance_dates = [dt for dt in bt.month_end_dates(prices.index) if dt in prices.index]
     tilt_snapshots, applied = build_tilt_snapshots(snapshots, candidates, rebalance_dates)
+    overlap_guarded_snapshots, overlap_guarded_applied = build_tilt_snapshots(
+        snapshots,
+        candidates,
+        rebalance_dates,
+        overlap_policy="parent_only_on_proxy_overlap",
+    )
 
     baseline_eq, baseline_decisions = bridge.run_v6b(prices, bridge.BASELINE_CONFIG)
     original_guarded_eq, original_guarded_decisions = pit_bridge.run_pit_v6b(
@@ -350,25 +406,37 @@ def main() -> int:
         bridge.BASELINE_CONFIG,
         mode="tier_turnover_guarded",
     )
-    curves = override_bt.build_curves(
+    overlap_guarded_eq, overlap_guarded_decisions = pit_bridge.run_pit_v6b(
         prices,
-        args.v6a_daily,
-        baseline_eq,
-        original_guarded_eq,
-        tilt_eq,
-        tilt_eq,
+        overlap_guarded_snapshots,
+        bridge.BASELINE_CONFIG,
+        mode="tier_turnover_guarded",
     )
+    curves = {
+        "V6A": override_bt.load_v6a_composite(args.v6a_daily),
+        "baseline_v2": baseline_eq,
+        "original_pit_guarded": original_guarded_eq,
+        "parent_child_tilt_guarded": tilt_eq,
+        "overlap_guarded_tilt": overlap_guarded_eq,
+        "GLD": override_bt.benchmark_equity(prices, "US.GLD"),
+        "BIL": override_bt.benchmark_equity(prices, "US.BIL"),
+        "SPY": override_bt.benchmark_equity(prices, "US.SPY"),
+        "QQQ": override_bt.benchmark_equity(prices, "US.QQQ"),
+    }
     baseline_v6ab, _ = override_bt.run_v6ab(curves, "baseline_v2", args.start, args.end)
     original_v6ab, _ = override_bt.run_v6ab(curves, "original_pit_guarded", args.start, args.end)
-    tilt_v6ab, _ = override_bt.run_v6ab(curves, "override_candidate_guarded", args.start, args.end)
+    tilt_v6ab, _ = override_bt.run_v6ab(curves, "parent_child_tilt_guarded", args.start, args.end)
+    overlap_guarded_v6ab, _ = override_bt.run_v6ab(curves, "overlap_guarded_tilt", args.start, args.end)
 
     rows = [
         row_for("baseline_v2_standalone_v6b", baseline_eq, baseline_decisions, args),
         row_for("original_pit_guarded_standalone_v6b", original_guarded_eq, original_guarded_decisions, args),
         row_for("parent_child_tilt_guarded_standalone_v6b", tilt_eq, tilt_decisions, args),
+        row_for("overlap_guarded_tilt_standalone_v6b", overlap_guarded_eq, overlap_guarded_decisions, args),
         row_for("baseline_v2_v6ab_dynamic_b", baseline_v6ab, [], args),
         row_for("original_pit_guarded_v6ab_dynamic_b", original_v6ab, original_guarded_decisions, args),
         row_for("parent_child_tilt_guarded_v6ab_dynamic_b", tilt_v6ab, tilt_decisions, args),
+        row_for("overlap_guarded_tilt_v6ab_dynamic_b", overlap_guarded_v6ab, overlap_guarded_decisions, args),
     ]
     month_review = build_month_review(
         baseline_eq,
@@ -379,6 +447,15 @@ def main() -> int:
         tilt_decisions,
         applied,
     )
+    overlap_guarded_month_review = build_month_review(
+        baseline_eq,
+        original_guarded_eq,
+        overlap_guarded_eq,
+        baseline_decisions,
+        original_guarded_decisions,
+        overlap_guarded_decisions,
+        overlap_guarded_applied,
+    )
     payload = {
         "asof": args.asof,
         "start": args.start,
@@ -387,8 +464,10 @@ def main() -> int:
         "override_review_json": str(args.override_review_json),
         "candidate_count": len(candidates),
         "applied_tilts": applied,
+        "overlap_guarded_applied_tilts": overlap_guarded_applied,
         "rows": rows,
         "month_review": month_review,
+        "overlap_guarded_month_review": overlap_guarded_month_review,
         "decision": decision_for_payload(rows, month_review),
     }
     md = render_md(payload)

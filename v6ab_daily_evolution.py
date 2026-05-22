@@ -219,7 +219,7 @@ def render_daily_report(
         f"- Override evidence review：override_candidates={override_evidence_counts.get('OVERRIDE_EVIDENCE_CANDIDATE', 0)}，watch={override_evidence_counts.get('WATCH_OVERRIDE_EVIDENCE', 0)}，metadata_reject={override_evidence_counts.get('METADATA_HEAVY_REJECT', 0)}",
         f"- Override evidence gap：P0={override_gap_counts.get('P0_HARVEST_AND_FACT_RULE_REVIEW', 0)}，P1={override_gap_counts.get('P1_FACT_PRECISION_REVIEW', 0)}，P2={override_gap_counts.get('P2_COVERAGE_REVIEW', 0)}",
         f"- Override candidate backtest：decision=`{override_candidate_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(override_candidate_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，quality flags={override_candidate_decision.get('quality_flagged_overrides', 0)}",
-        f"- Parent+child tilt：decision=`{parent_child_tilt_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(parent_child_tilt_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，bad months={parent_child_tilt_decision.get('bad_months', 0)}",
+        f"- Parent+child tilt：decision=`{parent_child_tilt_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(parent_child_tilt_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，overlap guard ann vs V2={float(parent_child_tilt_decision.get('overlap_guarded_ann_delta_vs_v2', 0.0) or 0.0):+.2%}，bad months={parent_child_tilt_decision.get('bad_months', 0)}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -437,6 +437,7 @@ def render_daily_report(
             "baseline_v2_v6ab_dynamic_b",
             "original_pit_guarded_v6ab_dynamic_b",
             "parent_child_tilt_guarded_v6ab_dynamic_b",
+            "overlap_guarded_tilt_v6ab_dynamic_b",
         }:
             continue
         stats = row.get("stats", {})
