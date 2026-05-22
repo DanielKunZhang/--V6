@@ -81,6 +81,13 @@ POSITIVE_REJECT_CONTEXT = [
     "processed and delivered orders",
     "not be sustainable",
     "decrease",
+    "fair use",
+    "copyright",
+    "lawsuit",
+    "litigation",
+    "motions for summary judgment",
+    "legal proceeding",
+    "regulatory proceeding",
 ]
 GENERIC_CONTEXT = [
     "table of contents",
