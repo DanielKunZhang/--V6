@@ -356,7 +356,7 @@ def collect_13f_learning_window(today: date | None = None) -> dict:
     return {"active": False}
 
 
-def collect_13f_system_actions(today: date | None = None, days_ahead: int = 14) -> list[dict[str, Any]]:
+def collect_13f_system_actions(today: date | None = None, days_ahead: int = 3) -> list[dict[str, Any]]:
     """Read machine-readable 13F outputs and return actionable system tasks.
 
     These are not trade signals. They are Radar/V6-B/valuation tasks created
@@ -384,7 +384,7 @@ def collect_13f_system_actions(today: date | None = None, days_ahead: int = 14) 
             v6b_candidates.append({**row, "ticker_short": ticker})
             continue
         actions.append({
-            "priority": "HIGH" if row.get("priority") == "P0" and days <= 3 else "MED",
+            "priority": "MED",
             "ticker": ticker,
             "item": f"{ticker} 13F系统输入：{row.get('system_effect', '')}",
             "trigger": f"复盘 {ticker}",
@@ -593,15 +593,16 @@ def collect_valuation_sop_actions(today: date, events: list[dict]) -> list[dict]
     known = _known_valuation_tickers()
     active_tickers: set[str] = set()
     for event in events:
+        if int(event.get("_days", 999)) > 3:
+            continue
         active_tickers.update(_extract_known_tickers(f"{event.get('text', '')} {event.get('action', '')}", known))
-    active_tickers.update(_recent_research_tickers(today, known))
 
     actions: list[dict] = []
     for ticker in sorted(active_tickers):
         selected = router.select_framework(ticker, [], config)
         framework_key = selected.get("framework_key", "SOP_v2.5")
         framework_name = selected.get("framework_name", framework_key)
-        priority = "HIGH" if framework_key == "AI_Infrastructure_SOP_v2.7" else "MED"
+        priority = "MED"
         actions.append({
             "priority": priority,
             "item": f"{ticker} 估值体系自动选择：{framework_name}",
@@ -962,8 +963,11 @@ def _workflow_actions_html(actions: list[dict]) -> str:
 
     color = {"HIGH": "#e74c3c", "MED": "#f39c12", "LOW": "#3498db"}
     label = {"HIGH": "必须处理", "MED": "建议准备", "LOW": "可选"}
+    must_actions = [a for a in actions if a.get("priority") == "HIGH"]
+    suggested_actions = [a for a in actions if a.get("priority") == "MED"]
+    optional_actions = [a for a in actions if a.get("priority") == "LOW"]
     rows = ""
-    for a in actions:
+    for a in must_actions[:5]:
         c = color.get(a["priority"], "#888")
         rows += (
             "<tr>"
@@ -975,6 +979,25 @@ def _workflow_actions_html(actions: list[dict]) -> str:
             f"<code>{a['trigger']}</code></td>"
             "</tr>"
         )
+    if not rows:
+        rows = (
+            "<tr><td colspan=\"3\" style=\"padding:6px;color:#666\">"
+            "今日无必须动作。默认策略：等待，不主动增加系统复杂度。</td></tr>"
+        )
+    optional_html = ""
+    queue_actions = suggested_actions + optional_actions
+    if queue_actions:
+        optional_items = "".join(
+            f"<li style=\"margin:2px 0\">[{a['domain']}] {a['item']} "
+            f"<code>{a['trigger']}</code></li>"
+            for a in queue_actions[:8]
+        )
+        optional_html = (
+            "<div style=\"margin-top:8px;color:#666;font-size:12px\">"
+            "<b>建议准备/研究队列：</b>"
+            f"<ul style=\"margin:4px 0 0 16px;padding:0\">{optional_items}</ul>"
+            "</div>"
+        )
     return (
         "<table style=\"width:100%;font-size:13px;border-collapse:collapse\">"
         "<tr style=\"background:#f5f5f5\">"
@@ -983,6 +1006,7 @@ def _workflow_actions_html(actions: list[dict]) -> str:
         "<th style=\"padding:4px 6px;text-align:left;width:120px\">你对AI说</th>"
         "</tr>"
         f"{rows}</table>"
+        f"{optional_html}"
         "<p style=\"margin:6px 0 0;font-size:11px;color:#999\">"
         "原则：先分析，再归档；主仓走财报重估/估值更新，Radar走样本复盘。</p>"
     )
@@ -1145,7 +1169,19 @@ def build_plain(
 
     lines += ["🎯 [今日动作清单]"]
     if workflow_actions:
-        for a in workflow_actions:
+        must_actions = [a for a in workflow_actions if a.get("priority") == "HIGH"]
+        queue_actions = [a for a in workflow_actions if a.get("priority") != "HIGH"]
+        if must_actions:
+            lines.append("   必须处理：")
+            for a in must_actions[:5]:
+                lines.append(
+                    f"   HIGH [{a['domain']}] {a['item']} → 对AI说：{a['trigger']}"
+                )
+        else:
+            lines.append("   ✅ 今日无必须动作。默认策略：等待。")
+        if queue_actions:
+            lines.append("   建议准备/研究队列：")
+        for a in queue_actions[:8]:
             lines.append(
                 f"   {a['priority']:<4} [{a['domain']}] {a['item']} → 对AI说：{a['trigger']}"
             )

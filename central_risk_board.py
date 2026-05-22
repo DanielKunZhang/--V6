@@ -861,6 +861,8 @@ def build_todo_display_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 def build_workflow_action_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for row in payload.get("workflow_actions", []) or []:
+        if str(row.get("priority", "")) != "HIGH":
+            continue
         rows.append(
             {
                 "priority": str(row.get("priority", "")),
