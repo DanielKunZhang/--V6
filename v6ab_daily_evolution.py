@@ -458,13 +458,19 @@ def render_daily_report(
             "",
             "### Parent + Child Tilt 月度复盘",
             "",
-            "| date | review | vs V2 | selected |",
-            "| --- | --- | ---: | --- |",
+            "| date | review | vs V2 | flags | risky exp V2/PIT/tilt | selected |",
+            "| --- | --- | ---: | --- | ---: | --- |",
         ]
         for row in month_review[:8]:
+            flags = ", ".join(row.get("expression_flags", [])) or "-"
+            risk = (
+                f"{float(row.get('v2_risky_exposure', 0.0) or 0.0):.0%}/"
+                f"{float(row.get('original_guarded_risky_exposure', 0.0) or 0.0):.0%}/"
+                f"{float(row.get('tilt_risky_exposure', 0.0) or 0.0):.0%}"
+            )
             lines.append(
                 f"| `{row.get('date')}` | `{row.get('review_reason')}` | "
-                f"{float(row.get('tilt_minus_v2', 0.0) or 0.0):+.2%} | {row.get('tilt_selected', '')} |"
+                f"{float(row.get('tilt_minus_v2', 0.0) or 0.0):+.2%} | `{flags}` | {risk} | {row.get('tilt_selected', '')} |"
             )
     lines += [
         "",

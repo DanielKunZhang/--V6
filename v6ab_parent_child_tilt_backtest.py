@@ -140,7 +140,17 @@ def build_month_review(
         b = float(baseline_rets.get(raw_date, 0.0))
         o = float(original_rets.get(raw_date, 0.0))
         t = float(tilt_rets.get(raw_date, 0.0))
+        baseline_row = baseline_by_date.get(raw_date, {})
+        original_row = original_by_date.get(raw_date, {})
         tilt_row = tilt_by_date.get(raw_date, {})
+        applied_tilts = applied_by_effective.get(raw_date, [])
+        v2_weights = dict(baseline_row.get("weights", {}))
+        original_weights = dict(original_row.get("weights", {}))
+        tilt_weights = dict(tilt_row.get("weights", {}))
+        v2_risky = risky_exposure(v2_weights)
+        original_risky = risky_exposure(original_weights)
+        tilt_risky = risky_exposure(tilt_weights)
+        proxy_overlap = has_parent_child_proxy_overlap(applied_tilts)
         reason = "MAINLINE_AND_EXPRESSION_OK"
         if t - b < -0.02:
             reason = "TILT_HURT_V2"
@@ -148,25 +158,60 @@ def build_month_review(
             reason = "TILT_HURT_ORIGINAL_PIT"
         elif t > max(b, o):
             reason = "TILT_HELPED"
+        expression_flags = []
+        if proxy_overlap:
+            expression_flags.append("child_parent_proxy_overlap")
+        if tilt_risky > original_risky + 0.05:
+            expression_flags.append("tilt_increased_risky_exposure")
+        if t - b < -0.02 and proxy_overlap:
+            expression_flags.append("duplicate_proxy_tilt_hurt")
         rows.append(
             {
                 "date": raw_date,
                 "pit_asof": tilt_row.get("pit_asof", raw_date),
-                "applied_tilts": applied_by_effective.get(raw_date, []),
+                "applied_tilts": applied_tilts,
                 "v2_next_ret": b,
                 "original_guarded_next_ret": o,
                 "tilt_next_ret": t,
                 "tilt_minus_v2": t - b,
                 "tilt_minus_original_guarded": t - o,
                 "review_reason": reason,
-                "v2_selected": selected_theme_labels(baseline_by_date.get(raw_date, {})),
-                "original_guarded_selected": selected_theme_labels(original_by_date.get(raw_date, {})),
+                "expression_flags": expression_flags,
+                "v2_risky_exposure": v2_risky,
+                "original_guarded_risky_exposure": original_risky,
+                "tilt_risky_exposure": tilt_risky,
+                "v2_weights": v2_weights,
+                "original_guarded_weights": original_weights,
+                "tilt_weights": tilt_weights,
+                "v2_selected": selected_theme_labels(baseline_row),
+                "original_guarded_selected": selected_theme_labels(original_row),
                 "tilt_selected": selected_theme_labels(tilt_by_date.get(raw_date, {})),
                 "tilt_turnover": tilt_row.get("turnover", 0.0),
                 "tilt_guard_reason": tilt_row.get("pit_guard_reason", ""),
             }
         )
     return rows
+
+
+def risky_exposure(weights: dict[str, float]) -> float:
+    return float(sum(float(weight) for ticker, weight in weights.items() if ticker not in {"CASH", "US.BIL"}))
+
+
+def theme_proxies(theme_id: str) -> list[str]:
+    theme = bt.THEMES.get(theme_id, {})
+    proxies = list(theme.get("proxies", []))
+    if proxies:
+        return proxies
+    return list(bridge.THEME_PROXY_FALLBACKS.get(theme_id, []))
+
+
+def has_parent_child_proxy_overlap(applied_tilts: list[dict[str, Any]]) -> bool:
+    for item in applied_tilts:
+        child = str(item.get("child_theme", ""))
+        parent = str(item.get("parent_theme", ""))
+        if child and parent and set(theme_proxies(child)) & set(theme_proxies(parent)):
+            return True
+    return False
 
 
 def decision_for_payload(rows: list[dict[str, Any]], month_rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -236,19 +281,25 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Tilt Month Review",
         "",
-        "| trade date | pit asof | tilt | v2 next | original PIT next | tilt next | vs V2 | vs original | review | selected |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+        "| trade date | pit asof | tilt | v2 next | original PIT next | tilt next | vs V2 | vs original | review | flags | risky exp V2/PIT/tilt | selected |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | --- |",
     ]
     for row in payload.get("month_review", []):
         tilts = ", ".join(
             f"{item.get('child_theme')}+{item.get('parent_theme')}"
             for item in row.get("applied_tilts", [])
         )
+        flags = ", ".join(row.get("expression_flags", [])) or "-"
+        risk = (
+            f"{float(row.get('v2_risky_exposure', 0.0) or 0.0):.0%}/"
+            f"{float(row.get('original_guarded_risky_exposure', 0.0) or 0.0):.0%}/"
+            f"{float(row.get('tilt_risky_exposure', 0.0) or 0.0):.0%}"
+        )
         lines.append(
             f"| `{row['date']}` | `{row.get('pit_asof')}` | `{tilts}` | {fmt_pct(row.get('v2_next_ret'))} | "
             f"{fmt_pct(row.get('original_guarded_next_ret'))} | {fmt_pct(row.get('tilt_next_ret'))} | "
             f"{fmt_pct(row.get('tilt_minus_v2'))} | {fmt_pct(row.get('tilt_minus_original_guarded'))} | "
-            f"`{row.get('review_reason')}` | {row.get('tilt_selected', '')} |"
+            f"`{row.get('review_reason')}` | `{flags}` | {risk} | {row.get('tilt_selected', '')} |"
         )
 
     lines += [
