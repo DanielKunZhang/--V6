@@ -258,3 +258,13 @@
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。
+
+---
+
+## 2026-05-22
+
+### GPT
+
+- [工作] V6AB 吸收 AAOI/短线报告中可迁移的“事实精度、入场质量、拥挤/赔率风险”思路，但严格保持研究层：已提交 `b7aec3e feat: attribute V6AB boost risk skill`，将 risk skill 指标接入 BOOST failure review、risk skill gate experiment 和 daily report。完整 daily 通过。结论：硬门槛不晋级，最佳 `top3_quality_limit_entry50_fact20` 仅比 guarded 多约 +0.04% 年化，只能 WATCH/诊断，不改变模拟盘。
+- [工作] 新增 `v6ab_signal_sizing_experiment.py` 并接入 daily report，已提交 `00c4f5b feat: test V6AB signal quality sizing`。该实验只测试“低 fact precision / 低 entry quality 时降低 PIT B sleeve 表达强度”，不改 classifier、不改 allowlist、不动模拟盘。结果：`cap_low_fact_or_entry_half` 年化 +31.30%，较 guarded -0.64pp；`cap_quality_risk_ladder` +30.65%，较 guarded -1.29pp；`cap_no_entry_edge_to_low` +30.61%，较 guarded -1.33pp。结论：当前瓶颈不是简单降仓/风控能解决，而是 historical evidence、fact precision 和主题映射质量仍需提升。
+- [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。当前最强研究候选仍是 `pit_tier_turnover_guarded_v6ab_dynamic_b`：年化约 +31.93%、maxDD -15.68%、Sharpe 1.24、2020 +30.51%、2024-2026 +60.09%，但 active rebalances=29<30 且 OVERRIDE=0，不能晋级。下一步优先做 fact precision / historical mainline mapping，而不是继续叠加低收益风控规则。

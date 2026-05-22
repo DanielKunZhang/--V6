@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-21 23:51:54`
+- Last updated: `2026-05-22 12:24:03`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1032,19 +1032,6 @@ dc58870 feat: add V6 daily report automation
 
 ## 最近协作日志
 
-## 2026-05-20
-
-### GPT
-
-- [11:07] [决策] 2026-05-20 冷启动口径修正：README_CURRENT.md 不再把旧 Iron Condor 写作生产系统；当前统一为 Daily Board / Central Risk Board、V6-A 小额人工 pilot、V6-B research/SIM、A股Radar Phase 1A、Value Wheel analyze-only、V3/IC legacy paused。所有模块必须服从统一目标：在不牺牲长期安全性的前提下相对安全地快速增长资本。
-- [11:10] [代码] 补齐 2026-05-19 X Radar Daily 的 High 后续动作：GOOGL Google Search AI化已从日报正文落到 x_radar_signal_trial.csv、investment_screener/watchlist.json notes 和 events_calendar 2026-05-22 复盘事件；AI infra 13F long + semi put 对冲此前已在 13F 学习中落到 institutional_hedge_signal / crowding_penalty / reflexivity_score / macro_regime_fit / position_role 字段与 6月1日 V6-B/Radar 刷新清单。
-- [11:23] [代码] 把13F学习从文档升级为系统输入：新增 us_radar_13f_system_input_seed.csv 和 us_radar_13f_system_input.py，生成 backtest_results/us_radar_13f_system_input/latest.{json,csv,md} 并同步桌面 LATEST；morning_brief.py 已读取 13F 系统输入，将 GOOGL/IREN/NVDA 等 P0 动作和 6月1日 V6-B候选刷新推入 Daily Board。13F仍禁止直接买卖，只用于候选质量、风险控制、反身性和研究优先级。
-- [11:41] [代码] 建立估值体系自动路由：v2.5用于传统/普通质量股，AI-Core v2.6用于AI平台/软件/半导体，AI Infrastructure v2.7用于NEE等AI电力/数据中心/电网/矿转算力；morning_brief已接入路由动作，NEE会以HIGH提示走v2.7，估值结果必须回写watchlist/radar_order_valuation_seed/events_calendar等系统入口。
-- [11:54] [代码] 完成NEE AI Infrastructure SOP v2.7估值：V_floor 62-70，V_base 78-88，V_AI_infra_option 6-12，risk-adjusted value 84-96，Bull 105-120；当前约89-91，结论FAIR_BUT_NEEDS_PULLBACK / Research P1 / 不买正股。已回写radar_order_valuation_seed、screener/watchlist和events_calendar，后续跟踪Dominion审批、large-load tariff、rate base/capex recovery及横向比较CEG/VST/GEV/ETN/XEL/SO/DUK。
-- [12:20] [代码] OpenD历史K线额度恢复后按低消耗顺序推进：第一批仅补ANET/TSM/MU/AMD/AAOI/ASX/LITE到2026-05-19；同时补齐V6-A最小核心池AMZN/AVGO/GOOGL/META/MSFT/NVDA/BIL/GLD/SPY/QQQ到2026-05-19，刷新V6-A deterministic replay并解除signal_freshness stale blocker，新plan-only release gate PASS；Radar主线扫描显示AI算力与数据中心/二阶扩散、missing cache=0，Missing Review coverage gaps=0但critical misses=4（NOK/MRVL/COHR/AAOI）。未执行交易，未做泛化全量回测。
-
----
-
 ## 2026-05-21
 
 ### GPT
@@ -1077,3 +1064,13 @@ dc58870 feat: add V6 daily report automation
 ### Claude
 
 - [11:53] [发现] 统一早间邮件链路：central_risk_board.py 已接入 morning_brief 的今日动作清单和 stale-data workflow，邮件 HTML/MD 新增 Today's Workflow Actions 与 Open Todos；morning_brief launchd plist 已改为 --no-email，只生成内部文件不再单独发第二封。当前工具会话为 root/非登录GUI域，launchctl 用户域重载未成功，但 plist 语法验证 OK。
+
+---
+
+## 2026-05-22
+
+### GPT
+
+- [工作] V6AB 吸收 AAOI/短线报告中可迁移的“事实精度、入场质量、拥挤/赔率风险”思路，但严格保持研究层：已提交 `b7aec3e feat: attribute V6AB boost risk skill`，将 risk skill 指标接入 BOOST failure review、risk skill gate experiment 和 daily report。完整 daily 通过。结论：硬门槛不晋级，最佳 `top3_quality_limit_entry50_fact20` 仅比 guarded 多约 +0.04% 年化，只能 WATCH/诊断，不改变模拟盘。
+- [工作] 新增 `v6ab_signal_sizing_experiment.py` 并接入 daily report，已提交 `00c4f5b feat: test V6AB signal quality sizing`。该实验只测试“低 fact precision / 低 entry quality 时降低 PIT B sleeve 表达强度”，不改 classifier、不改 allowlist、不动模拟盘。结果：`cap_low_fact_or_entry_half` 年化 +31.30%，较 guarded -0.64pp；`cap_quality_risk_ladder` +30.65%，较 guarded -1.29pp；`cap_no_entry_edge_to_low` +30.61%，较 guarded -1.33pp。结论：当前瓶颈不是简单降仓/风控能解决，而是 historical evidence、fact precision 和主题映射质量仍需提升。
+- [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。当前最强研究候选仍是 `pit_tier_turnover_guarded_v6ab_dynamic_b`：年化约 +31.93%、maxDD -15.68%、Sharpe 1.24、2020 +30.51%、2024-2026 +60.09%，但 active rebalances=29<30 且 OVERRIDE=0，不能晋级。下一步优先做 fact precision / historical mainline mapping，而不是继续叠加低收益风控规则。
