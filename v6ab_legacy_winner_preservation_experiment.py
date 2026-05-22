@@ -71,6 +71,8 @@ def should_preserve_baseline(
     snap: dict[str, Any],
     baseline_rows: list[dict[str, Any]],
     pit_rows: list[dict[str, Any]],
+    *,
+    policy: str = "v1_preserve_any_legacy",
 ) -> tuple[bool, list[str]]:
     if snap.get("override_allowlist"):
         return False, []
@@ -80,6 +82,8 @@ def should_preserve_baseline(
     baseline_selected = selected_ids(baseline_rows)
     pit_selected = selected_ids(pit_rows)
     missed = sorted((baseline_selected & PROTECTED_LEGACY_THEMES) - pit_selected)
+    if policy == "v2_memory_requires_broad_legacy_confirmation" and "ai_memory" in boosted and len(missed) < 2:
+        return False, missed
     return bool(missed), missed
 
 
@@ -89,6 +93,7 @@ def run_guarded_v6b(
     config: dict[str, Any],
     *,
     turnover_guard_threshold: float = 1.4,
+    policy: str = "v1_preserve_any_legacy",
 ) -> tuple[pd.Series, list[dict[str, Any]]]:
     monthly_dates = [dt for dt in bt.month_end_dates(prices.index) if dt in prices.index]
     monthly = prices.loc[monthly_dates].dropna(how="all")
@@ -121,7 +126,7 @@ def run_guarded_v6b(
                 pit_config["top_n"] = max(1, min(3, len(themes)))
                 pit_config["stock_top_n"] = 3
                 weights, rows = bt.pick_weights(monthly, dt, **pit_config)
-                preserve, preserved = should_preserve_baseline(snap, baseline_rows, rows)
+                preserve, preserved = should_preserve_baseline(snap, baseline_rows, rows, policy=policy)
                 proposed_turnover = sum(
                     abs(weights.get(k, 0.0) - current_weights.get(k, 0.0))
                     for k in set(weights) | set(current_weights)
@@ -179,6 +184,7 @@ def run_guarded_v6b(
                         "pit_confirmed": pit_bridge.has_confirmed_theme(snap),
                         "pit_guard_reason": guard_reason,
                         "legacy_preserved_themes": preserved,
+                        "legacy_preservation_policy": policy,
                         "classifier_fallback_to_v2": bool(not snap or snap.get("fallback_to_v2", True)),
                         "fallback_to_v2": bool(not pit_active),
                         "turnover": round(float(turnover), 6),
@@ -290,18 +296,30 @@ def build_month_review(
     return rows
 
 
-def decision_for_payload(rows: list[dict[str, Any]], month_review: list[dict[str, Any]]) -> dict[str, Any]:
+def decision_for_payload(
+    rows: list[dict[str, Any]],
+    month_review: list[dict[str, Any]],
+    qualified_month_review: list[dict[str, Any]],
+) -> dict[str, Any]:
     by_name = {row["candidate"]: row for row in rows}
     base = by_name.get("baseline_v2_v6ab_dynamic_b", {})
     original = by_name.get("original_pit_guarded_v6ab_dynamic_b", {})
     guarded = by_name.get("legacy_preserve_guarded_v6ab_dynamic_b", {})
+    qualified = by_name.get("legacy_preserve_qualified_v6ab_dynamic_b", {})
     base_stats = base.get("stats", {})
     original_stats = original.get("stats", {})
     guarded_stats = guarded.get("stats", {})
+    qualified_stats = qualified.get("stats", {})
     ann_delta_vs_v2 = float(guarded_stats.get("ann_ret", 0.0) or 0.0) - float(base_stats.get("ann_ret", 0.0) or 0.0)
     ann_delta_vs_original = float(guarded_stats.get("ann_ret", 0.0) or 0.0) - float(original_stats.get("ann_ret", 0.0) or 0.0)
+    qualified_ann_delta_vs_v2 = float(qualified_stats.get("ann_ret", 0.0) or 0.0) - float(base_stats.get("ann_ret", 0.0) or 0.0)
+    qualified_ann_delta_vs_original = float(qualified_stats.get("ann_ret", 0.0) or 0.0) - float(original_stats.get("ann_ret", 0.0) or 0.0)
     sharpe_delta_vs_v2 = float(guarded_stats.get("sharpe", 0.0) or 0.0) - float(base_stats.get("sharpe", 0.0) or 0.0)
+    qualified_sharpe_delta_vs_v2 = float(qualified_stats.get("sharpe", 0.0) or 0.0) - float(base_stats.get("sharpe", 0.0) or 0.0)
     bad_months = [row for row in month_review if float(row.get("legacy_guarded_minus_original", 0.0) or 0.0) < -0.02]
+    qualified_bad_months = [
+        row for row in qualified_month_review if float(row.get("legacy_guarded_minus_original", 0.0) or 0.0) < -0.02
+    ]
     tier = "REJECT_FOR_NOW"
     action = "legacy winner preservation 未证明优于当前 PIT guarded；保留为诊断。"
     if ann_delta_vs_v2 > 0.003 and ann_delta_vs_original >= -0.001 and sharpe_delta_vs_v2 >= 0 and not bad_months:
@@ -310,14 +328,38 @@ def decision_for_payload(rows: list[dict[str, Any]], month_review: list[dict[str
     if ann_delta_vs_original > 0.002 and sharpe_delta_vs_v2 > 0.02 and not bad_months:
         tier = "RESEARCH_OVERLAY"
         action = "legacy winner preservation 可作为研究 overlay 扩样本验证；不替换 V2。"
+    qualified_tier = "REJECT_FOR_NOW"
+    qualified_action = "qualified legacy preservation 仍需继续诊断。"
+    if (
+        qualified_ann_delta_vs_v2 > 0.003
+        and qualified_ann_delta_vs_original >= -0.001
+        and qualified_sharpe_delta_vs_v2 >= 0
+        and not qualified_bad_months
+    ):
+        qualified_tier = "WATCH"
+        qualified_action = "qualified legacy preservation 初步有效，进入 WATCH；不改模拟盘。"
+    if (
+        qualified_ann_delta_vs_original > 0.002
+        and qualified_sharpe_delta_vs_v2 > 0.02
+        and not qualified_bad_months
+    ):
+        qualified_tier = "RESEARCH_OVERLAY"
+        qualified_action = "qualified legacy preservation 可作为研究 overlay 扩样本验证；不替换 V2。"
     return {
         "tier": tier,
         "action": action,
+        "qualified_tier": qualified_tier,
+        "qualified_action": qualified_action,
         "ann_delta_vs_v2": ann_delta_vs_v2,
         "ann_delta_vs_original_pit": ann_delta_vs_original,
+        "qualified_ann_delta_vs_v2": qualified_ann_delta_vs_v2,
+        "qualified_ann_delta_vs_original_pit": qualified_ann_delta_vs_original,
         "sharpe_delta_vs_v2": sharpe_delta_vs_v2,
+        "qualified_sharpe_delta_vs_v2": qualified_sharpe_delta_vs_v2,
         "preserved_months": len(month_review),
         "bad_preserved_months": len(bad_months),
+        "qualified_preserved_months": len(qualified_month_review),
+        "qualified_bad_preserved_months": len(qualified_bad_months),
     }
 
 
@@ -329,6 +371,8 @@ def render_md(payload: dict[str, Any]) -> str:
         "- 模拟盘动作：`NO_CHANGE`。",
         "- 目的：验证 PIT AI boost 在无 OVERRIDE 时是否不应挤掉 V2 已识别的非 AI legacy winner。",
         f"- 决策：`{payload['decision']['tier']}` — {payload['decision']['action']}",
+        f"- qualified v2：`{payload['decision'].get('qualified_tier')}` — {payload['decision'].get('qualified_action')}",
+        f"- qualified v2 metrics：ann vs V2 `{fmt_pct(payload['decision'].get('qualified_ann_delta_vs_v2'))}`，ann vs original PIT `{fmt_pct(payload['decision'].get('qualified_ann_delta_vs_original_pit'))}`，bad months `{payload['decision'].get('qualified_bad_preserved_months')}`。",
         "",
         "## Results",
         "",
@@ -360,6 +404,22 @@ def render_md(payload: dict[str, Any]) -> str:
             f"{fmt_pct(row.get('legacy_guarded_minus_original'))} | {row.get('v2_selected', '')} | "
             f"{row.get('original_guarded_selected', '')} | {row.get('legacy_guarded_selected', '')} |"
         )
+    qualified_rows = payload.get("qualified_month_review", [])
+    if qualified_rows:
+        lines += [
+            "",
+            "## Qualified V2 Preserved Month Review",
+            "",
+            "| date | preserved | V2 next | original PIT next | qualified next | qualified vs original | V2 selected | original selected | qualified selected |",
+            "| --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |",
+        ]
+        for row in qualified_rows[:20]:
+            lines.append(
+                f"| `{row['date']}` | `{', '.join(row.get('preserved_themes', []))}` | {fmt_pct(row.get('v2_next_ret'))} | "
+                f"{fmt_pct(row.get('original_guarded_next_ret'))} | {fmt_pct(row.get('legacy_guarded_next_ret'))} | "
+                f"{fmt_pct(row.get('legacy_guarded_minus_original'))} | {row.get('v2_selected', '')} | "
+                f"{row.get('original_guarded_selected', '')} | {row.get('legacy_guarded_selected', '')} |"
+            )
     lines += [
         "",
         "## Interpretation",
@@ -395,11 +455,18 @@ def main() -> int:
         mode="tier_turnover_guarded",
     )
     guarded_eq, guarded_decisions = run_guarded_v6b(prices, snapshots, bridge.BASELINE_CONFIG)
+    qualified_eq, qualified_decisions = run_guarded_v6b(
+        prices,
+        snapshots,
+        bridge.BASELINE_CONFIG,
+        policy="v2_memory_requires_broad_legacy_confirmation",
+    )
     curves = {
         "V6A": load_v6a_composite(args.v6a_daily),
         "baseline_v2": baseline_eq,
         "original_pit_guarded": original_eq,
         "legacy_preserve_guarded": guarded_eq,
+        "legacy_preserve_qualified": qualified_eq,
         "GLD": benchmark_equity(prices, "US.GLD"),
         "BIL": benchmark_equity(prices, "US.BIL"),
         "SPY": benchmark_equity(prices, "US.SPY"),
@@ -408,13 +475,16 @@ def main() -> int:
     baseline_v6ab, _ = run_v6ab(curves, "baseline_v2", args.start, args.end)
     original_v6ab, _ = run_v6ab(curves, "original_pit_guarded", args.start, args.end)
     guarded_v6ab, _ = run_v6ab(curves, "legacy_preserve_guarded", args.start, args.end)
+    qualified_v6ab, _ = run_v6ab(curves, "legacy_preserve_qualified", args.start, args.end)
     rows = [
         row_for("baseline_v2_standalone_v6b", baseline_eq, baseline_decisions, args),
         row_for("original_pit_guarded_standalone_v6b", original_eq, original_decisions, args),
         row_for("legacy_preserve_guarded_standalone_v6b", guarded_eq, guarded_decisions, args),
+        row_for("legacy_preserve_qualified_standalone_v6b", qualified_eq, qualified_decisions, args),
         row_for("baseline_v2_v6ab_dynamic_b", baseline_v6ab, [], args),
         row_for("original_pit_guarded_v6ab_dynamic_b", original_v6ab, original_decisions, args),
         row_for("legacy_preserve_guarded_v6ab_dynamic_b", guarded_v6ab, guarded_decisions, args),
+        row_for("legacy_preserve_qualified_v6ab_dynamic_b", qualified_v6ab, qualified_decisions, args),
     ]
     month_review = build_month_review(
         baseline_eq,
@@ -424,6 +494,14 @@ def main() -> int:
         original_decisions,
         guarded_decisions,
     )
+    qualified_month_review = build_month_review(
+        baseline_eq,
+        original_eq,
+        qualified_eq,
+        baseline_decisions,
+        original_decisions,
+        qualified_decisions,
+    )
     payload = {
         "asof": args.asof,
         "start": args.start,
@@ -431,7 +509,8 @@ def main() -> int:
         "replay_json": str(args.replay_json),
         "rows": rows,
         "month_review": month_review,
-        "decision": decision_for_payload(rows, month_review),
+        "qualified_month_review": qualified_month_review,
+        "decision": decision_for_payload(rows, month_review, qualified_month_review),
     }
     md = render_md(payload)
     args.output_dir.mkdir(parents=True, exist_ok=True)
