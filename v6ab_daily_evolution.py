@@ -47,6 +47,7 @@ def render_daily_report(
     boost_near_miss: dict[str, Any],
     risk_skill_gate: dict[str, Any],
     signal_sizing: dict[str, Any],
+    mainline_gap: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -96,6 +97,12 @@ def render_daily_report(
     best_risk_skill = risk_skill_ranked[0] if risk_skill_ranked else {}
     signal_sizing_ranked = signal_sizing.get("ranked", []) if isinstance(signal_sizing.get("ranked"), list) else []
     best_signal_sizing = signal_sizing_ranked[0] if signal_sizing_ranked else {}
+    missed_theme_summary = (
+        mainline_gap.get("missed_v2_theme_summary", [])
+        if isinstance(mainline_gap.get("missed_v2_theme_summary"), list)
+        else []
+    )
+    worst_missed_theme = missed_theme_summary[0] if missed_theme_summary else {}
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -151,6 +158,7 @@ def render_daily_report(
         f"- BOOST near-miss：months={boost_near_miss.get('near_miss_months', 0)}，all overlay sum={float(boost_near_miss.get('overlay_sum_delta_all', 0.0) or 0.0):+.2%}，best cohort=`{best_near_miss.get('candidate', 'n/a')}` {float(best_near_miss.get('sum_overlay_delta', 0.0) or 0.0):+.2%}",
         f"- Risk skill gate：decision=`{risk_skill_gate.get('decision', 'UNKNOWN')}`，best=`{best_risk_skill.get('candidate', 'n/a')}`，ann vs guarded={float(best_risk_skill.get('ann_vs_baseline_guarded', 0.0) or 0.0):+.2%}",
         f"- Signal sizing：decision=`{signal_sizing.get('decision', 'UNKNOWN')}`，best=`{best_signal_sizing.get('candidate', 'n/a')}`，ann vs guarded={float(best_signal_sizing.get('delta_vs_guarded', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
+        f"- Historical mainline gap：negative={mainline_gap.get('negative_months', 0)}，neg sum={float(mainline_gap.get('negative_sum_delta', 0.0) or 0.0):+.2%}，worst missed=`{worst_missed_theme.get('missed_v2_themes', 'n/a')}` {float(worst_missed_theme.get('sum_delta', 0.0) or 0.0):+.2%}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -251,6 +259,19 @@ def render_daily_report(
         )
     lines += [
         "",
+        "## Historical Mainline Gap",
+        "",
+        "| missed V2 theme | count | sum delta | avg |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for row in missed_theme_summary[:8]:
+        lines.append(
+            f"| `{row.get('missed_v2_themes')}` | {row.get('count', 0)} | "
+            f"{float(row.get('sum_delta', 0.0) or 0.0):+.2%} | "
+            f"{float(row.get('avg_delta', 0.0) or 0.0):+.2%} |"
+        )
+    lines += [
+        "",
         "## PIT 候选对比",
         "",
         "| candidate | ann | maxDD | Sharpe | 2024-2026 ann | 2020 ann | active rebals |",
@@ -316,6 +337,7 @@ def main() -> int:
         run_step("boost_near_miss_review", [py, "v6ab_boost_near_miss_review.py", "--asof", args.asof]),
         run_step("risk_skill_gate_experiment", [py, "v6ab_risk_skill_gate_experiment.py", "--asof", args.asof]),
         run_step("signal_sizing_experiment", [py, "v6ab_signal_sizing_experiment.py", "--asof", args.asof]),
+        run_step("historical_mainline_gap_review", [py, "v6ab_historical_mainline_gap_review.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -329,6 +351,7 @@ def main() -> int:
     boost_near_miss = load_json(ROOT / "backtest_results" / "v6ab_boost_near_miss_review" / "latest.json")
     risk_skill_gate = load_json(ROOT / "backtest_results" / "v6ab_risk_skill_gate_experiment" / "latest.json")
     signal_sizing = load_json(ROOT / "backtest_results" / "v6ab_signal_sizing_experiment" / "latest.json")
+    mainline_gap = load_json(ROOT / "backtest_results" / "v6ab_historical_mainline_gap_review" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -342,6 +365,7 @@ def main() -> int:
         boost_near_miss,
         risk_skill_gate,
         signal_sizing,
+        mainline_gap,
     )
     payload = {
         "asof": args.asof,
@@ -356,6 +380,7 @@ def main() -> int:
         "boost_near_miss_review": boost_near_miss,
         "risk_skill_gate_experiment": risk_skill_gate,
         "signal_sizing_experiment": signal_sizing,
+        "historical_mainline_gap_review": mainline_gap,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
