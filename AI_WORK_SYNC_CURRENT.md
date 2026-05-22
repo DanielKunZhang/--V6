@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-22 20:56:02`
+- Last updated: `2026-05-22 21:00:44`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1089,3 +1089,4 @@ dc58870 feat: add V6 daily report automation
 - [19:03] [发现] V6AB PIT: added offline override candidate backtest. Legal/fair-use/copyright AI text now rejected as positive fact noise. After rerun, override evidence candidates reduced to ai_memory 2021-01/2021-02 only; ai_platform 2025 downgraded to WATCH. Offline override candidate V6AB ann 32.38% vs V2 31.83%, 2021 improves, but one override month has -9.53pp vs V2, so decision remains REJECT_FOR_NOW / no sim change.
 - [20:51] [发现] A股 Radar: added V6AB transfer review diagnostic. It applies PIT boundary, fact precision, mainline/expression separation, and promotion gates to A-share Radar. Current tier PAPER_TRADE_ONLY, not real-money: mainline/expression pass initial simulation readiness, but blockers remain sample_size_lt20 and strict_tracker_evaluated_lt20.
 - [20:55] [发现] System principle added: V6AB and A-share Radar may share methodology/engineering framework but must not directly share market-specific rules, thresholds, signal meanings, or trading actions. Cross-market transfer defaults to RESEARCH_TRANSFER and requires source/target/scope/not_allowed_scope/local validation before any promotion. Canonical doc: /Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/V6AB_A股Radar_双线迁移防污染原则_20260522.md
+- [21:00] [发现] Cross-market sync mechanism added. New cross_market_research_sync.py generates SHARE / QUARANTINE / VALIDATION_QUEUE plus a reusable prompt. It reads latest V6AB daily and A-share transfer review, syncs transferable methodology, and quarantines market-specific rules/thresholds. Integrated into A-share daily loop; output: 报表输出/LATEST/跨市场研究同步_LATEST.md.
