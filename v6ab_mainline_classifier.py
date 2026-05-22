@@ -10,6 +10,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from v6ab_mainline_risk_skill import apply_risk_skill
+
 
 ROOT = Path(__file__).resolve().parent
 DESKTOP_ROOT = Path("/Users/zhangkun/Desktop/AI个人投资公司")
@@ -394,6 +396,7 @@ def build_classifier(ledger: dict[str, Any], asof: str, taxonomy: str = "ai") ->
             "mainline_score": round(clamp(mainline), 4),
             "state": state,
         }
+        row.update(apply_risk_skill(row, theme, rows, asof))
         row["signal_tier"] = signal_tier(row)
         theme_rows.append(row)
     theme_rows = sorted(theme_rows, key=lambda row: row["mainline_score"], reverse=True)
@@ -438,15 +441,26 @@ def render_md(payload: dict[str, Any]) -> str:
         "",
         "## Theme State",
         "",
-        "| theme | state | tier | mainline | market | narrative | fundamental | institutional | history | risk | evidence | breadth |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| theme | state | tier | mainline | entry | action | payoff risk | position | fact | market | evidence | breadth |",
+        "| --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in payload["themes"]:
         lines.append(
-            f"| {row['label']} | `{row['state']}` | `{row['signal_tier']}` | {row['mainline_score']:.1f} | {row['market_score']:.1f} | "
-            f"{row['narrative_score']:.1f} | {row['fundamental_score']:.1f} | {row['institutional_score']:.1f} | "
-            f"{row['historical_depth_score']:.1f} | {row['risk_penalty']:.1f} | {row['evidence_count']} | {row['breadth']:.2f} |"
+            f"| {row['label']} | `{row['state']}` | `{row['signal_tier']}` | {row['mainline_score']:.1f} | "
+            f"{row['entry_quality_score']:.1f} | `{row['entry_quality_action']}` | {row['payoff_risk_score']:.1f} | "
+            f"{row['position_quality_score']:.1f} | {row['fact_precision_score']:.1f} | {row['market_score']:.1f} | "
+            f"{row['evidence_count']} | {row['breadth']:.2f} |"
         )
+    lines += [
+        "",
+        "## Risk Skill Columns",
+        "",
+        "- `entry`：主线强度、事实精度、产业链卡位、赔率风险合成后的入场质量观察分。",
+        "- `payoff risk`：拥挤度、估值/叙事透支、下一财报/订单/指引等事件风险的合成风险分。",
+        "- `position`：产业链卡位质量；上游瓶颈/定价权/客户质量加分，供应商依赖/客户集中/替代风险扣分。",
+        "- `fact`：事实精度；财报、订单、SEC、历史深度和机构验证高于纯叙事。",
+        "- 当前 risk skill 只输出研究诊断，不改变 `theme_allowlist`、`boost_allowlist` 或模拟盘。",
+    ]
     lines += ["", "## Ticker Priority", "", "| ticker | theme | score | evidence |", "| --- | --- | ---: | ---: |"]
     for row in payload["ticker_priority"][:20]:
         lines.append(f"| `{row['ticker']}` | {row['theme']} | {row['score']:.1f} | {row['evidence_count']} |")

@@ -100,13 +100,17 @@ def render_daily_report(
         "",
         "## Top Themes",
         "",
-        "| theme | state | mainline | market | evidence | risk |",
-        "| --- | --- | ---: | ---: | ---: | ---: |",
+        "| theme | state | mainline | entry | action | payoff risk | position | fact | market | evidence |",
+        "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in themes[:8]:
         lines.append(
             f"| {row['label']} | `{row['state']}` | {row['mainline_score']:.1f} | "
-            f"{row['market_score']:.1f} | {row['evidence_count']} | {row['risk_penalty']:.1f} |"
+            f"{float(row.get('entry_quality_score', 0.0) or 0.0):.1f} | `{row.get('entry_quality_action', 'n/a')}` | "
+            f"{float(row.get('payoff_risk_score', 0.0) or 0.0):.1f} | "
+            f"{float(row.get('position_quality_score', 0.0) or 0.0):.1f} | "
+            f"{float(row.get('fact_precision_score', 0.0) or 0.0):.1f} | "
+            f"{row['market_score']:.1f} | {row['evidence_count']} |"
         )
     lines += [
         "",
