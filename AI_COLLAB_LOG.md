@@ -279,6 +279,7 @@
 
 - [22:34] [发现] 长期目标已确认：V6AB 与 A股 Radar 都要演进为小型、可用、持续进化的主线识别/表达/复盘系统；共同链路为 当期可见信息 -> 判断真实主线 -> 选择表达工具 -> 控制替换风险 -> 复盘归因 -> 晋级/降级。V6AB 负责美股/海外主线轮动，A股 Radar 负责 A股市场实现。两者共享方法论、工程机制和复盘框架，但不共享具体规则、阈值、交易动作；跨市场迁移默认 RESEARCH_TRANSFER，必须本市场独立验证。已归档到 系统优化升级依据/V6AB_A股Radar_长期目标_可持续进化主线系统_20260522.md。
 - [23:34] [发现] V6AB qualified legacy preservation forward paper WATCH 已实现并接入 daily evolution：新增 v6ab_legacy_preservation_forward_watch.py，按日记录 V2 / original PIT / qualified preservation 三套选择、legacy protection 是否触发、触发理由和被阻止的替换；输出 backtest_results/v6ab_legacy_preservation_forward_watch/latest.{json,md,csv} 以及桌面 LATEST daily/weekly WATCH 报告，并在 V6AB_Daily_Mainline_Report_LATEST.md 展示。2026-05-22 截面 decision_date=2026-05-19，qualified protection 触发，preserved=precious_metals，blocked=ai_optical:US.SMH。模拟盘仍保持 V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING，NO_CHANGE。
+- [23:49] [发现] V6AB qualified legacy preservation 第二步复核已完成：新增 v6ab_legacy_preservation_trigger_review.py，复核 2026-05-19 forward WATCH 触发样本。结论 REASONABLE_WATCH：precious_metals 中期趋势仍在（SLV 6M/12M 强），但 1-3M 回落，不能视为短期确定赢家；被拦截的 ai_optical 由 AAOI/LITE/COHR 等极端动量驱动，且无 OVERRIDE。继续 WATCH，不替换 V2、不升 paper sim。morning_brief 已接入 V6AB WATCH 待办：连续 ledger 观察、触发复核、非 AI 历史主线证据补强、WATCH 晋级条件草案，全部标明不改变 V2 模拟盘。
 ### Claude
 
 - [18:39] [发现] V6AB PIT: added override evidence gap review; improved event fact extraction for ai_memory/ai_platform; reran SEC fact ledger with short timeout; override evidence improved from 0 to 3 candidates + 1 watch in daily, PIT guarded ann now 32.05% vs V2 31.83%, still RESEARCH_OVERLAY/no sim change.

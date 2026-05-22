@@ -47,6 +47,7 @@ US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
 US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_input" / "latest.json"
 VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
+V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -806,6 +807,52 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             row["trigger"],
             row["reason"],
         )
+
+    # V6AB qualified legacy preservation 仍处于 WATCH：每日只提示观察/复核，不改变 V2 模拟盘。
+    watch_payload = read_json(V6AB_LEGACY_FORWARD_WATCH)
+    watch_obs = watch_payload.get("latest_observation", {}) if isinstance(watch_payload, dict) else {}
+    if today.weekday() < 5:
+        add(
+            "LOW",
+            "V6",
+            "V6AB qualified legacy preservation WATCH ledger 连续观察",
+            "运行 V6AB WATCH ledger",
+            "记录 V2 / original PIT / qualified preservation 三套选择、protection 是否触发和阻止的替换；仅纸面观察，不替换 V2",
+        )
+    if watch_obs:
+        decision_date = str(watch_obs.get("decision_date", ""))
+        status = str(watch_obs.get("status", "UNKNOWN"))
+        blocked = ", ".join(watch_obs.get("blocked_replacements", [])[:3]) if isinstance(watch_obs.get("blocked_replacements"), list) else ""
+        if watch_obs.get("legacy_preservation_applied"):
+            add(
+                "MED",
+                "V6",
+                f"V6AB legacy protection 触发复核：{decision_date}",
+                "复核 V6AB legacy WATCH",
+                f"forward WATCH status={status}，blocked={blocked or '-'}；确认是 PIT 过度替换还是 qualified 过度保护，不改变模拟盘",
+            )
+        else:
+            add(
+                "LOW",
+                "V6",
+                f"V6AB legacy WATCH 无触发：{decision_date}",
+                "复核 V6AB legacy WATCH",
+                "连续无触发说明保护层可能足够低频；继续累积 5-10 个交易日观察，不改变模拟盘",
+            )
+    add(
+        "LOW",
+        "V6",
+        "V6AB 非 AI 历史主线证据补强",
+        "补强 V6AB 非AI主线证据",
+        "优先补 2020 liquidity/technology/precious metals、2022 energy/inflation/defensive、2024-2026 AI infra/semis/power/data center 的 PIT 可见证据",
+    )
+    add(
+        "LOW",
+        "V6",
+        "V6AB WATCH promotion 条件草案",
+        "定义 V6AB WATCH 晋级条件",
+        "后续把 WATCH -> PAPER_SHADOW -> PAPER_SIM_CANDIDATE 的门槛写清楚；当前 qualified preservation 不能替换 V2",
+    )
 
     # 非交易日也给出明确状态，避免 Daily/Weekly 邮件看起来“没有今日待办”。
     if today.weekday() >= 5:
