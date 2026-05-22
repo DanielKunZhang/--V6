@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-23 00:02:42`
+- Last updated: `2026-05-23 00:14:49`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1066,3 +1066,4 @@ dc58870 feat: add V6 daily report automation
 ### GPT
 
 - [00:02] [发现] PDD 主仓压力点已启动处理：用户反馈 PDD 跌至约93美元并后悔中概持仓。已新增公司研究/PDD/PDD_财报前压力复盘_20260522.md，结论为 NO_ADD_PRE_EARNINGS / HOLD / POST_EARNINGS_REUNDERWRITE：财报前不加仓、不卖CSP、不因后悔情绪直接清仓；财报后若收入失速+利润率恶化+管理层解释差，按既有规则减仓300-400股至风险预算内。已将 events_calendar PDD Q1重估日期修正到 2026-05-27，并修正 decision_log 目标日期，保留原始 2026-05-17 HOLD 决策不变。
+- [00:14] [发现] 完成 AMZN AI-Core SOP v2.6 首轮估值：报告写入 公司估值/AMZN_估值报告_20260523_SOPv2.6版.md；结论 Research Only，V_base $253、V_floor $91、Bull $424，当前约 $268.5 高于 V_base，PRICE_GATE FAIL，V_option 按概率加权为 $0；已将 AMZN 加入 investment_screener/watchlist.json，高优先级观察但不建仓、不替换现有主仓。

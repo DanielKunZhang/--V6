@@ -209,6 +209,25 @@
       "kelly_position_pct": 10.0,
       "notes": "HQ Compounder 20260519重估：Core HQ Compounder / Trend Overlay。8%-10%是长期核心复利仓，10%-15%是趋势增强仓，阶段上限15%。当前约12.8%可持有但FY2027 Q1财报前不新增；财报强通过可维持12%-15%，中性通过回到10%-12%，未通过先降趋势增强部分到8%-10%。V_base $230-260，$190-210且财报通过才小补，$260-280复核降overlay，$280+估值兑现。"
     },
+    "AMZN": {
+      "company": "Amazon.com, Inc.",
+      "exchange": "US",
+      "currency": "USD",
+      "v_base": 253,
+      "v_base_geo_adjusted": 253,
+      "floor": 91,
+      "ceiling": 424,
+      "alert_threshold": 0.9,
+      "last_price_at_analysis": 268.5,
+      "last_analysis_date": "2026-05-23",
+      "next_earnings": "2026-07(est. Q2 2026)",
+      "sector": "Technology / Cloud / AI Infrastructure / Advertising / Commerce",
+      "wacc": 0.095,
+      "tgr": 0.03,
+      "geo_discount_pct": 0,
+      "kelly_position_pct": 0,
+      "notes": "AI-Core SOP v2.6：Research Only。V_base $253，V_floor $91，Bull $424，概率加权AI价值约$226<V_base，因此V_option=$0。当前约$268.5高于V_base，PRICE_GATE FAIL。Watch<=253，Starter<=228，Core<=202。Q1 2026收入$181.5B(+17%)、AWS $37.6B(+28%)、TTM OCF $148.5B，但TTM FCF仅$1.2B，PPE净购买$147.3B，AI CapEx J曲线是核心变量。"
+    },
     "AAOI": {
       "company": "Applied Optoelectronics Inc.",
       "exchange": "US",
