@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-22 13:05:46`
+- Last updated: `2026-05-22 13:37:01`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1077,3 +1077,5 @@ dc58870 feat: add V6 daily report automation
 - [代码] Daily email 降噪已完成并提交 `4a868be fix: reduce daily workflow email noise`：13F 系统输入默认只显示 3 天内到期项且固定为 MED，估值路由只跟随 3 天内事件，不再因为远期横向比较/近期研究文件把 CEG/DUK/ETN/GEV/SO/VST/XEL 等推到 Today's HIGH；早间简报 HTML/文本只把 HIGH 放在“必须处理”，MED/LOW 放入“建议准备/研究队列”；Central Risk Board 的 Today's Workflow Actions 也只展示 HIGH。验证今天从 24 条噪音任务收敛为 2 条必须处理：PDD 日志遗留、GOOGL AI Search thesis watch。
 - [代码] V6AB Historical Mainline Gap Review 已实现并接入 daily evolution，提交 `b4ad272 feat: add V6AB historical mainline gap review`。新增 `v6ab_historical_mainline_gap_review.py`，只做诊断，不改交易规则：从 PIT guarded vs V2 月度 attribution 中定位负贡献月份里 V2 被挤掉的主题和 PIT 替换进去的主题。最新结果：guarded active months 28，negative 15，negative sum -40.08%；负贡献最集中在 missed V2 themes：`technology` 7次 / -23.98%，`precious_metals` 4次 / -17.87%；added guarded 负贡献集中在 `ai_platform` -21.99%、`ai_memory` -11.50%、`ai_optical` -9.09%。结论：下一步应优先补 2020/2023/2024/2026 相关的 technology / precious_metals / defensive-or-commodity 历史主线证据和映射，而不是继续简单给 AI BOOST 加风控。
 - [代码] V6AB Theme Mapping Experiment 已实现并接入 daily evolution，提交 `7f1f325 feat: test V6AB historical theme mapping`。新增 `v6ab_theme_mapping_experiment.py`，离线测试“AI 子主题证据不足时回到父主题”的候选映射，不改正式 classifier/PIT replay/模拟盘。结果：`ai_child_low_fact_to_parent` 年化 +32.00%，较 guarded +0.07pp，Sharpe +0.00，2020 相对 V2 优势从 +0.92pp 提升到 +1.83pp，active 29，changed snapshots 4；但提升低于晋级阈值，decision=`NO_THEME_MAPPING_PROMOTION`。结论：方向有效但证据不足，保留为 WATCH/研究候选；下一步应把它和更完整的 historical evidence/fact precision 合并验证，而不是单独晋级。
+- [代码] V6AB 父/子主题冲突映射实验取得更明确进展，提交 `a91c7fa feat: test V6AB parent theme conflict mapping`。新增候选：当 `ai_platform` 与父主题 `technology` 同时在 BOOST 且无 OVERRIDE 时，把 `ai_platform` 合并回 `technology`；泛化版则把 AI 子主题与父主题冲突时回父主题。最新 theme mapping 实验：`platform_parent_conflict_to_technology` 年化 +32.30%，maxDD -15.68%，Sharpe 1.25，较 guarded +0.36pp，2020 vs V2 +4.62pp，2024-2026 vs V2 +3.38pp，active 29，changed snapshots 5；日报 decision=`REVIEW_THEME_MAPPING_CANDIDATE`。映射命中 2020-06、2020-07、2023-07、2024-01、2025-07，正好对应此前 gap review 暴露的 technology 被 ai_platform 挤掉问题。仍不动模拟盘；下一步应为该候选单独跑 attribution/promotion gate，检查是否只是修 5 个历史月份、是否有隐性损伤。
+- [代码] 同步新增 `v6ab_macro_regime_evidence_seed.py`，生成 2020 liquidity/technology/precious metals、2022 energy/rate shock、2023 broad technology/AI transition 的 date-stamped macro regime evidence。试验默认接入后没有净提升，guarded 年化基本不变且 2020 小幅回落，因此未接入默认 PIT replay，仅保留为研究输入，后续需和主题映射/主线强弱排序组合验证。
