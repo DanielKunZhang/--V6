@@ -57,6 +57,7 @@ def render_daily_report(
     parent_child_tilt_backtest: dict[str, Any],
     legacy_winner_preservation: dict[str, Any],
     legacy_false_negative_audit: dict[str, Any],
+    legacy_promotion_gate: dict[str, Any],
 ) -> str:
     themes = classifier.get("themes", [])
     confirmed = [row for row in themes if row.get("state") == "CONFIRMED"]
@@ -169,6 +170,11 @@ def render_daily_report(
         if isinstance(legacy_false_negative_audit.get("decision"), dict)
         else {}
     )
+    legacy_promotion_decision = (
+        legacy_promotion_gate.get("decision", {})
+        if isinstance(legacy_promotion_gate.get("decision"), dict)
+        else {}
+    )
 
     lines = [
         "# V6AB Daily Mainline Report",
@@ -234,6 +240,7 @@ def render_daily_report(
         f"- Parent+child tilt：decision=`{parent_child_tilt_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(parent_child_tilt_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，overlap guard ann vs V2={float(parent_child_tilt_decision.get('overlap_guarded_ann_delta_vs_v2', 0.0) or 0.0):+.2%}，bad months={parent_child_tilt_decision.get('bad_months', 0)}",
         f"- Legacy winner preservation：decision=`{legacy_winner_decision.get('tier', 'UNKNOWN')}`，ann vs V2={float(legacy_winner_decision.get('ann_delta_vs_v2', 0.0) or 0.0):+.2%}，ann vs PIT={float(legacy_winner_decision.get('ann_delta_vs_original_pit', 0.0) or 0.0):+.2%}，bad months={legacy_winner_decision.get('bad_preserved_months', 0)}；qualified=`{legacy_winner_decision.get('qualified_tier', 'UNKNOWN')}`，ann vs PIT={float(legacy_winner_decision.get('qualified_ann_delta_vs_original_pit', 0.0) or 0.0):+.2%}，bad={legacy_winner_decision.get('qualified_bad_preserved_months', 0)}",
         f"- Legacy false-negative audit：decision=`{legacy_fn_decision.get('tier', 'UNKNOWN')}`，skipped={legacy_fn_decision.get('false_negative_count', 0)}，risk={legacy_fn_decision.get('false_negative_risk_count', 0)}",
+        f"- Legacy promotion gate：decision=`{legacy_promotion_decision.get('tier', 'UNKNOWN')}`，failed={', '.join(legacy_promotion_decision.get('failed_checks', [])[:4]) if isinstance(legacy_promotion_decision.get('failed_checks'), list) else 'n/a'}",
         "- 本报告只作为 V6-V3 研究输入，下一步接入回测比较。",
         "- 人工 triage 重点看高分 ticker 是否有真实订单/财报/估值支撑，以及是否只是拥挤交易。",
         "",
@@ -549,6 +556,28 @@ def render_daily_report(
                 f"| `{row.get('date')}` | `{', '.join(row.get('preservation_candidates', []))}` | "
                 f"{float(row.get('qualified_skipped_delta_vs_original', 0.0) or 0.0):+.2%} | `{row.get('decision')}` |"
             )
+    promo_checks = (
+        legacy_promotion_gate.get("checks", [])
+        if isinstance(legacy_promotion_gate.get("checks"), list)
+        else []
+    )
+    if promo_checks:
+        lines += [
+            "",
+            "### Legacy Preservation Promotion Gate",
+            "",
+            "| check | result | value | threshold |",
+            "| --- | --- | ---: | --- |",
+        ]
+        for row in promo_checks[:12]:
+            value = row.get("value")
+            if isinstance(value, float):
+                value_text = f"{value:+.2f}" if "sharpe" in str(row.get("check", "")) else f"{value:+.2%}" if abs(value) <= 1.5 else f"{value:.2f}"
+            else:
+                value_text = str(value)
+            lines.append(
+                f"| `{row.get('check')}` | {'PASS' if row.get('passed') else 'FAIL'} | {value_text} | {row.get('threshold')} |"
+            )
     lines += [
         "",
         "## PIT 候选对比",
@@ -626,6 +655,7 @@ def main() -> int:
         run_step("parent_child_tilt_backtest", [py, "v6ab_parent_child_tilt_backtest.py", "--asof", args.asof]),
         run_step("legacy_winner_preservation", [py, "v6ab_legacy_winner_preservation_experiment.py", "--asof", args.asof]),
         run_step("legacy_false_negative_audit", [py, "v6ab_legacy_preservation_false_negative_audit.py", "--asof", args.asof]),
+        run_step("legacy_promotion_gate", [py, "v6ab_legacy_preservation_promotion_gate.py", "--asof", args.asof]),
     ]
     classifier = load_json(OUT_DIR / "latest_mainline_classifier.json")
     promotion = load_json(ROOT / "backtest_results" / "v6ab_promotion_gate" / "latest.json")
@@ -651,6 +681,7 @@ def main() -> int:
     legacy_false_negative_audit = load_json(
         ROOT / "backtest_results" / "v6ab_legacy_preservation_false_negative_audit" / "latest.json"
     )
+    legacy_promotion_gate = load_json(ROOT / "backtest_results" / "v6ab_legacy_preservation_promotion_gate" / "latest.json")
     report = render_daily_report(
         args.asof,
         classifier,
@@ -674,6 +705,7 @@ def main() -> int:
         parent_child_tilt_backtest,
         legacy_winner_preservation,
         legacy_false_negative_audit,
+        legacy_promotion_gate,
     )
     payload = {
         "asof": args.asof,
@@ -698,6 +730,7 @@ def main() -> int:
         "parent_child_tilt_backtest": parent_child_tilt_backtest,
         "legacy_winner_preservation": legacy_winner_preservation,
         "legacy_false_negative_audit": legacy_false_negative_audit,
+        "legacy_promotion_gate": legacy_promotion_gate,
     }
     (OUT_DIR / "latest_daily_mainline_report.md").write_text(report, encoding="utf-8")
     (OUT_DIR / "latest_daily_evolution.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
