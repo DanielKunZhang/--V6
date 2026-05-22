@@ -68,6 +68,118 @@ def ticker_priority_for(snapshot: dict[str, Any], themes: list[str], limit: int 
     return sorted(rows, key=lambda row: float(row.get("score", 0.0) or 0.0), reverse=True)[:limit]
 
 
+def detail_values(row: dict[str, Any], key: str) -> list[float]:
+    values: list[float] = []
+    for detail in row.get("theme_details", []):
+        try:
+            values.append(float(detail.get(key, 0.0) or 0.0))
+        except Exception:
+            pass
+    return values
+
+
+def max_detail(row: dict[str, Any], key: str) -> float:
+    values = detail_values(row, key)
+    return max(values) if values else 0.0
+
+
+def min_detail(row: dict[str, Any], key: str) -> float:
+    values = detail_values(row, key)
+    return min(values) if values else 0.0
+
+
+def avg_detail(row: dict[str, Any], key: str) -> float:
+    values = detail_values(row, key)
+    return float(np.mean(values)) if values else 0.0
+
+
+def any_action(row: dict[str, Any], action: str) -> bool:
+    return any(str(detail.get("entry_quality_action", "")) == action for detail in row.get("theme_details", []))
+
+
+def risk_skill_features(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "max_payoff_risk_score": max_detail(row, "payoff_risk_score"),
+        "avg_payoff_risk_score": avg_detail(row, "payoff_risk_score"),
+        "min_entry_quality_score": min_detail(row, "entry_quality_score"),
+        "avg_entry_quality_score": avg_detail(row, "entry_quality_score"),
+        "min_fact_precision_score": min_detail(row, "fact_precision_score"),
+        "avg_fact_precision_score": avg_detail(row, "fact_precision_score"),
+        "min_position_quality_score": min_detail(row, "position_quality_score"),
+        "avg_position_quality_score": avg_detail(row, "position_quality_score"),
+        "max_crowding_score": max_detail(row, "crowding_score"),
+        "has_risk_review_theme": any_action(row, "RISK_REVIEW"),
+        "has_capped_boost_theme": any_action(row, "CAPPED_BOOST_ONLY"),
+        "has_no_entry_edge_theme": any_action(row, "NO_ENTRY_EDGE"),
+    }
+
+
+def summarize_cohort(rows: list[dict[str, Any]], name: str, predicate: Any) -> dict[str, Any]:
+    selected = [row for row in rows if predicate(row)]
+    deltas = [float(row.get("tier_minus_v2", 0.0) or 0.0) for row in selected]
+    return {
+        "cohort": name,
+        "count": len(selected),
+        "sum_delta": float(np.sum(deltas)) if deltas else 0.0,
+        "avg_delta": float(np.mean(deltas)) if deltas else 0.0,
+        "win_rate": float(np.mean([value > 0 for value in deltas])) if deltas else 0.0,
+        "negative_months": int(np.sum([value < 0 for value in deltas])) if deltas else 0,
+        "dates": [row.get("date") for row in selected],
+    }
+
+
+def correlation_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    keys = [
+        "max_payoff_risk_score",
+        "avg_payoff_risk_score",
+        "min_entry_quality_score",
+        "avg_entry_quality_score",
+        "min_fact_precision_score",
+        "avg_fact_precision_score",
+        "min_position_quality_score",
+        "avg_position_quality_score",
+        "max_crowding_score",
+        "tier_turnover",
+    ]
+    out: list[dict[str, Any]] = []
+    y = np.array([float(row.get("tier_minus_v2", 0.0) or 0.0) for row in rows], dtype=float)
+    for key in keys:
+        x = np.array([float(row.get(key, 0.0) or 0.0) for row in rows], dtype=float)
+        if len(x) < 3 or np.std(x) == 0 or np.std(y) == 0:
+            corr = 0.0
+        else:
+            corr = float(np.corrcoef(x, y)[0, 1])
+        out.append({"metric": key, "corr_with_tier_delta": corr})
+    return sorted(out, key=lambda row: abs(row["corr_with_tier_delta"]), reverse=True)
+
+
+def build_risk_skill_attribution(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    enriched = []
+    for row in rows:
+        item = dict(row)
+        item.update(risk_skill_features(row))
+        enriched.append(item)
+    cohorts = [
+        summarize_cohort(enriched, "has_risk_review_theme", lambda row: row.get("has_risk_review_theme")),
+        summarize_cohort(enriched, "has_capped_boost_theme", lambda row: row.get("has_capped_boost_theme")),
+        summarize_cohort(enriched, "has_no_entry_edge_theme", lambda row: row.get("has_no_entry_edge_theme")),
+        summarize_cohort(enriched, "max_payoff_risk_ge70", lambda row: float(row.get("max_payoff_risk_score", 0.0)) >= 70),
+        summarize_cohort(enriched, "max_payoff_risk_ge55", lambda row: float(row.get("max_payoff_risk_score", 0.0)) >= 55),
+        summarize_cohort(enriched, "min_entry_quality_lt50", lambda row: float(row.get("min_entry_quality_score", 0.0)) < 50),
+        summarize_cohort(enriched, "min_fact_precision_lt20", lambda row: float(row.get("min_fact_precision_score", 0.0)) < 20),
+        summarize_cohort(enriched, "max_crowding_ge90", lambda row: float(row.get("max_crowding_score", 0.0)) >= 90),
+    ]
+    return {
+        "cohorts": sorted(cohorts, key=lambda row: row["sum_delta"]),
+        "correlations": correlation_summary(enriched),
+        "rows": enriched,
+        "interpretation": [
+            "risk skill attribution 只验证诊断分数是否解释 BOOST 正负贡献，不改变交易规则。",
+            "若某 cohort 负贡献集中但同时误伤大量正样本，应优先考虑 capped/延迟确认，而不是硬删除。",
+        ],
+    }
+
+
 def classify_failure(row: dict[str, Any], boosted: list[str], theme_details: list[dict[str, Any]]) -> list[str]:
     labels: list[str] = []
     date_year = int(str(row.get("date", "1900"))[:4])
@@ -146,6 +258,7 @@ def build_review(args: argparse.Namespace) -> dict[str, Any]:
         details_by_theme = theme_map(snap)
         theme_details = [details_by_theme.get(theme, {"theme": theme}) for theme in boosted]
         labels = classify_failure(row, boosted, theme_details)
+        risk_features = risk_skill_features({"theme_details": theme_details})
         review_rows.append(
             {
                 "date": row.get("date"),
@@ -166,6 +279,7 @@ def build_review(args: argparse.Namespace) -> dict[str, Any]:
                 "hard_selected": row.get("hard_selected", row.get("hard_top", "")),
                 "tier_turnover": float(row.get("tier_turnover", 0.0) or 0.0),
                 "theme_details": theme_details,
+                **risk_features,
                 "top_ticker_priority": ticker_priority_for(snap, boosted),
                 "failure_labels": labels,
                 "recommended_fixes": recommended_fixes(labels),
@@ -195,6 +309,7 @@ def build_review(args: argparse.Namespace) -> dict[str, Any]:
             {"label": label, "count": label_counts[label], "sum_tier_delta": label_sum_delta[label]}
             for label in sorted(label_counts, key=lambda key: (label_sum_delta[key], -label_counts[key]))
         ],
+        "risk_skill_attribution": build_risk_skill_attribution(review_rows),
         "worst_months": worst,
         "best_months": best,
         "rows": review_rows,
@@ -226,6 +341,29 @@ def render_md(payload: dict[str, Any]) -> str:
     ]
     for row in payload["label_summary"]:
         lines.append(f"| `{row['label']}` | {row['count']} | {fmt_pct(row['sum_tier_delta'])} |")
+
+    risk_attr = payload.get("risk_skill_attribution", {})
+    lines += [
+        "",
+        "## Risk Skill Attribution",
+        "",
+        "| cohort | count | sum delta | avg | win rate | negative |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in risk_attr.get("cohorts", []):
+        lines.append(
+            f"| `{row.get('cohort')}` | {row.get('count', 0)} | {fmt_pct(row.get('sum_delta'))} | "
+            f"{fmt_pct(row.get('avg_delta'))} | {fmt_pct(row.get('win_rate'))} | {row.get('negative_months', 0)} |"
+        )
+    lines += [
+        "",
+        "## Risk Skill Correlations",
+        "",
+        "| metric | corr with tier-v2 |",
+        "| --- | ---: |",
+    ]
+    for row in risk_attr.get("correlations", [])[:8]:
+        lines.append(f"| `{row.get('metric')}` | {float(row.get('corr_with_tier_delta', 0.0)):+.3f} |")
 
     lines += [
         "",

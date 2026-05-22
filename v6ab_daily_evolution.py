@@ -60,6 +60,15 @@ def render_daily_report(
         if isinstance(row, dict) and not row.get("passed", False)
     ]
     boost_labels = boost_review.get("label_summary", []) if isinstance(boost_review.get("label_summary"), list) else []
+    boost_risk_attr = (
+        boost_review.get("risk_skill_attribution", {})
+        if isinstance(boost_review.get("risk_skill_attribution"), dict)
+        else {}
+    )
+    boost_risk_cohorts = (
+        boost_risk_attr.get("cohorts", []) if isinstance(boost_risk_attr.get("cohorts"), list) else []
+    )
+    worst_risk_cohort = boost_risk_cohorts[0] if boost_risk_cohorts else {}
     gate_ranked = gate_experiment.get("ranked", []) if isinstance(gate_experiment.get("ranked"), list) else []
     bridge_rows = pit_bridge.get("rows", []) if isinstance(pit_bridge.get("rows"), list) else []
     threshold_ranked = (
@@ -133,6 +142,7 @@ def render_daily_report(
         f"- PIT promotion gate：`{promotion_decision.get('tier', 'UNKNOWN')}` — {promotion_decision.get('action', '未生成')}",
         f"- 未通过 gate：{', '.join(failed_checks[:8]) if failed_checks else '无'}",
         f"- BOOST failure review：active={boost_review.get('active_boost_months', 0)}，negative={boost_review.get('negative_boost_months', 0)}，sum delta={float(boost_review.get('sum_tier_delta', 0.0)):+.2%}",
+        f"- BOOST risk attribution：worst cohort=`{worst_risk_cohort.get('cohort', 'n/a')}`，count={worst_risk_cohort.get('count', 0)}，sum={float(worst_risk_cohort.get('sum_delta', 0.0) or 0.0):+.2%}",
         f"- OVERRIDE readiness：decision=`{override_readiness.get('decision', 'UNKNOWN')}`，hard sum={float(override_readiness.get('hard_sum_delta', 0.0)):+.2%}",
         f"- Turnover guard experiment：best active threshold={float(best_threshold.get('threshold', 0.0) or 0.0):.2f}，active={best_threshold.get('active_rebalances', 'n/a')}，ann delta={float(best_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}；current 1.40 active={current_threshold.get('active_rebalances', 'n/a')}，ann delta={float(current_threshold.get('delta', {}).get('ann_delta', 0.0) or 0.0):+.2%}",
         f"- BOOST near-miss：months={boost_near_miss.get('near_miss_months', 0)}，all overlay sum={float(boost_near_miss.get('overlay_sum_delta_all', 0.0) or 0.0):+.2%}，best cohort=`{best_near_miss.get('candidate', 'n/a')}` {float(best_near_miss.get('sum_overlay_delta', 0.0) or 0.0):+.2%}",
@@ -147,6 +157,19 @@ def render_daily_report(
     ]
     for row in boost_labels[:8]:
         lines.append(f"| `{row.get('label')}` | {row.get('count', 0)} | {float(row.get('sum_tier_delta', 0.0)):+.2%} |")
+    lines += [
+        "",
+        "## BOOST Risk Skill 归因",
+        "",
+        "| cohort | count | sum delta | avg | win rate | negative |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in boost_risk_cohorts[:8]:
+        lines.append(
+            f"| `{row.get('cohort')}` | {row.get('count', 0)} | {float(row.get('sum_delta', 0.0) or 0.0):+.2%} | "
+            f"{float(row.get('avg_delta', 0.0) or 0.0):+.2%} | {float(row.get('win_rate', 0.0) or 0.0):+.2%} | "
+            f"{row.get('negative_months', 0)} |"
+        )
     lines += [
         "",
         "## BOOST Gate 实验",

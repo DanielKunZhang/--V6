@@ -123,6 +123,97 @@ def apply_gate(
     }
 
 
+def apply_expression_filter(
+    snapshots: list[dict[str, Any]],
+    name: str,
+    rule: Callable[[dict[str, Any]], bool],
+    *,
+    preserve_core: set[str] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    preserve_core = preserve_core or {"semis_ai", "technology", "liquidity_growth", "broad_beta", "precious_metals"}
+    out: list[dict[str, Any]] = []
+    changed_rows: list[dict[str, Any]] = []
+    for snap in snapshots:
+        item = copy.deepcopy(snap)
+        risky = risky_theme_ids(item, rule)
+        before_boost = list(item.get("boost_allowlist", []))
+        after_boost = [theme for theme in before_boost if theme not in risky or theme in preserve_core]
+        item["boost_allowlist"] = after_boost
+        if before_boost != after_boost:
+            changed_rows.append(
+                {
+                    "asof": item.get("asof"),
+                    "dropped_themes": sorted(set(before_boost) - set(after_boost)),
+                    "before_boost": before_boost,
+                    "after_boost": after_boost,
+                    "before_override": item.get("override_allowlist", []),
+                    "after_override": item.get("override_allowlist", []),
+                }
+            )
+        out.append(item)
+    return out, {
+        "candidate": name,
+        "changed_snapshots": len(changed_rows),
+        "dropped_rows": changed_rows,
+    }
+
+
+def apply_top_quality_limit(
+    snapshots: list[dict[str, Any]],
+    name: str,
+    *,
+    min_entry_quality: float,
+    min_fact_precision: float,
+    max_themes: int = 2,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    changed_rows: list[dict[str, Any]] = []
+    for snap in snapshots:
+        item = copy.deepcopy(snap)
+        by_theme = theme_by_id(item)
+        before_boost = list(item.get("boost_allowlist", []))
+        if len(before_boost) <= max_themes:
+            out.append(item)
+            continue
+        risky = [
+            theme
+            for theme in before_boost
+            if float(by_theme.get(theme, {}).get("entry_quality_score", 0.0) or 0.0) < min_entry_quality
+            or float(by_theme.get(theme, {}).get("fact_precision_score", 0.0) or 0.0) < min_fact_precision
+        ]
+        safe = [theme for theme in before_boost if theme not in risky]
+        if len(safe) < max_themes:
+            ranked = sorted(
+                before_boost,
+                key=lambda theme: (
+                    float(by_theme.get(theme, {}).get("entry_quality_score", 0.0) or 0.0),
+                    float(by_theme.get(theme, {}).get("fact_precision_score", 0.0) or 0.0),
+                    float(by_theme.get(theme, {}).get("mainline_score", 0.0) or 0.0),
+                ),
+                reverse=True,
+            )
+            safe = ranked[:max_themes]
+        after_boost = safe[:max_themes]
+        item["boost_allowlist"] = after_boost
+        if before_boost != after_boost:
+            changed_rows.append(
+                {
+                    "asof": item.get("asof"),
+                    "dropped_themes": sorted(set(before_boost) - set(after_boost)),
+                    "before_boost": before_boost,
+                    "after_boost": after_boost,
+                    "before_override": item.get("override_allowlist", []),
+                    "after_override": item.get("override_allowlist", []),
+                }
+            )
+        out.append(item)
+    return out, {
+        "candidate": name,
+        "changed_snapshots": len(changed_rows),
+        "dropped_rows": changed_rows,
+    }
+
+
 def summarize(
     name: str,
     standalone_eq: pd.Series,
@@ -216,6 +307,42 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for name, rule in rules:
         gated_snapshots, gate_meta = apply_gate(snapshots, name, rule)
+        standalone_eq, decisions = pit.run_pit_v6b(
+            prices,
+            gated_snapshots,
+            bridge.BASELINE_CONFIG,
+            mode="tier_turnover_guarded",
+            turnover_guard_threshold=args.turnover_guard,
+        )
+        curves = dict(base_curves)
+        curves[name] = standalone_eq
+        v6ab_eq = run_dynamic_candidate(curves, name, pit_cap, args)
+        rows.append(summarize(name, standalone_eq, v6ab_eq, decisions, baseline_v6ab, args, gate_meta))
+
+    expression_candidates = [
+        apply_expression_filter(snapshots, "expression_filter_entry_lt50_preserve_core", rule_low_entry_quality),
+        apply_expression_filter(
+            snapshots,
+            "expression_filter_fact_lt20_preserve_core",
+            lambda row: float(row.get("fact_precision_score", 0.0) or 0.0) < 20,
+        ),
+        apply_top_quality_limit(
+            snapshots,
+            "top2_quality_limit_entry50_fact20",
+            min_entry_quality=50,
+            min_fact_precision=20,
+            max_themes=2,
+        ),
+        apply_top_quality_limit(
+            snapshots,
+            "top3_quality_limit_entry50_fact20",
+            min_entry_quality=50,
+            min_fact_precision=20,
+            max_themes=3,
+        ),
+    ]
+    for gated_snapshots, gate_meta in expression_candidates:
+        name = gate_meta["candidate"]
         standalone_eq, decisions = pit.run_pit_v6b(
             prices,
             gated_snapshots,
