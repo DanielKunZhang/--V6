@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-23 23:58:13`
+- Last updated: `2026-05-24 00:48:03`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1032,35 +1032,6 @@ dc58870 feat: add V6 daily report automation
 
 ## 最近协作日志
 
-## 2026-05-22
-
-### GPT
-
-- [工作] V6AB 吸收 AAOI/短线报告中可迁移的“事实精度、入场质量、拥挤/赔率风险”思路，但严格保持研究层：已提交 `b7aec3e feat: attribute V6AB boost risk skill`，将 risk skill 指标接入 BOOST failure review、risk skill gate experiment 和 daily report。完整 daily 通过。结论：硬门槛不晋级，最佳 `top3_quality_limit_entry50_fact20` 仅比 guarded 多约 +0.04% 年化，只能 WATCH/诊断，不改变模拟盘。
-- [工作] 新增 `v6ab_signal_sizing_experiment.py` 并接入 daily report，已提交 `00c4f5b feat: test V6AB signal quality sizing`。该实验只测试“低 fact precision / 低 entry quality 时降低 PIT B sleeve 表达强度”，不改 classifier、不改 allowlist、不动模拟盘。结果：`cap_low_fact_or_entry_half` 年化 +31.30%，较 guarded -0.64pp；`cap_quality_risk_ladder` +30.65%，较 guarded -1.29pp；`cap_no_entry_edge_to_low` +30.61%，较 guarded -1.33pp。结论：当前瓶颈不是简单降仓/风控能解决，而是 historical evidence、fact precision 和主题映射质量仍需提升。
-- [决策] V6AB 模拟盘继续保持 `V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING`。当前最强研究候选仍是 `pit_tier_turnover_guarded_v6ab_dynamic_b`：年化约 +31.93%、maxDD -15.68%、Sharpe 1.24、2020 +30.51%、2024-2026 +60.09%，但 active rebalances=29<30 且 OVERRIDE=0，不能晋级。下一步优先做 fact precision / historical mainline mapping，而不是继续叠加低收益风控规则。
-- [代码] Daily email 降噪已完成并提交 `4a868be fix: reduce daily workflow email noise`：13F 系统输入默认只显示 3 天内到期项且固定为 MED，估值路由只跟随 3 天内事件，不再因为远期横向比较/近期研究文件把 CEG/DUK/ETN/GEV/SO/VST/XEL 等推到 Today's HIGH；早间简报 HTML/文本只把 HIGH 放在“必须处理”，MED/LOW 放入“建议准备/研究队列”；Central Risk Board 的 Today's Workflow Actions 也只展示 HIGH。验证今天从 24 条噪音任务收敛为 2 条必须处理：PDD 日志遗留、GOOGL AI Search thesis watch。
-- [代码] V6AB Historical Mainline Gap Review 已实现并接入 daily evolution，提交 `b4ad272 feat: add V6AB historical mainline gap review`。新增 `v6ab_historical_mainline_gap_review.py`，只做诊断，不改交易规则：从 PIT guarded vs V2 月度 attribution 中定位负贡献月份里 V2 被挤掉的主题和 PIT 替换进去的主题。最新结果：guarded active months 28，negative 15，negative sum -40.08%；负贡献最集中在 missed V2 themes：`technology` 7次 / -23.98%，`precious_metals` 4次 / -17.87%；added guarded 负贡献集中在 `ai_platform` -21.99%、`ai_memory` -11.50%、`ai_optical` -9.09%。结论：下一步应优先补 2020/2023/2024/2026 相关的 technology / precious_metals / defensive-or-commodity 历史主线证据和映射，而不是继续简单给 AI BOOST 加风控。
-- [代码] V6AB Theme Mapping Experiment 已实现并接入 daily evolution，提交 `7f1f325 feat: test V6AB historical theme mapping`。新增 `v6ab_theme_mapping_experiment.py`，离线测试“AI 子主题证据不足时回到父主题”的候选映射，不改正式 classifier/PIT replay/模拟盘。结果：`ai_child_low_fact_to_parent` 年化 +32.00%，较 guarded +0.07pp，Sharpe +0.00，2020 相对 V2 优势从 +0.92pp 提升到 +1.83pp，active 29，changed snapshots 4；但提升低于晋级阈值，decision=`NO_THEME_MAPPING_PROMOTION`。结论：方向有效但证据不足，保留为 WATCH/研究候选；下一步应把它和更完整的 historical evidence/fact precision 合并验证，而不是单独晋级。
-- [代码] V6AB 父/子主题冲突映射实验取得更明确进展，提交 `a91c7fa feat: test V6AB parent theme conflict mapping`。新增候选：当 `ai_platform` 与父主题 `technology` 同时在 BOOST 且无 OVERRIDE 时，把 `ai_platform` 合并回 `technology`；泛化版则把 AI 子主题与父主题冲突时回父主题。最新 theme mapping 实验：`platform_parent_conflict_to_technology` 年化 +32.30%，maxDD -15.68%，Sharpe 1.25，较 guarded +0.36pp，2020 vs V2 +4.62pp，2024-2026 vs V2 +3.38pp，active 29，changed snapshots 5；日报 decision=`REVIEW_THEME_MAPPING_CANDIDATE`。映射命中 2020-06、2020-07、2023-07、2024-01、2025-07，正好对应此前 gap review 暴露的 technology 被 ai_platform 挤掉问题。仍不动模拟盘；下一步应为该候选单独跑 attribution/promotion gate，检查是否只是修 5 个历史月份、是否有隐性损伤。
-- [代码] 同步新增 `v6ab_macro_regime_evidence_seed.py`，生成 2020 liquidity/technology/precious metals、2022 energy/rate shock、2023 broad technology/AI transition 的 date-stamped macro regime evidence。试验默认接入后没有净提升，guarded 年化基本不变且 2020 小幅回落，因此未接入默认 PIT replay，仅保留为研究输入，后续需和主题映射/主线强弱排序组合验证。
-- [代码] V6AB 父/子主题冲突候选已升级为正式候选审查，并新增 Theme Hierarchy Diagnostics。`v6ab_theme_mapping_candidate_review.py` 单独评估 `platform_parent_conflict_to_technology`：年化 +32.30% vs V2 +31.83%，maxDD -15.68% 持平，Sharpe 1.25 vs 1.23，2020 +34.20% vs +29.58%，2024-2026 +60.78% vs +57.40%；但 active rebals=29<30 且 OVERRIDE=0，decision=`RESEARCH_OVERLAY`，模拟盘 `NO_CHANGE`。新增 `v6ab_theme_hierarchy_diagnostics.py` 并接入 daily evolution：child BOOST 样本 22，merge_to_parent 4，override_ready_research 1；诊断要求子主题独立必须有相对父主题的市场/趋势领先，不能只因证据多就 OVERRIDE。完整 daily 通过，新增步骤 `theme_mapping_candidate_review` 与 `theme_hierarchy_diagnostics` 均 OK。下一步不是放宽 gate，而是补 date-stamped、可差异化的主线证据，让真正独立的 child theme 能产生 OVERRIDE。
-- [代码] V6AB 新增 `v6ab_override_evidence_candidate_review.py` 并接入 daily evolution，用来审查 child theme 是否有可差异化、PIT 可见的 OVERRIDE 事实证据。规则要求 actionable event facts、主题关键词命中、跨 ticker 广度、相对父主题市场领先和证据质量优势；不再把 AMZN North America sales 这类泛化收入增长误算为 `ai_platform` 事实。最新完整 daily 通过：reviewed child rows=22，`override_candidates=0`、`watch=0`、`metadata_reject=22`。结论：当前 child theme BOOST 大多仍由 filing metadata 和非差异化事实支撑，不能产生 OVERRIDE；下一步应定向补 HBM/AI memory、AWS/Azure/cloud AI、optical/networking/datacenter 等带日期、带经营事实、跨公司验证的 evidence，而不是放宽 gate 或继续堆复杂风控。
-
-
-- [22:34] [发现] 长期目标已确认：V6AB 与 A股 Radar 都要演进为小型、可用、持续进化的主线识别/表达/复盘系统；共同链路为 当期可见信息 -> 判断真实主线 -> 选择表达工具 -> 控制替换风险 -> 复盘归因 -> 晋级/降级。V6AB 负责美股/海外主线轮动，A股 Radar 负责 A股市场实现。两者共享方法论、工程机制和复盘框架，但不共享具体规则、阈值、交易动作；跨市场迁移默认 RESEARCH_TRANSFER，必须本市场独立验证。已归档到 系统优化升级依据/V6AB_A股Radar_长期目标_可持续进化主线系统_20260522.md。
-- [23:34] [发现] V6AB qualified legacy preservation forward paper WATCH 已实现并接入 daily evolution：新增 v6ab_legacy_preservation_forward_watch.py，按日记录 V2 / original PIT / qualified preservation 三套选择、legacy protection 是否触发、触发理由和被阻止的替换；输出 backtest_results/v6ab_legacy_preservation_forward_watch/latest.{json,md,csv} 以及桌面 LATEST daily/weekly WATCH 报告，并在 V6AB_Daily_Mainline_Report_LATEST.md 展示。2026-05-22 截面 decision_date=2026-05-19，qualified protection 触发，preserved=precious_metals，blocked=ai_optical:US.SMH。模拟盘仍保持 V6AB_SIM_CANDIDATE_V2_DYNAMIC_B_SIZING，NO_CHANGE。
-- [23:49] [发现] V6AB qualified legacy preservation 第二步复核已完成：新增 v6ab_legacy_preservation_trigger_review.py，复核 2026-05-19 forward WATCH 触发样本。结论 REASONABLE_WATCH：precious_metals 中期趋势仍在（SLV 6M/12M 强），但 1-3M 回落，不能视为短期确定赢家；被拦截的 ai_optical 由 AAOI/LITE/COHR 等极端动量驱动，且无 OVERRIDE。继续 WATCH，不替换 V2、不升 paper sim。morning_brief 已接入 V6AB WATCH 待办：连续 ledger 观察、触发复核、非 AI 历史主线证据补强、WATCH 晋级条件草案，全部标明不改变 V2 模拟盘。
-### Claude
-
-- [18:39] [发现] V6AB PIT: added override evidence gap review; improved event fact extraction for ai_memory/ai_platform; reran SEC fact ledger with short timeout; override evidence improved from 0 to 3 candidates + 1 watch in daily, PIT guarded ann now 32.05% vs V2 31.83%, still RESEARCH_OVERLAY/no sim change.
-- [19:03] [发现] V6AB PIT: added offline override candidate backtest. Legal/fair-use/copyright AI text now rejected as positive fact noise. After rerun, override evidence candidates reduced to ai_memory 2021-01/2021-02 only; ai_platform 2025 downgraded to WATCH. Offline override candidate V6AB ann 32.38% vs V2 31.83%, 2021 improves, but one override month has -9.53pp vs V2, so decision remains REJECT_FOR_NOW / no sim change.
-- [20:51] [发现] A股 Radar: added V6AB transfer review diagnostic. It applies PIT boundary, fact precision, mainline/expression separation, and promotion gates to A-share Radar. Current tier PAPER_TRADE_ONLY, not real-money: mainline/expression pass initial simulation readiness, but blockers remain sample_size_lt20 and strict_tracker_evaluated_lt20.
-- [20:55] [发现] System principle added: V6AB and A-share Radar may share methodology/engineering framework but must not directly share market-specific rules, thresholds, signal meanings, or trading actions. Cross-market transfer defaults to RESEARCH_TRANSFER and requires source/target/scope/not_allowed_scope/local validation before any promotion. Canonical doc: /Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/V6AB_A股Radar_双线迁移防污染原则_20260522.md
-- [21:00] [发现] Cross-market sync mechanism added. New cross_market_research_sync.py generates SHARE / QUARANTINE / VALIDATION_QUEUE plus a reusable prompt. It reads latest V6AB daily and A-share transfer review, syncs transferable methodology, and quarantines market-specific rules/thresholds. Integrated into A-share daily loop; output: 报表输出/LATEST/跨市场研究同步_LATEST.md.
-
----
-
 ## 2026-05-23
 
 ### GPT
@@ -1081,3 +1052,11 @@ dc58870 feat: add V6 daily report automation
 - [22:58] [代码] A股 Radar 已补 MLCC/被动元件盲区：a_share_official_policy_sources.json 新增 AI服务器供应链 / MLCC被动元件 主题词，manual_theme_evidence_ledger 支持 MLCC/多层陶瓷电容/被动元件/电子元件自动归类，morning_brief 与 A股 INBOX 指引加入该重点。用户转述短线团队 MLCC 线索已写入 A股 INBOX 并重跑 Theme Evidence ledger：样本 66，A股 2，MLCC 记录为 WATCH/NEEDS_TRIAGE，confidence=3，D5=2026-05-28，需后续找 TrendForce、村田、三星电机、太阳诱电、国巨/华新科和国内公告验证。
 - [23:33] [发现] PDD 股东回报/资本配置已纳入 thesis：新增公司研究/PDD/PDD_股东回报与资本配置备忘_20260523.md，明确后续 SOP v2.5 重估默认加入 Shareholder Return / Capital Allocation Discount=5%；若 Temu 增速放缓、利润/OCF 继续恶化且仍无回购/分红框架，折扣扩大到8%-10%；若 Temu 盈利路径清晰或管理层启动资本回报，折扣可降到0%-3%。events_calendar 的 2026-05-27 PDD 重估提醒和 investment_screener/watchlist.json 已同步该检查项。
 - [23:58] [代码] AI_Core_Long_Compounder_Radar v1 已落地：新增 ai_core_long_compounder_config.json 与 ai_core_long_compounder_radar.py，基于已有 watchlist/估值锚生成 AI_Core_Long_Compounder_Radar_LATEST.{md,json,csv}，用于每周识别 AI 大时代可长期逢低加仓的高信任复利候选。当前输出：NVDA=HOLD_NO_ADD_UNTIL_CONCENTRATION_OK，ADBE=STARTER_OR_UPGRADE_REVIEW，AMZN/MSFT=WATCH_WAIT_FOR_PULLBACK，GOOGL=DO_NOT_CHASE，AVGO/TSM/ASML/META/AMD/ANET=RESEARCH_VALUATION_FIRST。morning_brief 已接入周五 AI Core 复核提醒，只做研究/估值/击球区，不自动交易。
+
+---
+
+## 2026-05-24
+
+### GPT
+
+- [00:47] [代码] A股 Radar 拥挤交易/抱团风险已落地：a_share_futu_plate_heat_scan 为板块新增 crowding_risk/crowding_reason，按 AI硬件/光模块/算力链/半导体/MLCC 等热门关键词、热度、上涨比例、强势股、涨停代理和成交额标记 LOW/MED/HIGH/EXTREME；a_share_short_radar_evening_guide 新增“拥挤/抱团风险”区块，强主线+极端拥挤只允许观察或一手级 pilot 复核，主题强但无业绩/订单/政策/公告验证不进实盘候选；morning_brief 和 A股 SOP 文档已同步该原则。

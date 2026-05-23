@@ -55,6 +55,58 @@ def is_mainland_common_stock(code: str) -> bool:
     return False
 
 
+def crowding_risk(row: dict[str, Any]) -> tuple[str, str]:
+    name = str(row.get("plate_name", ""))
+    ai_hot_keywords = [
+        "AI",
+        "人工智能",
+        "算力",
+        "数据中心",
+        "光模块",
+        "CPO",
+        "半导体",
+        "芯片",
+        "电子元件",
+        "被动元件",
+        "MLCC",
+        "机器人",
+        "液冷",
+        "服务器",
+    ]
+    is_ai_hot = any(k.lower() in name.lower() for k in ai_hot_keywords)
+    heat = safe_float(row.get("heat_score"))
+    up_ratio = safe_float(row.get("up_ratio"))
+    strong_ratio = safe_float(row.get("strong_ratio_5pct"))
+    limit_count = int(safe_float(row.get("limit_proxy_count")))
+    amount = safe_float(row.get("amount_rmb"))
+
+    reasons: list[str] = []
+    if is_ai_hot:
+        reasons.append("AI/硬件/算力链热门主题")
+    if heat >= 70:
+        reasons.append("热度极高")
+    elif heat >= 55:
+        reasons.append("热度偏高")
+    if up_ratio >= 0.70:
+        reasons.append("板块普涨")
+    if strong_ratio >= 0.25:
+        reasons.append("强势股占比高")
+    if limit_count >= 3:
+        reasons.append("涨停代理多")
+    if amount >= 100_000_000_000:
+        reasons.append("成交额极高")
+
+    if is_ai_hot and (heat >= 70 or strong_ratio >= 0.30 or limit_count >= 5):
+        return "EXTREME", "；".join(reasons)
+    if is_ai_hot and (heat >= 55 or strong_ratio >= 0.20 or limit_count >= 3):
+        return "HIGH", "；".join(reasons)
+    if heat >= 70 and (strong_ratio >= 0.25 or limit_count >= 3):
+        return "HIGH", "；".join(reasons)
+    if heat >= 55 or up_ratio >= 0.70 or strong_ratio >= 0.20:
+        return "MED", "；".join(reasons)
+    return "LOW", "未见高拥挤代理"
+
+
 def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
     from futu import Market, OpenQuoteContext, Plate, RET_OK
 
@@ -126,8 +178,7 @@ def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
                 key=lambda item: safe_float(pick(item, "change_rate", "chg_rate")),
                 reverse=True,
             )[:5]
-            rows.append(
-                {
+            row = {
                     **plate,
                     "sample_count": sample_count,
                     "member_count_total": len(member_records),
@@ -148,8 +199,11 @@ def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
                         }
                         for item in leaders
                     ],
-                }
-            )
+            }
+            risk_level, risk_reason = crowding_risk(row)
+            row["crowding_risk"] = risk_level
+            row["crowding_reason"] = risk_reason
+            rows.append(row)
             time.sleep(args["sleep_sec"])
     finally:
         ctx.close()
@@ -220,6 +274,8 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "limit_proxy_count",
         "zero_change_count",
         "amount_rmb",
+        "crowding_risk",
+        "crowding_reason",
         "top_leaders",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -250,10 +306,28 @@ def render_md(payload: dict[str, Any]) -> str:
         lines.append("")
     lines.extend(
         [
+            "## 拥挤/抱团风险提示",
+            "",
+            "| 板块 | 拥挤风险 | 原因 |",
+            "| --- | --- | --- |",
+        ]
+    )
+    risky = [
+        row for row in payload.get("rows", [])
+        if row.get("crowding_risk") in {"EXTREME", "HIGH"}
+    ][:10]
+    if risky:
+        for row in risky:
+            lines.append(f"| {row['plate_name']} | `{row.get('crowding_risk', '')}` | {row.get('crowding_reason', '')} |")
+    else:
+        lines.append("| 暂无 | `LOW/MED` | 未见高拥挤代理，仍需结合价格位置和复盘判断 |")
+    lines.extend(
+        [
+            "",
             "## 热度 Top 板块",
             "",
-            "| 排名 | 板块 | 类型 | 热度 | 上涨比例 | 强势股 | 涨停代理 | 成交额 | 领涨样本 |",
-            "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+            "| 排名 | 板块 | 类型 | 热度 | 拥挤 | 上涨比例 | 强势股 | 涨停代理 | 成交额 | 领涨样本 |",
+            "| ---: | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- |",
         ]
     )
     for idx, row in enumerate(payload.get("rows", [])[:20], start=1):
@@ -262,7 +336,7 @@ def render_md(payload: dict[str, Any]) -> str:
             for item in row.get("top_leaders", [])[:3]
         )
         lines.append(
-            f"| {idx} | {row['plate_name']} | {row['plate_class']} | {row['heat_score']:.2f} | "
+            f"| {idx} | {row['plate_name']} | {row['plate_class']} | {row['heat_score']:.2f} | `{row.get('crowding_risk', 'LOW')}` | "
             f"{row['up_ratio']:.1%} | {row['strong_count_5pct']} | {row['limit_proxy_count']} | "
             f"{row['amount_rmb']:.0f} | {leaders} |"
         )
@@ -277,6 +351,8 @@ def render_md(payload: dict[str, Any]) -> str:
             "## 人工复核口径",
             "",
             "- 若 Top 板块与政策/产业线索一致，可复制摘要到 A股Radar 人工信息搜集 INBOX。",
+            "- 若主题强但拥挤风险为 HIGH/EXTREME，只能降级为观察或一手级 pilot 复核，不允许追高。",
+            "- 若主题强但标的无业绩/订单/政策/公告验证，不进入实盘候选。",
             "- 若只是纯涨幅榜、无政策/产业/公告支撑，不写入 theme evidence。",
             "- 若 OpenD 不可用，本报告会 SKIPPED/TIMEOUT，不阻塞 daily loop。",
             "",

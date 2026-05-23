@@ -27,6 +27,7 @@ FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 BACKFILL_MD = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md"
 BACKFILL_JSON = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json"
 OFFICIAL_POLICY_JSON = REPORT_ROOT / "A股官方政策白名单扫描_LATEST.json"
+PLATE_HEAT_JSON = REPORT_ROOT / "A股富途板块热度自动扫描_LATEST.json"
 STRICT_TRACKER_JSON = REPORT_ROOT / "A股短线Radar规则过严样本追踪_LATEST.json"
 CLASSIFICATION_LEDGER_JSON = REPORT_ROOT / "A股Radar主线分类准度Ledger_LATEST.json"
 
@@ -214,6 +215,40 @@ def official_policy_table(payload: dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+def crowding_risk_table(payload: dict[str, Any]) -> str:
+    rows = payload.get("rows", []) if isinstance(payload, dict) else []
+    if not rows:
+        status = payload.get("status", "UNKNOWN") if isinstance(payload, dict) else "UNKNOWN"
+        reason = payload.get("reason", "") if isinstance(payload, dict) else ""
+        return f"<p class='muted'>暂无板块拥挤数据。状态：{esc(status)} {esc(reason)}</p>"
+    risky = [row for row in rows if row.get("crowding_risk") in {"EXTREME", "HIGH"}]
+    if not risky:
+        return "<p class='muted'>暂未发现 HIGH/EXTREME 拥挤代理；仍需结合价格位置和复盘判断。</p>"
+    df = pd.DataFrame(risky)
+    keep = [
+        "plate_name",
+        "heat_score",
+        "crowding_risk",
+        "crowding_reason",
+        "up_ratio",
+        "strong_count_5pct",
+        "limit_proxy_count",
+        "amount_rmb",
+    ]
+    cols = [col for col in keep if col in df.columns]
+    labels = {
+        "plate_name": "板块",
+        "heat_score": "热度",
+        "crowding_risk": "拥挤风险",
+        "crowding_reason": "原因",
+        "up_ratio": "上涨比例",
+        "strong_count_5pct": "强势股",
+        "limit_proxy_count": "涨停代理",
+        "amount_rmb": "成交额",
+    }
+    return df_to_html_table(df[cols].rename(columns=labels), max_rows=8)
+
+
 def compact_candidate_table(candidates: pd.DataFrame, tradable_only: bool) -> str:
     if candidates.empty:
         return "<p class='muted'>暂无候选。</p>"
@@ -288,6 +323,7 @@ def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     feedback = read_json(FEEDBACK_JSON)
     backfill = read_json(BACKFILL_JSON)
     official_policy = read_json(OFFICIAL_POLICY_JSON)
+    plate_heat = read_json(PLATE_HEAT_JSON)
     strict_tracker = read_json(STRICT_TRACKER_JSON)
     classification_ledger = read_json(CLASSIFICATION_LEDGER_JSON)
     themes = read_csv(THEMES_CSV)
@@ -326,6 +362,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 <p><b>复盘状态：</b>{esc(review_status)}</p>
 <p><b>当前纪律：</b>Phase 1A 中频主题轮动训练期；真实仓位 0；不打板、不排板、不盯盘、不早盘抢票；只记录模拟触发和收盘复盘。30 笔完整样本前不改规则，只做诊断。</p>
 <p><b>概念校验：</b>不一刀切排除概念，先判断是否有政策/产业支撑、板块扩散、龙头/中军/补涨结构；硬排除短命游资题材和计划外追高。</p>
+<p><b>拥挤校验：</b>AI硬件、光模块、算力链、半导体设备、MLCC 等主题即使强，也不等于安全；若出现极端拥挤，只能观察或一手级 pilot 复核，不追高。</p>
 <p><b>理想节奏：</b>提前埋伏、启动初入、冷却退出；每天只需低频确认，不做秒级决策。</p>
 </div>
 
@@ -344,6 +381,9 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 <h3>官方政策/公告白名单扫描</h3>
 <p class="muted">官方源只提供主线证据和人工复核入口；不是买入信号。若与板块热度和候选结构共振，再进入主线持续性观察。</p>
 {official_policy_table(official_policy)}
+<h3>拥挤/抱团风险</h3>
+<p class="muted">主线仍强不等于安全。强主线 + 极端拥挤时，只允许降级为观察或一手级 pilot 复核；主题强但无业绩/订单/政策/公告验证，不进实盘候选。</p>
+{crowding_risk_table(plate_heat)}
 <h3>规则过严样本追踪</h3>
 {strict_tracker_table(strict_tracker)}
 <h3>主线分类准度 Ledger</h3>
@@ -391,6 +431,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "backfill_md": str(BACKFILL_MD),
             "backfill_json": str(BACKFILL_JSON),
             "official_policy_json": str(OFFICIAL_POLICY_JSON),
+            "plate_heat_json": str(PLATE_HEAT_JSON),
             "strict_tracker_json": str(STRICT_TRACKER_JSON),
             "classification_ledger_json": str(CLASSIFICATION_LEDGER_JSON),
         },

@@ -897,7 +897,7 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         "Theme Evidence",
         "A股 Radar 人工信息搜集：政策/产业/公告/板块异动",
         "记录 A股主题证据",
-        f"官方白名单扫描已自动处理政府/交易所公开源，状态={official_status}，命中 {official_rows} 条，失败源 {official_failed_count} 个；报告见 {THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN.with_suffix('.md')}。人工只补系统失败/需复核的官方源、巨潮/交易所公司公告、以及有政策或产业支撑的财联社/东方财富板块异动，写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行。富途板块热度已自动生成，不需要人工重复抄纯涨幅榜。重点搜人形机器人、半导体设备、低空经济、AI应用、算力、AI服务器供应链/MLCC被动元件、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
+        f"官方白名单扫描已自动处理政府/交易所公开源，状态={official_status}，命中 {official_rows} 条，失败源 {official_failed_count} 个；报告见 {THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN.with_suffix('.md')}。人工只补系统失败/需复核的官方源、巨潮/交易所公司公告、以及有政策或产业支撑的财联社/东方财富板块异动，写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行。富途板块热度已自动生成，不需要人工重复抄纯涨幅榜，并会标记拥挤/抱团风险。重点搜人形机器人、半导体设备、低空经济、AI应用、算力、AI服务器供应链/MLCC被动元件、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。AI硬件/光模块/算力链/半导体设备/MLCC 即使主线强，若拥挤风险 HIGH/EXTREME，只允许观察或一手级 pilot 复核，不追高。当前 evidence 到期复核 {evidence_due_count} 条",
     )
     add(
         "MED" if official_failed_count else "LOW",

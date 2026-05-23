@@ -310,3 +310,11 @@
 - [22:58] [代码] A股 Radar 已补 MLCC/被动元件盲区：a_share_official_policy_sources.json 新增 AI服务器供应链 / MLCC被动元件 主题词，manual_theme_evidence_ledger 支持 MLCC/多层陶瓷电容/被动元件/电子元件自动归类，morning_brief 与 A股 INBOX 指引加入该重点。用户转述短线团队 MLCC 线索已写入 A股 INBOX 并重跑 Theme Evidence ledger：样本 66，A股 2，MLCC 记录为 WATCH/NEEDS_TRIAGE，confidence=3，D5=2026-05-28，需后续找 TrendForce、村田、三星电机、太阳诱电、国巨/华新科和国内公告验证。
 - [23:33] [发现] PDD 股东回报/资本配置已纳入 thesis：新增公司研究/PDD/PDD_股东回报与资本配置备忘_20260523.md，明确后续 SOP v2.5 重估默认加入 Shareholder Return / Capital Allocation Discount=5%；若 Temu 增速放缓、利润/OCF 继续恶化且仍无回购/分红框架，折扣扩大到8%-10%；若 Temu 盈利路径清晰或管理层启动资本回报，折扣可降到0%-3%。events_calendar 的 2026-05-27 PDD 重估提醒和 investment_screener/watchlist.json 已同步该检查项。
 - [23:58] [代码] AI_Core_Long_Compounder_Radar v1 已落地：新增 ai_core_long_compounder_config.json 与 ai_core_long_compounder_radar.py，基于已有 watchlist/估值锚生成 AI_Core_Long_Compounder_Radar_LATEST.{md,json,csv}，用于每周识别 AI 大时代可长期逢低加仓的高信任复利候选。当前输出：NVDA=HOLD_NO_ADD_UNTIL_CONCENTRATION_OK，ADBE=STARTER_OR_UPGRADE_REVIEW，AMZN/MSFT=WATCH_WAIT_FOR_PULLBACK，GOOGL=DO_NOT_CHASE，AVGO/TSM/ASML/META/AMD/ANET=RESEARCH_VALUATION_FIRST。morning_brief 已接入周五 AI Core 复核提醒，只做研究/估值/击球区，不自动交易。
+
+---
+
+## 2026-05-24
+
+### GPT
+
+- [00:47] [代码] A股 Radar 拥挤交易/抱团风险已落地：a_share_futu_plate_heat_scan 为板块新增 crowding_risk/crowding_reason，按 AI硬件/光模块/算力链/半导体/MLCC 等热门关键词、热度、上涨比例、强势股、涨停代理和成交额标记 LOW/MED/HIGH/EXTREME；a_share_short_radar_evening_guide 新增“拥挤/抱团风险”区块，强主线+极端拥挤只允许观察或一手级 pilot 复核，主题强但无业绩/订单/政策/公告验证不进实盘候选；morning_brief 和 A股 SOP 文档已同步该原则。
