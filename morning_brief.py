@@ -813,6 +813,13 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         f"官方白名单扫描已自动处理政府/交易所公开源，状态={official_status}，命中 {official_rows} 条，失败源 {official_failed_count} 个；报告见 {THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN.with_suffix('.md')}。人工只补系统失败/需复核的官方源、巨潮/交易所公司公告、以及有政策或产业支撑的财联社/东方财富板块异动，写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行。富途板块热度已自动生成，不需要人工重复抄纯涨幅榜。重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
     )
     add(
+        "MED" if official_failed_count else "LOW",
+        "Radar-CN",
+        "A股官方信息源稳定性巡检",
+        "巡检A股官方源",
+        f"查看 A股官方政策白名单扫描_LATEST：若失败源>0 或连续多日命中=0，则提醒我优化白名单 URL/RSS/关键词；若命中官方政策，检查是否与富途板块热度和候选结构共振。当前状态={official_status}，命中={official_rows}，失败源={official_failed_count}",
+    )
+    add(
         "MED" if v6ab_evidence_focus or today.weekday() == 4 else "LOW",
         "Theme Evidence",
         "V6AB / 美股 Radar 人工信息搜集：财报、SEC、13F、产业链扩散",
