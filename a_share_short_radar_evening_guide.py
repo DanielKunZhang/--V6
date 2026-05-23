@@ -264,7 +264,8 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 <h3>一页结论</h3>
 <p><b>最强主线：</b>{esc(summary['top_theme'])} / {esc(summary['top_theme_score'])}</p>
 <p><b>复盘状态：</b>{esc(review_status)}</p>
-<p><b>当前纪律：</b>20个交易日纯观察期；真实仓位 0；不打板、不排板、不盯盘、不早盘抢票；只记录模拟触发和收盘复盘。</p>
+<p><b>当前纪律：</b>Phase 1A 训练期；真实仓位 0；不打板、不排板、不盯盘、不早盘抢票；只记录模拟触发和收盘复盘。30 笔完整样本前不改规则，只做诊断。</p>
+<p><b>概念校验：</b>不一刀切排除概念，先判断是否有政策/产业支撑、板块扩散、龙头/中军/补涨结构；硬排除短命游资题材和计划外追高。</p>
 </div>
 
 <div class="box ok">
@@ -302,7 +303,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 <div class="box warn">
 <h3>执行口令</h3>
 <p>开盘前若主线集体低于预期，全部取消，只复盘。若候选高开加速，不追。当前阶段即使触发计划买点，也只记录为模拟触发，不做真实交易。</p>
-<p>收盘后输入 <code>复盘</code>，按 SOP 更新样本。</p>
+<p>收盘后输入 <code>复盘</code>，按 SOP 更新样本，并记录信号执行、止损/失效、主观干预和复盘覆盖。</p>
 </div>
 </body>
 </html>"""

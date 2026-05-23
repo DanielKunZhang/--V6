@@ -727,6 +727,13 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
     # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。
     if today.weekday() < 5:
         add(
+            "MED",
+            "Radar-CN",
+            "A股 Radar Phase 1A 纪律记录",
+            "复盘 A股Radar",
+            "当前是主线识别/短线表达/交易纪律训练系统；每日记录候选、触发、止损/失效、主观干预和复盘覆盖率，30笔完整样本前不改规则",
+        )
+        add(
             "LOW",
             "Radar-CN",
             "A股 Radar 日更复盘（仅当今天有候选/交易/观察标的时执行）",
@@ -739,9 +746,9 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         add(
             "LOW",
             "Radar-CN",
-            "A股 Radar 周度新主题/新标的扫描",
+            "A股 Radar 周度新主题/新标的扫描与概念持续性校验",
             "扫描 A股Radar 新候选",
-            "每周五自动发现新主题/新标的，只生成 AddToRadar 候选，需人工确认后才写入观察池",
+            "每周五自动发现新主题/新标的，只生成 AddToRadar 候选；重点区分政策/产业主线与短命游资概念，需人工确认后才写入观察池",
         )
 
     # 美股 Radar / V6-B 以周度或事件驱动为主，不做每日噪音提醒。
