@@ -47,6 +47,8 @@ def build_payload(config: dict[str, Any], ticker: str, asof: str) -> dict[str, A
                 "segment": segment_name,
                 "line": line_name,
                 "driver": line.get("driver", ""),
+                "evidence_level": line.get("evidence_level", "UNCLASSIFIED"),
+                "evidence_note": line.get("evidence_note", ""),
             }
             for scenario in ["bear", "base", "upside"]:
                 multiplier = float(scenarios.get(scenario, {}).get("line_multipliers", {}).get(line_name, 1.0))
@@ -209,7 +211,12 @@ def build_validation(
                     "note": "Base model should reconcile to official actual quarter.",
                 }
             )
-        for segment_key, segment_name in [("components", "Components"), ("systems", "Systems")]:
+        for segment_key, segment_name in [
+            ("components", "Components"),
+            ("systems", "Systems"),
+            ("datacenter_communications", "Datacenter & Communications"),
+            ("industrial", "Industrial"),
+        ]:
             if segment_key not in facts or segment_name not in segment_totals:
                 continue
             model = segment_totals[segment_name]["base"][idx]
@@ -245,10 +252,10 @@ def write_csv(path: Path, payload: dict[str, Any]) -> None:
     quarters = payload["quarters"]
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["scenario", "segment", "line", *quarters, "driver"])
+        writer.writerow(["scenario", "segment", "line", "evidence_level", "evidence_note", *quarters, "driver"])
         for row in payload["rows"]:
             for scenario in ["bear", "base", "upside"]:
-                writer.writerow([scenario, row["segment"], row["line"], *row[scenario], row["driver"]])
+                writer.writerow([scenario, row["segment"], row["line"], row["evidence_level"], row["evidence_note"], *row[scenario], row["driver"]])
 
 
 def fmt_money(value: float) -> str:
@@ -342,11 +349,12 @@ def render_md(payload: dict[str, Any]) -> str:
         ]
     )
 
-    lines.extend(["", "## Base Case 业务线", "", "| Segment | Line | " + " | ".join(quarters) + " | Driver |", "| --- | --- | " + " | ".join(["---:"] * len(quarters)) + " | --- |"])
+    lines.extend(["", "## Base Case 业务线", "", "| Segment | Line | Evidence | " + " | ".join(quarters) + " | Driver |", "| --- | --- | --- | " + " | ".join(["---:"] * len(quarters)) + " | --- |"])
     for row in payload["rows"]:
         values = " | ".join(fmt_money(v) for v in row["base"])
         driver = str(row["driver"]).replace("|", "/")
-        lines.append(f"| {row['segment']} | {row['line']} | {values} | {driver} |")
+        evidence = f"`{row.get('evidence_level', '')}`"
+        lines.append(f"| {row['segment']} | {row['line']} | {evidence} | {values} | {driver} |")
 
     lines.extend(["", "## 证据 Gate", ""])
     for gate in company.get("evidence_gates", []):
@@ -425,7 +433,7 @@ def render_html(payload: dict[str, Any]) -> str:
     for row in payload["rows"]:
         cells = "".join(f"<td>{esc(fmt_money(v))}</td>" for v in row["base"])
         line_rows.append(
-            f"<tr><td>{esc(row['segment'])}</td><td>{esc(row['line'])}</td>{cells}<td>{esc(row['driver'])}</td></tr>"
+            f"<tr><td>{esc(row['segment'])}</td><td>{esc(row['line'])}</td><td>{esc(row.get('evidence_level', ''))}</td>{cells}<td>{esc(row['driver'])}</td></tr>"
         )
 
     header = "".join(f"<th>{esc(q)}</th>" for q in quarters)
@@ -490,7 +498,7 @@ ul {{ line-height: 1.7; }}
 
 <section class="panel">
 <h2>Base Case 业务线</h2>
-<table><thead><tr><th>Segment</th><th>Line</th>{header}<th class="driver">Driver</th></tr></thead><tbody>{''.join(line_rows)}</tbody></table>
+<table><thead><tr><th>Segment</th><th>Line</th><th>Evidence</th>{header}<th class="driver">Driver</th></tr></thead><tbody>{''.join(line_rows)}</tbody></table>
 </section>
 
 <section class="panel">
@@ -527,15 +535,126 @@ def write_outputs(payload: dict[str, Any]) -> None:
     write_csv(REPORT_ROOT / f"{ticker}_AI_Optical_Revenue_Build_LATEST.csv", payload)
 
 
+def render_compare_md(payloads: list[dict[str, Any]], asof: str) -> str:
+    lines = [
+        "# AI Optical / Rack-scale Revenue Build Compare",
+        "",
+        f"- 日期：`{asof}`",
+        "- 用途：横向比较 AI optical / rack-scale 候选的收入模型、主源校准、估值吸收程度和动作。",
+        "- 边界：研究工具，不自动交易，不替代完整估值报告。",
+        "",
+        "| Ticker | Company | Action | Price | Bear/Base/Upside | Price/Base | Upside dependency | Calibration | Evidence level |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+    ]
+    for payload in payloads:
+        decision = payload["decision"]
+        checks = payload.get("validation", [])
+        calibration = "PASS" if checks and all(c.get("status") == "PASS" for c in checks) else "CHECK"
+        evidence_level = "product-level" if payload["ticker"] == "LITE" else "segment-level"
+        lines.append(
+            f"| `{payload['ticker']}` | {payload['company']['company']} | `{decision['action']}` | "
+            f"${decision['price']:.2f} | ${decision['bear_value']:.0f}/${decision['base_value']:.0f}/${decision['upside_value']:.0f} | "
+            f"{decision['base_discount']:.2f}x | {decision['upside_dependency']:.1%} | `{calibration}` | {evidence_level} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## 当前结论",
+            "",
+            "- `LITE`：产品线模型更细，但价格已超过粗略 upside 锚，结论是 `DO_NOT_CHASE`。",
+            "- `COHR`：主源分部证据更直接，估值吸收程度低于 LITE，但仍需补 800G/1.6T/CPO/OCS 产品级证据。",
+            "- 两者都只进入 V6AB/Radar evidence，不改变 V6AB V2 模拟盘。",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def render_compare_html(payloads: list[dict[str, Any]], asof: str) -> str:
+    rows = []
+    for payload in payloads:
+        decision = payload["decision"]
+        checks = payload.get("validation", [])
+        calibration = "PASS" if checks and all(c.get("status") == "PASS" for c in checks) else "CHECK"
+        evidence_level = "product-level" if payload["ticker"] == "LITE" else "segment-level"
+        rows.append(
+            "<tr>"
+            f"<td>{esc(payload['ticker'])}</td>"
+            f"<td>{esc(payload['company']['company'])}</td>"
+            f"<td><b>{esc(decision['action'])}</b></td>"
+            f"<td>${decision['price']:.2f}</td>"
+            f"<td>${decision['bear_value']:.0f} / ${decision['base_value']:.0f} / ${decision['upside_value']:.0f}</td>"
+            f"<td>{decision['base_discount']:.2f}x</td>"
+            f"<td>{decision['upside_dependency']:.1%}</td>"
+            f"<td>{esc(calibration)}</td>"
+            f"<td>{esc(evidence_level)}</td>"
+            "</tr>"
+        )
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI Optical Revenue Build Compare</title>
+<style>
+body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin:0; background:#f6f7f9; color:#18212f; }}
+main {{ max-width: 1120px; margin:0 auto; padding:28px; }}
+.panel {{ background:#fff; border:1px solid #dfe3ea; border-radius:8px; padding:18px; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+th, td {{ border-bottom:1px solid #e5e8ef; padding:9px 8px; text-align:right; }}
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3), td:last-child {{ text-align:left; }}
+thead th {{ background:#173b57; color:white; }}
+.note {{ color:#5b6675; line-height:1.6; }}
+</style>
+</head>
+<body><main>
+<h1>AI Optical / Rack-scale Revenue Build Compare</h1>
+<p class="note">日期：{esc(asof)}。研究工具，不自动交易，不替代完整估值报告。</p>
+<section class="panel">
+<table><thead><tr><th>Ticker</th><th>Company</th><th>Action</th><th>Price</th><th>Bear/Base/Upside</th><th>Price/Base</th><th>Upside dependency</th><th>Calibration</th><th>Evidence</th></tr></thead><tbody>{''.join(rows)}</tbody></table>
+</section>
+<section class="panel">
+<h2>当前结论</h2>
+<p>LITE 产品线模型更细，但价格已超过粗略 upside 锚，结论是 DO_NOT_CHASE。</p>
+<p>COHR 主源分部证据更直接，估值吸收程度低于 LITE，但仍需补 800G/1.6T/CPO/OCS 产品级证据。</p>
+</section>
+</main></body></html>
+"""
+
+
+def write_compare_outputs(payloads: list[dict[str, Any]], asof: str) -> None:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_ROOT.mkdir(parents=True, exist_ok=True)
+    md = render_compare_md(payloads, asof)
+    html = render_compare_html(payloads, asof)
+    data = json.dumps({"asof": asof, "payloads": payloads}, ensure_ascii=False, indent=2)
+    for path, content in {
+        OUTPUT_DIR / "latest_compare.md": md,
+        OUTPUT_DIR / "latest_compare.html": html,
+        OUTPUT_DIR / "latest_compare.json": data,
+        REPORT_ROOT / "AI_Optical_Revenue_Build_Compare_LATEST.md": md,
+        REPORT_ROOT / "AI_Optical_Revenue_Build_Compare_LATEST.html": html,
+        REPORT_ROOT / "AI_Optical_Revenue_Build_Compare_LATEST.json": data,
+    }.items():
+        path.write_text(content, encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ticker", default="LITE")
+    parser.add_argument("--all", action="store_true")
     parser.add_argument("--asof", required=True)
     args = parser.parse_args()
     config = read_json(CONFIG_PATH)
-    payload = build_payload(config, args.ticker.upper(), args.asof)
-    write_outputs(payload)
-    print(render_md(payload))
+    tickers = list(config.get("companies", {}).keys()) if args.all else [args.ticker.upper()]
+    payloads = []
+    for ticker in tickers:
+        payload = build_payload(config, ticker, args.asof)
+        write_outputs(payload)
+        payloads.append(payload)
+    if len(payloads) > 1:
+        write_compare_outputs(payloads, args.asof)
+        print(render_compare_md(payloads, args.asof))
+    else:
+        print(render_md(payloads[0]))
 
 
 if __name__ == "__main__":

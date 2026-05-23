@@ -48,6 +48,7 @@ US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_inp
 VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 OPTIONALITY_OVERLAY_QUEUE = ROOT / "optionality_overlay_review_queue.json"
 AI_CORE_LONG_COMPOUNDER_RADAR = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/AI_Core_Long_Compounder_Radar_LATEST.json")
+AI_OPTICAL_REVENUE_BUILD_COMPARE = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/AI_Optical_Revenue_Build_Compare_LATEST.json")
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
@@ -981,6 +982,24 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "AI Core Long Compounder Radar 周度复核",
             "复核AI核心复利股",
             f"查看 AI_Core_Long_Compounder_Radar_LATEST：目标是寻找 AI 大时代少数可长期逢低加仓的高信任复利股；当前需人工复核候选={tickers}。只做估值/thesis/击球区复核，不自动交易，不追高，不替代主仓风险预算",
+        )
+
+    # AI Optical / Rack-scale Revenue Build：周度复核强主线是否已经被价格吃满。
+    # 这是 V6AB/Radar 的研究输入，不是正股买入信号。
+    if today.weekday() == 4:
+        optical_payload = read_json(AI_OPTICAL_REVENUE_BUILD_COMPARE)
+        payloads = optical_payload.get("payloads", []) if isinstance(optical_payload, dict) else []
+        do_not_chase = [
+            p.get("ticker", "")
+            for p in payloads
+            if isinstance(p, dict) and p.get("decision", {}).get("action") == "DO_NOT_CHASE"
+        ]
+        add(
+            "LOW",
+            "AI Optical",
+            "AI Optical / Rack-scale Revenue Build 周度复核",
+            "复核AI光通信收入模型",
+            f"查看 AI_Optical_Revenue_Build_Compare_LATEST：用途是把 LITE/COHR 等 AI optical/rack-scale 强主线拆成收入、FCF、价格吸收和证据等级。当前 DO_NOT_CHASE={','.join(do_not_chase) or '暂无'}。只补主源证据、等回撤或等估值重置；不追高，不改变 V6AB V2",
         )
 
     # 跨市场同步防污染检查：定期提醒用户让 AI 审查 V6AB / A股 Radar 的共享成果。

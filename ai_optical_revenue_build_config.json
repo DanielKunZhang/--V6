@@ -55,37 +55,51 @@
             {
               "name": "100G EML laser chips",
               "values": [120, 120, 130, 125, 115, 105],
-              "driver": "Legacy/high-volume EML path; should gradually decline as 200G ramps, but not collapse if 800G/1.6T mix still uses 100G."
+              "driver": "Legacy/high-volume EML path; should gradually decline as 200G ramps, but not collapse if 800G/1.6T mix still uses 100G.",
+              "evidence_level": "MODEL_ASSUMPTION",
+              "evidence_note": "Product-level split comes from screenshot/working model; official segment subtotal is confirmed, but 100G line item is not separately disclosed."
             },
             {
               "name": "200G EML laser chips",
               "values": [80, 115, 200, 280, 360, 450],
-              "driver": "Core upside line. Requires ASP premium, InP capacity, customer qualification, and AI cluster demand validation."
+              "driver": "Core upside line. Requires ASP premium, InP capacity, customer qualification, and AI cluster demand validation.",
+              "evidence_level": "OFFICIAL_DIRECTION_SELLSIDE_NUMBERS",
+              "evidence_note": "Official materials support 200G EML/datacenter direction, but exact quarterly revenue ramp still needs IR/call/sell-side source verification."
             },
             {
               "name": "DCI long-wavelength lasers",
               "values": [150, 145, 185, 215, 245, 280],
-              "driver": "DCI and hyperscaler interconnect demand; less pure than 200G but can benefit from scale-across data-center buildout."
+              "driver": "DCI and hyperscaler interconnect demand; less pure than 200G but can benefit from scale-across data-center buildout.",
+              "evidence_level": "OFFICIAL_DIRECTION_MODEL_ASSUMPTION",
+              "evidence_note": "Supported directionally by datacenter/communications commentary; exact product split is model assumption."
             },
             {
               "name": "Pump lasers",
               "values": [80, 88, 110, 130, 150, 170],
-              "driver": "Scale-across/sub-sea and optical amplification demand; supply capacity and margin quality need verification."
+              "driver": "Scale-across/sub-sea and optical amplification demand; supply capacity and margin quality need verification.",
+              "evidence_level": "MODEL_ASSUMPTION",
+              "evidence_note": "Needs product-level confirmation and margin evidence."
             },
             {
               "name": "CPO ultra-high-power lasers",
               "values": [30, 40, 70, 100, 140, 190],
-              "driver": "Longer-dated CPO/scale-out option; high payoff but timing and standards remain less certain."
+              "driver": "Longer-dated CPO/scale-out option; high payoff but timing and standards remain less certain.",
+              "evidence_level": "OPTION_NOT_BASE",
+              "evidence_note": "CPO is relevant but timing is less certain; should not carry base-case valuation without stronger order/customer evidence."
             },
             {
               "name": "3D sensing VCSEL",
               "values": [60, 75, 70, 55, 50, 65],
-              "driver": "Consumer/Apple-related line; not core AI thesis and should not be used to justify AI multiple expansion."
+              "driver": "Consumer/Apple-related line; not core AI thesis and should not be used to justify AI multiple expansion.",
+              "evidence_level": "NON_AI_ANCHOR",
+              "evidence_note": "Not an AI thesis driver."
             },
             {
               "name": "Other industrial lasers",
               "values": [13.3, 34, 38, 40, 42, 44],
-              "driver": "Non-core stabilizer. F3Q26A is calibrated as residual so Components subtotal matches official $533.3M."
+              "driver": "Non-core stabilizer. F3Q26A is calibrated as residual so Components subtotal matches official $533.3M.",
+              "evidence_level": "RESIDUAL",
+              "evidence_note": "Used to reconcile official segment subtotal."
             }
           ]
         },
@@ -95,22 +109,30 @@
             {
               "name": "800G cloud transceivers",
               "values": [160, 170, 175, 165, 150, 130],
-              "driver": "Mature high-speed module cycle; may fade as 1.6T ramps."
+              "driver": "Mature high-speed module cycle; may fade as 1.6T ramps.",
+              "evidence_level": "OFFICIAL_DIRECTION_MODEL_ASSUMPTION",
+              "evidence_note": "Directionally tied to cloud datacenter systems, but exact line split needs source validation."
             },
             {
               "name": "1.6T cloud transceivers",
               "values": [30, 55, 130, 200, 280, 370],
-              "driver": "Important AI rack-scale ramp line; requires customer qualification and volume evidence."
+              "driver": "Important AI rack-scale ramp line; requires customer qualification and volume evidence.",
+              "evidence_level": "OFFICIAL_DIRECTION_SELLSIDE_NUMBERS",
+              "evidence_note": "Official materials support 1.6T/ramp direction, but quarterly values need source validation."
             },
             {
               "name": "OCS (R300 + R-series)",
               "values": [50, 85, 130, 160, 195, 230],
-              "driver": "Optical circuit switching path; needs proof that AI network architectures adopt it at scale."
+              "driver": "Optical circuit switching path; needs proof that AI network architectures adopt it at scale.",
+              "evidence_level": "OFFICIAL_DIRECTION_MODEL_ASSUMPTION",
+              "evidence_note": "Needs architecture adoption and order evidence before it can support ticker-specific alpha."
             },
             {
               "name": "Telecom networking",
               "values": [35, 38, 45, 50, 55, 60],
-              "driver": "Legacy/networking line; secondary to AI thesis."
+              "driver": "Legacy/networking line; secondary to AI thesis.",
+              "evidence_level": "NON_AI_ANCHOR",
+              "evidence_note": "Non-core to AI thesis."
             }
           ]
         }
@@ -177,6 +199,138 @@
       ],
       "initial_decision": "RESEARCH_BUILD_ONLY",
       "system_action": "Use as V6AB/Radar evidence input after source validation; do not trade from the model alone."
+    },
+    "COHR": {
+      "company": "Coherent Corp.",
+      "market": "US",
+      "theme": "AI optical / datacenter photonics",
+      "source_note": "First-pass company-segment revenue build from Coherent official Q3 FY26 release and investor presentation. Product-level 800G/1.6T/CPO assumptions remain less granular than LITE until earnings call/IR details are added.",
+      "official_sources": [
+        {
+          "name": "Coherent Q3 FY26 results press release",
+          "url": "https://www.coherent.com/news/press-releases/third-quarter-fiscal-year-2026-results",
+          "use": "Q3 FY26 revenue, margin, EPS, Q4 guidance, management commentary"
+        },
+        {
+          "name": "Coherent Q3 FY26 investor presentation",
+          "url": "https://www.coherent.com/content/dam/coherent/site/en/documents/investors/investor-presentations/2026/may-6/investor-presentation-20260506.pdf",
+          "use": "Quarterly revenue by market segment and datacenter/communications trend"
+        }
+      ],
+      "official_calibration": {
+        "F3Q26A": {
+          "total_revenue": 1810.0,
+          "datacenter_communications": 1361.6,
+          "industrial": 444.0,
+          "non_gaap_gross_margin_pct": 39.6,
+          "non_gaap_eps": 1.41
+        },
+        "F4Q26G": {
+          "revenue_guidance_low": 1910,
+          "revenue_guidance_high": 2050,
+          "non_gaap_eps_low": 1.52,
+          "non_gaap_eps_high": 1.72
+        }
+      },
+      "currency": "USD",
+      "unit": "USD millions per quarter",
+      "quarters": ["F3Q26A", "F4Q26G", "F1Q27E", "F2Q27E", "F3Q27E", "F4Q27E"],
+      "segments": [
+        {
+          "name": "Datacenter & Communications",
+          "lines": [
+            {
+              "name": "Datacenter & communications photonics",
+              "values": [1361.6, 1500, 1650, 1800, 1950, 2100],
+              "driver": "Official segment is already the dominant AI/networking line. Needs product-level split into 800G/1.6T/CPO/OCS later.",
+              "evidence_level": "OFFICIAL_SEGMENT",
+              "evidence_note": "Segment subtotal is official; product-level AI split remains to be added."
+            }
+          ]
+        },
+        {
+          "name": "Industrial",
+          "lines": [
+            {
+              "name": "Industrial",
+              "values": [444, 450, 455, 465, 475, 485],
+              "driver": "Non-AI anchor; recent sequential drag means it should not be used to justify AI multiple expansion.",
+              "evidence_level": "OFFICIAL_SEGMENT",
+              "evidence_note": "Official segment-level anchor; not an AI driver."
+            }
+          ]
+        },
+        {
+          "name": "Other / rounding",
+          "lines": [
+            {
+              "name": "Other and rounding",
+              "values": [4.4, 30, 35, 35, 35, 35],
+              "driver": "Residual line to reconcile total revenue and allow conservative non-core growth.",
+              "evidence_level": "RESIDUAL",
+              "evidence_note": "Residual line."
+            }
+          ]
+        }
+      ],
+      "scenario_modifiers": {
+        "bear": {
+          "description": "AI datacenter demand remains strong but growth decelerates and industrial drag persists.",
+          "line_multipliers": {
+            "Datacenter & communications photonics": 0.85,
+            "Industrial": 0.95
+          }
+        },
+        "base": {
+          "description": "Official-segment first-pass build with datacenter/communications continuing to compound.",
+          "line_multipliers": {}
+        },
+        "upside": {
+          "description": "Capacity expansion and AI photonics demand drive stronger datacenter/communications ramp.",
+          "line_multipliers": {
+            "Datacenter & communications photonics": 1.18,
+            "Industrial": 1.02
+          }
+        }
+      },
+      "financial_layer": {
+        "bear": {
+          "gross_margin_pct": [0.382, 0.388, 0.392, 0.396, 0.400, 0.402],
+          "operating_margin_pct": [0.165, 0.175, 0.185, 0.190, 0.195, 0.200],
+          "fcf_margin_pct": [0.080, 0.095, 0.105, 0.115, 0.120, 0.125]
+        },
+        "base": {
+          "gross_margin_pct": [0.396, 0.405, 0.415, 0.425, 0.435, 0.440],
+          "operating_margin_pct": [0.185, 0.200, 0.215, 0.230, 0.240, 0.250],
+          "fcf_margin_pct": [0.100, 0.120, 0.140, 0.155, 0.165, 0.175]
+        },
+        "upside": {
+          "gross_margin_pct": [0.405, 0.420, 0.435, 0.450, 0.460, 0.465],
+          "operating_margin_pct": [0.195, 0.220, 0.245, 0.265, 0.280, 0.290],
+          "fcf_margin_pct": [0.110, 0.135, 0.165, 0.185, 0.200, 0.215]
+        },
+        "net_cash_m": -2500,
+        "diluted_shares_m": 196,
+        "valuation_multiples": {
+          "bear_fcf_multiple": 16,
+          "base_fcf_multiple": 22,
+          "upside_fcf_multiple": 28
+        }
+      },
+      "current_market": {
+        "price": 377.57,
+        "price_date": "2026-05-22",
+        "source": "public historical close cross-check; refresh before any future action"
+      },
+      "evidence_gates": [
+        "Coherent official filings/presentation confirm Datacenter & Communications growth and margin expansion.",
+        "Capacity expansion translates into high-quality FCF, not only revenue growth.",
+        "Product-level evidence for 800G/1.6T/CPO/OCS is added before using the model for ticker-specific alpha.",
+        "Industrial drag does not offset datacenter margin expansion.",
+        "Price/crowding remains acceptable versus base-case value."
+      ],
+      "initial_decision": "RESEARCH_BUILD_ONLY",
+      "system_action": "Use as higher-quality AI optical comparison candidate versus LITE after product-level evidence is added."
     }
   }
 }
