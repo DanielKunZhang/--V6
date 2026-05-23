@@ -1,0 +1,116 @@
+{
+  "version": "ai_optical_revenue_build_v1",
+  "updated_at": "2026-05-24",
+  "principle": "Build bottom-up revenue scenarios for AI optical / rack-scale supply-chain candidates. This is research evidence, not a trading signal.",
+  "companies": {
+    "LITE": {
+      "company": "Lumentum Holdings Inc.",
+      "market": "US",
+      "theme": "AI optical / rack-scale systems",
+      "source_note": "Initial template seeded from user-provided screenshot of a Claude-assisted Excel revenue build. Numbers are unverified until checked against company IR, earnings call, filings, and credible supply-chain sources.",
+      "currency": "USD",
+      "unit": "USD millions per quarter",
+      "quarters": ["F3Q26A", "F4Q26G", "F1Q27E", "F2Q27E", "F3Q27E", "F4Q27E"],
+      "segments": [
+        {
+          "name": "Components",
+          "lines": [
+            {
+              "name": "100G EML laser chips",
+              "values": [120, 120, 130, 125, 115, 105],
+              "driver": "Legacy/high-volume EML path; should gradually decline as 200G ramps, but not collapse if 800G/1.6T mix still uses 100G."
+            },
+            {
+              "name": "200G EML laser chips",
+              "values": [80, 115, 200, 280, 360, 450],
+              "driver": "Core upside line. Requires ASP premium, InP capacity, customer qualification, and AI cluster demand validation."
+            },
+            {
+              "name": "DCI long-wavelength lasers",
+              "values": [150, 145, 185, 215, 245, 280],
+              "driver": "DCI and hyperscaler interconnect demand; less pure than 200G but can benefit from scale-across data-center buildout."
+            },
+            {
+              "name": "Pump lasers",
+              "values": [80, 88, 110, 130, 150, 170],
+              "driver": "Scale-across/sub-sea and optical amplification demand; supply capacity and margin quality need verification."
+            },
+            {
+              "name": "CPO ultra-high-power lasers",
+              "values": [30, 40, 70, 100, 140, 190],
+              "driver": "Longer-dated CPO/scale-out option; high payoff but timing and standards remain less certain."
+            },
+            {
+              "name": "3D sensing VCSEL",
+              "values": [60, 75, 70, 55, 50, 65],
+              "driver": "Consumer/Apple-related line; not core AI thesis and should not be used to justify AI multiple expansion."
+            },
+            {
+              "name": "Other industrial lasers",
+              "values": [33, 34, 38, 40, 42, 44],
+              "driver": "Non-core stabilizer."
+            }
+          ]
+        },
+        {
+          "name": "Systems",
+          "lines": [
+            {
+              "name": "800G cloud transceivers",
+              "values": [160, 170, 175, 165, 150, 130],
+              "driver": "Mature high-speed module cycle; may fade as 1.6T ramps."
+            },
+            {
+              "name": "1.6T cloud transceivers",
+              "values": [30, 55, 130, 200, 280, 370],
+              "driver": "Important AI rack-scale ramp line; requires customer qualification and volume evidence."
+            },
+            {
+              "name": "OCS (R300 + R-series)",
+              "values": [50, 85, 130, 160, 195, 230],
+              "driver": "Optical circuit switching path; needs proof that AI network architectures adopt it at scale."
+            },
+            {
+              "name": "Telecom networking",
+              "values": [35, 38, 45, 50, 55, 60],
+              "driver": "Legacy/networking line; secondary to AI thesis."
+            }
+          ]
+        }
+      ],
+      "scenario_modifiers": {
+        "bear": {
+          "description": "200G/CPO/1.6T ramp delayed, AI optical demand remains real but pricing and capacity upside are overestimated.",
+          "line_multipliers": {
+            "200G EML laser chips": 0.7,
+            "CPO ultra-high-power lasers": 0.5,
+            "1.6T cloud transceivers": 0.65,
+            "OCS (R300 + R-series)": 0.75
+          }
+        },
+        "base": {
+          "description": "Screenshot-seeded base case. Treat as working model, not verified company guidance.",
+          "line_multipliers": {}
+        },
+        "upside": {
+          "description": "AI rack-scale acceleration: 200G/1.6T/CPO adoption is faster and LITE captures more bottleneck economics.",
+          "line_multipliers": {
+            "200G EML laser chips": 1.25,
+            "CPO ultra-high-power lasers": 1.45,
+            "1.6T cloud transceivers": 1.25,
+            "OCS (R300 + R-series)": 1.2
+          }
+        }
+      },
+      "evidence_gates": [
+        "Lumentum IR or earnings call confirms AI/datacenter demand by product line.",
+        "200G EML ramp has customer qualification, supply capacity, and margin evidence.",
+        "1.6T and CPO timing is supported by customer roadmap, not only market narrative.",
+        "Revenue growth converts into gross margin and FCF, not just lower-quality pass-through sales.",
+        "Stock price/crowding does not already price the upside case."
+      ],
+      "initial_decision": "RESEARCH_BUILD_ONLY",
+      "system_action": "Use as V6AB/Radar evidence input after source validation; do not trade from the model alone."
+    }
+  }
+}
