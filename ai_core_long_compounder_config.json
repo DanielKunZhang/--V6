@@ -1,0 +1,96 @@
+{
+  "version": "ai_core_long_compounder_radar_v1",
+  "updated_at": "2026-05-23",
+  "principle": "Find a small number of AI-era long compounders for thesis-led, valuation-disciplined, long-term pullback accumulation. This is research guidance only, not an auto-trading system.",
+  "price_policy": "Use latest completed valuation/watchlist price by default. Do not spend Futu K-line quota or auto-trade.",
+  "core_candidates": [
+    {
+      "ticker": "NVDA",
+      "pool": "AI GPU / accelerated computing platform",
+      "trust_tier": "HIGH_TRUST_CORE",
+      "thesis_trend": "STRONG",
+      "role": "Core AI exposure, split between core compounder and trend overlay",
+      "gates": ["Data Center growth", "gross margin durability", "customer concentration", "China/export control", "AI capex sustainability"]
+    },
+    {
+      "ticker": "MSFT",
+      "pool": "Enterprise AI platform / Azure / Office / GitHub",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "STRONG",
+      "role": "Most stable enterprise AI platform candidate",
+      "gates": ["Azure AI revenue", "Copilot monetization", "OpenAI relationship", "CapEx ROI", "valuation discipline"]
+    },
+    {
+      "ticker": "AMZN",
+      "pool": "AWS / AI infrastructure / advertising / logistics",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "STRONG",
+      "role": "Complex but potentially major AI-era platform compounder",
+      "gates": ["AWS AI acceleration", "advertising growth", "retail/logistics leverage", "AI CapEx to FCF conversion", "valuation discipline"]
+    },
+    {
+      "ticker": "GOOGL",
+      "pool": "Search / YouTube / Cloud / Gemini / Waymo",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "WATCH",
+      "role": "High-quality platform with AI Search and regulatory rebuttal gates",
+      "gates": ["AI Search engagement", "ad click dilution", "AI serving cost", "Cloud acceleration", "DOJ/regulatory outcome"]
+    },
+    {
+      "ticker": "META",
+      "pool": "AI-enhanced ads / recommendation / social platform",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "Needs fresh AI-Core valuation before any core ranking",
+      "gates": ["AI ad efficiency", "CapEx discipline", "Reality Labs drag", "engagement durability", "valuation"]
+    },
+    {
+      "ticker": "ADBE",
+      "pool": "Creative/document software AI transformation",
+      "trust_tier": "UPGRADE_CANDIDATE",
+      "thesis_trend": "WATCH",
+      "role": "Potential mispriced compounder if AI disruption is contained",
+      "gates": ["AI-native substitution", "net new ARR", "Firefly monetization", "pricing power", "CEO succession"]
+    },
+    {
+      "ticker": "AVGO",
+      "pool": "AI ASIC / networking / infrastructure software",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "AI infrastructure compounder candidate, needs full valuation",
+      "gates": ["custom silicon demand", "AI networking growth", "VMware integration", "customer concentration", "valuation"]
+    },
+    {
+      "ticker": "TSM",
+      "pool": "Leading-edge foundry / AI semiconductor bottleneck",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "Core AI manufacturing bottleneck with geopolitical discount",
+      "gates": ["AI node demand", "pricing power", "CapEx cycle", "Taiwan geopolitical risk", "valuation"]
+    },
+    {
+      "ticker": "ASML",
+      "pool": "EUV lithography monopoly / semiconductor capex bottleneck",
+      "trust_tier": "HIGH_TRUST_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "Monopoly-like AI/semi capex enabler, needs updated valuation",
+      "gates": ["EUV/High-NA demand", "China controls", "semi cycle", "order book", "valuation"]
+    },
+    {
+      "ticker": "ANET",
+      "pool": "AI networking / datacenter switching",
+      "trust_tier": "RADAR_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "AI network expansion candidate, not yet core without valuation",
+      "gates": ["AI cluster networking share", "cloud customer concentration", "margin durability", "valuation"]
+    },
+    {
+      "ticker": "AMD",
+      "pool": "AI accelerator challenger / CPU platform",
+      "trust_tier": "RADAR_CANDIDATE",
+      "thesis_trend": "RESEARCH",
+      "role": "Upside challenger, requires evidence of sustained AI accelerator traction",
+      "gates": ["MI-series adoption", "gross margin", "ROCm/software ecosystem", "valuation"]
+    }
+  ]
+}

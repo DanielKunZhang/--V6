@@ -47,6 +47,7 @@ US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
 US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_input" / "latest.json"
 VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 OPTIONALITY_OVERLAY_QUEUE = ROOT / "optionality_overlay_review_queue.json"
+AI_CORE_LONG_COMPOUNDER_RADAR = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/AI_Core_Long_Compounder_Radar_LATEST.json")
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
@@ -962,6 +963,24 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "周度清点：是否有候选需要进入 Optionality Review 队列",
             "清点期权表达候选",
             "只从主仓/进攻价值投 thesis、V6AB/V6-B 强主线、已验证跨市场研究中提取；输出只能是 NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW；不得自动交易期权，必须先写明 max loss / event window / invalidation / exit plan",
+        )
+
+    # AI 大时代长期核心复利股：周度查看候选是否进入击球区。
+    # 这是主仓研究雷达，不自动交易，不和 V6AB/A股 Radar 仓位混用。
+    if today.weekday() == 4:
+        ai_core_payload = read_json(AI_CORE_LONG_COMPOUNDER_RADAR)
+        rows = ai_core_payload.get("rows", []) if isinstance(ai_core_payload, dict) else []
+        actionable = [
+            r for r in rows
+            if isinstance(r, dict) and r.get("action") in {"PULLBACK_REVIEW", "STARTER_OR_UPGRADE_REVIEW"}
+        ]
+        tickers = "、".join(str(r.get("ticker", "")) for r in actionable[:5]) or "暂无"
+        add(
+            "MED" if actionable else "LOW",
+            "AI Core",
+            "AI Core Long Compounder Radar 周度复核",
+            "复核AI核心复利股",
+            f"查看 AI_Core_Long_Compounder_Radar_LATEST：目标是寻找 AI 大时代少数可长期逢低加仓的高信任复利股；当前需人工复核候选={tickers}。只做估值/thesis/击球区复核，不自动交易，不追高，不替代主仓风险预算",
         )
 
     # 跨市场同步防污染检查：定期提醒用户让 AI 审查 V6AB / A股 Radar 的共享成果。

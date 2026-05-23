@@ -17,6 +17,7 @@ backtest_results/
 !central_risk_board_config.json
 !a_share_official_policy_sources.json
 !optionality_overlay_review_queue.json
+!ai_core_long_compounder_config.json
 *.bak
 .DS_Store
 .env
