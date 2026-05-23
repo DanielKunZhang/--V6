@@ -199,6 +199,23 @@ def parse_inbox(path: Path, asof: date) -> list[dict[str, Any]]:
 def infer_theme(text: str, market: str) -> str:
     lowered = text.lower()
     pairs = [
+        ("vera rubin", "AI rack-scale systems / Rubin supply chain"),
+        ("rubin", "AI rack-scale systems / Rubin supply chain"),
+        ("vr200", "AI rack-scale systems / Rubin supply chain"),
+        ("nvl72", "AI rack-scale systems / Rubin supply chain"),
+        ("rack-scale", "AI rack-scale systems / Rubin supply chain"),
+        ("rack scale", "AI rack-scale systems / Rubin supply chain"),
+        ("机柜", "AI rack-scale systems / Rubin supply chain"),
+        ("ai工厂", "AI rack-scale systems / Rubin supply chain"),
+        ("整机柜", "AI rack-scale systems / Rubin supply chain"),
+        ("整系统", "AI rack-scale systems / Rubin supply chain"),
+        ("液冷", "AI rack-scale systems / cooling"),
+        ("cpo", "AI optical / photonics"),
+        ("pcb", "AI PCB / high-end materials"),
+        ("abf", "AI PCB / high-end materials"),
+        ("高端材料", "AI PCB / high-end materials"),
+        ("电源", "AI power / data center"),
+        ("hvdc", "AI power / data center"),
         ("人形机器人", "人形机器人"),
         ("机器人", "人形机器人"),
         ("半导体设备", "半导体设备"),
@@ -284,8 +301,8 @@ def summarize_block(block: str, limit: int = 220) -> str:
 def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: set[int], asof: date) -> list[dict[str, Any]]:
     market = "A股" if "A股" in path.name else "US"
     paste_lines = collect_paste_lines(lines, consumed_table_lines)
-    if market == "US" and any("seeking" in line.lower() or "hot themes" in line.lower() for line in paste_lines):
-        return parse_seeking_alpha_lines(path, paste_lines, asof)
+    has_sa_lines = market == "US" and any("seeking" in line.lower() or "hot themes" in line.lower() for line in paste_lines)
+    sa_rows = parse_seeking_alpha_lines(path, paste_lines, asof) if has_sa_lines else []
 
     blocks: list[str] = []
     current: list[str] = []
@@ -313,6 +330,8 @@ def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: s
     rows: list[dict[str, Any]] = []
     for block in blocks:
         if not block or "示例：" in block:
+            continue
+        if has_sa_lines and not any(marker in block for marker in ["来源：", "待验证", "动作：", "主题：", "摘要：", "短线群", "主源"]):
             continue
         summary = summarize_block(block)
         raw_id = "|".join([asof.isoformat(), market, summary])
@@ -347,7 +366,7 @@ def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: s
                 "updated_at": asof.isoformat(),
             }
         )
-    return rows
+    return sa_rows + rows
 
 
 def collect_paste_lines(lines: list[str], consumed_table_lines: set[int]) -> list[str]:
