@@ -731,7 +731,7 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "Radar-CN",
             "A股 Radar Phase 1A 纪律记录",
             "复盘 A股Radar",
-            "当前是主线识别/短线表达/交易纪律训练系统；每日记录候选、触发、止损/失效、主观干预和复盘覆盖率，30笔完整样本前不改规则",
+            "当前是中频主题轮动训练系统，不打板不盯盘；每日记录候选、信号来源、为什么是启动初期、触发/冷却/失效、主观干预和复盘覆盖率，30笔完整样本前不改规则",
         )
         add(
             "LOW",
