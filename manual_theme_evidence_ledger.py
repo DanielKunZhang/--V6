@@ -36,6 +36,8 @@ TEMPLATE = """# {title}
 - 不确定就写 `WATCH`，不要为了完整性硬凑。
 - `confidence` 用 1-5，3=值得记录，4=较强，5=非常强。
 - `user_verdict` 用 `KEEP / WATCH / REJECT`。
+- INBOX 只放待处理新信息；系统处理写入 ledger 后，可以删除已处理行。
+- 历史档案看 `Theme_Evidence_人工搜集_LATEST.md/json/csv`，不要把 INBOX 当档案库。
 
 | date | market | theme | source_type | summary | evidence_direction | confidence | stage | link_or_source | user_verdict | notes |
 | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- |

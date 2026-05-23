@@ -735,14 +735,14 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         "Theme Evidence",
         "A股 Radar 人工信息搜集：政策/产业/公告/板块异动",
         "记录 A股主题证据",
-        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；重点搜集人形机器人、半导体设备及新出现的政策/产业主线。系统会结构化入 ledger；当前 evidence 到期复核 {evidence_due_count} 条",
+        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。搜集建议：中国政府网/发改委/工信部/证监会政策，巨潮/交易所公告，富途/财联社/东方财富板块异动；重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
     )
     add(
         "LOW" if today.weekday() < 4 else "MED",
         "Theme Evidence",
         "V6AB / 美股 Radar 人工信息搜集：财报、SEC、13F、产业链扩散",
         "记录 V6AB主题证据",
-        f"把本周看到的 AI infra/semis/power/data center、2020 technology/precious metals、2022 energy/defensive 等高质量线索写入 {THEME_EVIDENCE_V6AB_INBOX}；只做 evidence，不改变 V2 模拟盘",
+        f"把本周看到的高质量线索写入 {THEME_EVIDENCE_V6AB_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。搜集建议：SEC EDGAR/公司IR/财报电话会/13F/Fed/BEA/产业链公开报道；重点搜 AI infra、semis、power、data center、HBM、光模块、云capex，以及 2020 technology/precious metals、2022 energy/inflation/defensive 历史主线证据。只记录财报/订单/capex/供应链瓶颈/机构持仓/宏观数据或强反证；不记录泛泛新闻。只做 evidence，不改变 V2 模拟盘",
     )
 
     # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。
