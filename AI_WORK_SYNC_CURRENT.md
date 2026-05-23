@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-24 01:15:54`
+- Last updated: `2026-05-24 01:25:08`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1063,3 +1063,4 @@ dc58870 feat: add V6 daily report automation
 - [00:56] [代码] AI Core Long Compounder Radar 已补齐快速估值锚：META/AVGO/TSM/ASML/ANET/AMD 写入 watchlist，ANET/AMD 接入 AI-Core SOP v2.6 路由，新增 research_snapshots/20260524/AI_Core_Long_Compounder_Quick_Valuation_Anchors_v1.md；刷新后 RESEARCH_VALUATION_FIRST 清零，当前 ADBE=STARTER_OR_UPGRADE_REVIEW，META=WATCH_REVIEW_ONLY，NVDA=HOLD_NO_ADD，AMZN/AVGO/MSFT/TSM/ANET=WATCH_WAIT_FOR_PULLBACK，ASML/GOOGL/AMD=DO_NOT_CHASE。估值纪律仍是 V_base 决定正股能否买，V_option 不允许追高。
 - [01:06] [代码] 短线群 Rubin/VR200/AI机柜系统竞争线索已接入 Theme Evidence：V6AB 与 A股 INBOX 均新增 WATCH 记录，只作主源验证线索，不交易；manual_theme_evidence_ledger 新增 Rubin/VR200/rack-scale/机柜/液冷/CPO/PCB/ABF/HVDC 等关键词，并修复 US INBOX 中 Seeking Alpha 区块后面的普通人工线索被跳过的问题；a_share_official_policy_sources 新增 AI机柜系统供应链/PCB液冷电源互联 主题关键词。重跑 ledger 后样本 68，A股 3，US/V6AB 65，Rubin 线索已分别进入 ledger。
 - [01:15] [代码] AI Optical / Rack-scale Revenue Build 第一层已落地：新增 ai_optical_revenue_build_config.json 与 ai_optical_revenue_build.py，先以 LITE 做样板，按 100G/200G EML、DCI、Pump、CPO、VCSEL、800G、1.6T、OCS、Telecom 业务线生成 Bear/Base/Upside 三情景、AI核心收入占比、证据 Gate 和 HTML/MD/CSV/JSON 报告。输出在 LITE_AI_Optical_Revenue_Build_LATEST.*。边界：这是第一层 revenue build，数字来自用户截图种子，未主源验证；不能交易、不替代 V6AB V2；后续周末继续做主源校正、毛利/FCF层和估值/动作层。
+- [01:24] [代码] LITE Revenue Build 已推进到第二层：接入 Lumentum Q3 FY26 官方 press release/Q3 presentation/Q2 presentation 作为主源校准，F3Q26A revenue/components/systems 与 F4Q26 guidance 均 PASS；新增 financial_layer，把收入模型接到 gross margin、operating margin、FCF margin、net cash、shares、FCF multiple，输出 Bear/Base/Upside 粗略价值/股；接入价格锚 2026-05-22 close约946.9 后，动作从潜在 pilot 降为 DO_NOT_CHASE：Price/Base 1.70x，Upside dependency 103.9%，说明 LITE 主线强但当前普通股已经吃满甚至超过 upside 情景，只能作为 V6AB/Radar 主线证据与等待回撤样本。

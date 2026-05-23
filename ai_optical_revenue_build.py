@@ -83,6 +83,10 @@ def build_payload(config: dict[str, Any], ticker: str, asof: str) -> dict[str, A
             }
         )
 
+    financials = build_financial_layer(company, quarters, scenario_totals)
+    validation = build_validation(company, quarters, scenario_totals, segment_totals)
+    decision = build_decision(company, financials)
+
     return {
         "asof": asof,
         "ticker": ticker,
@@ -92,8 +96,149 @@ def build_payload(config: dict[str, Any], ticker: str, asof: str) -> dict[str, A
         "segment_totals": segment_totals,
         "scenario_totals": scenario_totals,
         "mix": mix,
+        "financials": financials,
+        "validation": validation,
+        "decision": decision,
         "version": config.get("version", ""),
     }
+
+
+def build_decision(company: dict[str, Any], financials: dict[str, Any]) -> dict[str, Any]:
+    current = company.get("current_market", {})
+    price = float(current.get("price", 0) or 0)
+    bear_value = float(financials["bear"].get("value_per_share", 0))
+    base_value = float(financials["base"].get("value_per_share", 0))
+    upside_value = float(financials["upside"].get("value_per_share", 0))
+    if not price:
+        return {
+            "action": "NO_PRICE_RESEARCH_ONLY",
+            "reason": "No current price anchor.",
+            "price": price,
+            "base_discount": None,
+            "upside_dependency": None,
+        }
+    base_discount = price / base_value if base_value else None
+    upside_dependency = max(0.0, (price - bear_value) / max(upside_value - bear_value, 1.0))
+    if price > base_value:
+        action = "DO_NOT_CHASE"
+        reason = "Price is above rough base value; revenue upside may be real but common stock has no base-case margin of safety."
+    elif upside_dependency > 0.35:
+        action = "NEEDS_SOURCE_VALIDATION"
+        reason = "Price already depends materially on AI upside; require source validation before any pilot review."
+    elif price <= base_value * 0.8:
+        action = "PILOT_REVIEW_AFTER_GATES"
+        reason = "Price is below rough base value, but only after evidence gates pass and crowding is acceptable."
+    else:
+        action = "WATCH_WAIT_FOR_PULLBACK"
+        reason = "Model suggests upside, but current setup still needs evidence and better entry discipline."
+    return {
+        "action": action,
+        "reason": reason,
+        "price": price,
+        "price_date": current.get("price_date", ""),
+        "price_source": current.get("source", ""),
+        "bear_value": bear_value,
+        "base_value": base_value,
+        "upside_value": upside_value,
+        "base_discount": base_discount,
+        "upside_dependency": upside_dependency,
+    }
+
+
+def build_financial_layer(
+    company: dict[str, Any],
+    quarters: list[str],
+    scenario_totals: dict[str, list[float]],
+) -> dict[str, Any]:
+    layer = company.get("financial_layer", {})
+    out: dict[str, Any] = {}
+    for scenario in ["bear", "base", "upside"]:
+        assumptions = layer.get(scenario, {})
+        revenue = scenario_totals[scenario]
+        gross_margin = [float(v) for v in assumptions.get("gross_margin_pct", [0.0] * len(quarters))]
+        operating_margin = [float(v) for v in assumptions.get("operating_margin_pct", [0.0] * len(quarters))]
+        fcf_margin = [float(v) for v in assumptions.get("fcf_margin_pct", [0.0] * len(quarters))]
+        gross_profit = [round(revenue[idx] * gross_margin[idx], 1) for idx in range(len(quarters))]
+        operating_income = [round(revenue[idx] * operating_margin[idx], 1) for idx in range(len(quarters))]
+        fcf = [round(revenue[idx] * fcf_margin[idx], 1) for idx in range(len(quarters))]
+        annualized_exit_fcf = fcf[-1] * 4
+        fcf_multiple = float(layer.get("valuation_multiples", {}).get(f"{scenario}_fcf_multiple", 0))
+        net_cash = float(layer.get("net_cash_m", 0))
+        shares = float(layer.get("diluted_shares_m", 0))
+        equity_value = annualized_exit_fcf * fcf_multiple + net_cash
+        value_per_share = equity_value / shares if shares else 0
+        out[scenario] = {
+            "gross_margin_pct": gross_margin,
+            "operating_margin_pct": operating_margin,
+            "fcf_margin_pct": fcf_margin,
+            "gross_profit": gross_profit,
+            "operating_income": operating_income,
+            "fcf": fcf,
+            "annualized_exit_fcf": annualized_exit_fcf,
+            "fcf_multiple": fcf_multiple,
+            "net_cash_m": net_cash,
+            "diluted_shares_m": shares,
+            "equity_value_m": equity_value,
+            "value_per_share": value_per_share,
+        }
+    return out
+
+
+def build_validation(
+    company: dict[str, Any],
+    quarters: list[str],
+    scenario_totals: dict[str, list[float]],
+    segment_totals: dict[str, dict[str, list[float]]],
+) -> list[dict[str, Any]]:
+    calibration = company.get("official_calibration", {})
+    checks: list[dict[str, Any]] = []
+    for quarter, facts in calibration.items():
+        if quarter not in quarters:
+            continue
+        idx = quarters.index(quarter)
+        if "total_revenue" in facts:
+            model = scenario_totals["base"][idx]
+            actual = float(facts["total_revenue"])
+            checks.append(
+                {
+                    "quarter": quarter,
+                    "metric": "total_revenue",
+                    "model": model,
+                    "official": actual,
+                    "status": "PASS" if abs(model - actual) <= 1.0 else "CHECK",
+                    "note": "Base model should reconcile to official actual quarter.",
+                }
+            )
+        for segment_key, segment_name in [("components", "Components"), ("systems", "Systems")]:
+            if segment_key not in facts or segment_name not in segment_totals:
+                continue
+            model = segment_totals[segment_name]["base"][idx]
+            actual = float(facts[segment_key])
+            checks.append(
+                {
+                    "quarter": quarter,
+                    "metric": segment_key,
+                    "model": model,
+                    "official": actual,
+                    "status": "PASS" if abs(model - actual) <= 1.0 else "CHECK",
+                    "note": "Segment subtotal reconciliation.",
+                }
+            )
+        if "revenue_guidance_low" in facts and "revenue_guidance_high" in facts:
+            model = scenario_totals["base"][idx]
+            low = float(facts["revenue_guidance_low"])
+            high = float(facts["revenue_guidance_high"])
+            checks.append(
+                {
+                    "quarter": quarter,
+                    "metric": "revenue_guidance_range",
+                    "model": model,
+                    "official": f"{low:.0f}-{high:.0f}",
+                    "status": "PASS" if low <= model <= high else "CHECK",
+                    "note": "Base model should sit inside official guidance range.",
+                }
+            )
+    return checks
 
 
 def write_csv(path: Path, payload: dict[str, Any]) -> None:
@@ -139,10 +284,63 @@ def render_md(payload: dict[str, Any]) -> str:
         values = " | ".join(fmt_money(v) for v in payload["scenario_totals"][scenario])
         lines.append(f"| `{scenario}` | {values} |")
 
+    lines.extend(
+        [
+            "",
+            "## 主源校准",
+            "",
+            "| Quarter | Metric | Model | Official / Guide | Status | Note |",
+            "| --- | --- | ---: | ---: | --- | --- |",
+        ]
+    )
+    for check in payload.get("validation", []):
+        model = check["model"]
+        model_text = fmt_money(model) if isinstance(model, (int, float)) else str(model)
+        official = check["official"]
+        official_text = fmt_money(official) if isinstance(official, (int, float)) else str(official)
+        lines.append(
+            f"| {check['quarter']} | {check['metric']} | {model_text} | {official_text} | `{check['status']}` | {check['note']} |"
+        )
+
     lines.extend(["", "## AI 核心收入占比", "", "| 情景 | " + " | ".join(quarters) + " |", "| --- | " + " | ".join(["---:"] * len(quarters)) + " |"])
     for item in payload["mix"]:
         values = " | ".join(f"{v:.1%}" for v in item["ai_core_mix"])
         lines.append(f"| `{item['scenario']}` | {values} |")
+
+    lines.extend(
+        [
+            "",
+        "## 简化财务层 / 定价锚",
+            "",
+            "| 情景 | Exit季度收入 | Exit FCF margin | 年化Exit FCF | FCF倍数 | 净现金 | 股数 | 粗略价值/股 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for scenario in ["bear", "base", "upside"]:
+        fin = payload["financials"][scenario]
+        lines.append(
+            f"| `{scenario}` | {fmt_money(payload['scenario_totals'][scenario][-1])} | "
+            f"{fin['fcf_margin_pct'][-1]:.1%} | {fmt_money(fin['annualized_exit_fcf'])} | "
+            f"{fin['fcf_multiple']:.1f}x | {fmt_money(fin['net_cash_m'])} | "
+            f"{fin['diluted_shares_m']:.1f} | ${fin['value_per_share']:.0f} |"
+        )
+
+    decision = payload["decision"]
+    base_discount = decision.get("base_discount")
+    upside_dependency = decision.get("upside_dependency")
+    lines.extend(
+        [
+            "",
+            "## 动作判定",
+            "",
+            f"- 当前价格锚：`${decision['price']:.2f}`（{decision.get('price_date', '')}；{decision.get('price_source', '')}）",
+            f"- Bear/Base/Upside 粗略价值：`${decision['bear_value']:.0f}` / `${decision['base_value']:.0f}` / `${decision['upside_value']:.0f}`",
+            f"- Price/Base：`{base_discount:.2f}x`" if isinstance(base_discount, float) else "- Price/Base：`NA`",
+            f"- Upside dependency：`{upside_dependency:.1%}`" if isinstance(upside_dependency, float) else "- Upside dependency：`NA`",
+            f"- 动作：`{decision['action']}`",
+            f"- 原因：{decision['reason']}",
+        ]
+    )
 
     lines.extend(["", "## Base Case 业务线", "", "| Segment | Line | " + " | ".join(quarters) + " | Driver |", "| --- | --- | " + " | ".join(["---:"] * len(quarters)) + " | --- |"])
     for row in payload["rows"]:
@@ -153,6 +351,9 @@ def render_md(payload: dict[str, Any]) -> str:
     lines.extend(["", "## 证据 Gate", ""])
     for gate in company.get("evidence_gates", []):
         lines.append(f"- {gate}")
+    lines.extend(["", "## 主源", ""])
+    for source in company.get("official_sources", []):
+        lines.append(f"- {source['name']}: {source['url']}")
     return "\n".join(lines) + "\n"
 
 
@@ -176,6 +377,50 @@ def render_html(payload: dict[str, Any]) -> str:
         cells = "".join(f"<td>{v:.1%}</td>" for v in item["ai_core_mix"])
         mix_rows.append(f"<tr><th>{esc(item['scenario'].upper())}</th>{cells}</tr>")
 
+    validation_rows = []
+    for check in payload.get("validation", []):
+        model = check["model"]
+        model_text = fmt_money(model) if isinstance(model, (int, float)) else str(model)
+        official = check["official"]
+        official_text = fmt_money(official) if isinstance(official, (int, float)) else str(official)
+        validation_rows.append(
+            "<tr>"
+            f"<td>{esc(check['quarter'])}</td>"
+            f"<td>{esc(check['metric'])}</td>"
+            f"<td>{esc(model_text)}</td>"
+            f"<td>{esc(official_text)}</td>"
+            f"<td><b>{esc(check['status'])}</b></td>"
+            f"<td>{esc(check['note'])}</td>"
+            "</tr>"
+        )
+
+    decision = payload["decision"]
+    base_discount = decision.get("base_discount")
+    upside_dependency = decision.get("upside_dependency")
+    decision_html = (
+        f"<p><b>Action:</b> {esc(decision['action'])}</p>"
+        f"<p><b>Price:</b> ${decision['price']:.2f} · "
+        f"<b>Bear/Base/Upside:</b> ${decision['bear_value']:.0f} / ${decision['base_value']:.0f} / ${decision['upside_value']:.0f}</p>"
+        f"<p><b>Price/Base:</b> {base_discount:.2f}x · <b>Upside dependency:</b> {upside_dependency:.1%}</p>"
+        f"<p class='meta'>{esc(decision['reason'])}</p>"
+    )
+
+    financial_rows = []
+    for scenario in ["bear", "base", "upside"]:
+        fin = payload["financials"][scenario]
+        financial_rows.append(
+            "<tr>"
+            f"<th>{esc(scenario.upper())}</th>"
+            f"<td>{esc(fmt_money(payload['scenario_totals'][scenario][-1]))}</td>"
+            f"<td>{fin['fcf_margin_pct'][-1]:.1%}</td>"
+            f"<td>{esc(fmt_money(fin['annualized_exit_fcf']))}</td>"
+            f"<td>{fin['fcf_multiple']:.1f}x</td>"
+            f"<td>{esc(fmt_money(fin['net_cash_m']))}</td>"
+            f"<td>{fin['diluted_shares_m']:.1f}</td>"
+            f"<td><b>${fin['value_per_share']:.0f}</b></td>"
+            "</tr>"
+        )
+
     line_rows = []
     for row in payload["rows"]:
         cells = "".join(f"<td>{esc(fmt_money(v))}</td>" for v in row["base"])
@@ -185,6 +430,10 @@ def render_html(payload: dict[str, Any]) -> str:
 
     header = "".join(f"<th>{esc(q)}</th>" for q in quarters)
     gates = "".join(f"<li>{esc(gate)}</li>" for gate in company.get("evidence_gates", []))
+    sources = "".join(
+        f"<li><a href='{esc(source['url'])}'>{esc(source['name'])}</a> - {esc(source['use'])}</li>"
+        for source in company.get("official_sources", [])
+    )
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -224,6 +473,22 @@ ul {{ line-height: 1.7; }}
 </section>
 
 <section class="panel">
+<h2>主源校准</h2>
+<table><thead><tr><th>Quarter</th><th>Metric</th><th>Model</th><th>Official / Guide</th><th>Status</th><th class="driver">Note</th></tr></thead><tbody>{''.join(validation_rows)}</tbody></table>
+</section>
+
+<section class="panel">
+<h2>简化财务层 / 定价锚</h2>
+<table><thead><tr><th>Scenario</th><th>Exit季度收入</th><th>Exit FCF margin</th><th>年化Exit FCF</th><th>FCF倍数</th><th>净现金</th><th>股数</th><th>粗略价值/股</th></tr></thead><tbody>{''.join(financial_rows)}</tbody></table>
+<p class="meta">这是第二层 rough pricing anchor，用于检验收入假设是否能转化为现金流和估值；仍不是最终交易结论。</p>
+</section>
+
+<section class="panel">
+<h2>动作判定</h2>
+{decision_html}
+</section>
+
+<section class="panel">
 <h2>Base Case 业务线</h2>
 <table><thead><tr><th>Segment</th><th>Line</th>{header}<th class="driver">Driver</th></tr></thead><tbody>{''.join(line_rows)}</tbody></table>
 </section>
@@ -232,6 +497,11 @@ ul {{ line-height: 1.7; }}
 <h2>证据 Gate</h2>
 <ul>{gates}</ul>
 <p class="meta">{esc(company['source_note'])}</p>
+</section>
+
+<section class="panel">
+<h2>主源</h2>
+<ul>{sources}</ul>
 </section>
 </main>
 </body>

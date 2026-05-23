@@ -8,6 +8,43 @@
       "market": "US",
       "theme": "AI optical / rack-scale systems",
       "source_note": "Initial template seeded from user-provided screenshot of a Claude-assisted Excel revenue build. Numbers are unverified until checked against company IR, earnings call, filings, and credible supply-chain sources.",
+      "official_sources": [
+        {
+          "name": "Lumentum Q3 FY26 financial results press release",
+          "url": "https://investor.lumentum.com/financial-news-releases/news-details/2026/Lumentum-Announces-Third-Quarter-of-Fiscal-Year-2026-Financial-Results/default.aspx",
+          "use": "Q3 FY26 revenue, GAAP income statement, cash balance, risk factors"
+        },
+        {
+          "name": "Lumentum Q3 FY26 earnings presentation",
+          "url": "https://s21.q4cdn.com/377324469/files/doc_financials/2026/q3/Q3-FY26-Earnings-Presentation_final.pdf",
+          "use": "Components/Systems revenue, EML/CPO/DCI/pump/1.6T/OCS commentary, Q4 guidance"
+        },
+        {
+          "name": "Lumentum Q2 FY26 earnings presentation",
+          "url": "https://s21.q4cdn.com/377324469/files/doc_financials/2026/q2/Q2-FY26-Earnings-Presentation-final_2.pdf",
+          "use": "Q2 baseline, 200G EML contribution, CPO 2H CY26 ramp, OCS run-rate"
+        }
+      ],
+      "official_calibration": {
+        "F3Q26A": {
+          "total_revenue": 808.4,
+          "components": 533.3,
+          "systems": 275.1,
+          "non_gaap_gross_margin_pct": 47.9,
+          "non_gaap_operating_margin_pct": 32.2,
+          "non_gaap_eps": 2.37,
+          "diluted_shares_m": 95.2
+        },
+        "F4Q26G": {
+          "revenue_guidance_low": 960,
+          "revenue_guidance_high": 1010,
+          "non_gaap_operating_margin_low_pct": 35.0,
+          "non_gaap_operating_margin_high_pct": 36.0,
+          "non_gaap_eps_low": 2.85,
+          "non_gaap_eps_high": 3.05,
+          "diluted_shares_m": 102.0
+        }
+      },
       "currency": "USD",
       "unit": "USD millions per quarter",
       "quarters": ["F3Q26A", "F4Q26G", "F1Q27E", "F2Q27E", "F3Q27E", "F4Q27E"],
@@ -47,8 +84,8 @@
             },
             {
               "name": "Other industrial lasers",
-              "values": [33, 34, 38, 40, 42, 44],
-              "driver": "Non-core stabilizer."
+              "values": [13.3, 34, 38, 40, 42, 44],
+              "driver": "Non-core stabilizer. F3Q26A is calibrated as residual so Components subtotal matches official $533.3M."
             }
           ]
         },
@@ -101,6 +138,35 @@
             "OCS (R300 + R-series)": 1.2
           }
         }
+      },
+      "financial_layer": {
+        "bear": {
+          "gross_margin_pct": [0.455, 0.465, 0.470, 0.475, 0.480, 0.485],
+          "operating_margin_pct": [0.285, 0.310, 0.320, 0.330, 0.340, 0.345],
+          "fcf_margin_pct": [0.140, 0.170, 0.185, 0.195, 0.205, 0.210]
+        },
+        "base": {
+          "gross_margin_pct": [0.479, 0.490, 0.500, 0.505, 0.510, 0.515],
+          "operating_margin_pct": [0.322, 0.355, 0.365, 0.375, 0.385, 0.390],
+          "fcf_margin_pct": [0.180, 0.215, 0.235, 0.250, 0.260, 0.265]
+        },
+        "upside": {
+          "gross_margin_pct": [0.490, 0.505, 0.520, 0.530, 0.540, 0.545],
+          "operating_margin_pct": [0.335, 0.370, 0.390, 0.410, 0.425, 0.435],
+          "fcf_margin_pct": [0.195, 0.235, 0.265, 0.285, 0.300, 0.310]
+        },
+        "net_cash_m": 3640,
+        "diluted_shares_m": 102,
+        "valuation_multiples": {
+          "bear_fcf_multiple": 18,
+          "base_fcf_multiple": 24,
+          "upside_fcf_multiple": 30
+        }
+      },
+      "current_market": {
+        "price": 946.9,
+        "price_date": "2026-05-22",
+        "source": "public historical close cross-check; refresh before any future action"
       },
       "evidence_gates": [
         "Lumentum IR or earnings call confirms AI/datacenter demand by product line.",
