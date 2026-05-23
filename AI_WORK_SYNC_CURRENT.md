@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-23 22:49:41`
+- Last updated: `2026-05-23 22:54:13`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1077,3 +1077,4 @@ dc58870 feat: add V6 daily report automation
 - [16:16] [代码] Daily email 已补充收尾提醒：morning_brief 的 workflow 现在每天显示 A股官方信息源稳定性巡检（失败源>0 自动升 MED），提醒查看官方白名单扫描、失败源/连续空结果时让 AI 优化 URL/RSS/关键词，并检查官方政策是否与富途板块热度和候选结构共振；A股人工 INBOX 与 V6AB Theme Evidence 录入/清理提醒仍保留在 daily email。
 - [16:24] [代码] A股官方白名单源今晚补充收尾：联网测试国资委、市场监管总局、国家数据局、北京/上海/深圳/广东等候选后，按稳定性加入 4 个源：市场监管总局-新闻/公开、北京市政府-重点专题、上海市政府-政策文件、广东省政府-政策文件库。国资委超时、深圳 SSL 异常、国家数据局常见路径 404，暂不加入。重跑官方扫描白名单源数从 10 增至 14，状态 OK，暂无新增主题命中，原发改委算力/数据中心线索仍进入 ledger。
 - [22:49] [代码] Optionality Overlay 有限亏损表达层已落地：新增 OPTIONALITY_OVERLAY_SOP.md 与 optionality_overlay_review_queue.json，明确它不是独立信号源、不自动交易期权，只允许 NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW；morning_brief 已接入 daily email，估值提醒要求输出 Optionality Review，队列中 WATCH/DEFINED_RISK 项才会触发人工复核提醒。V6/V6AB/A股 Radar 正股逻辑不变。
+- [22:54] [代码] 为避免用户忘记 Optionality Overlay，morning_brief 增加每周五 LOW 级清点提醒：从主仓/进攻价值投 thesis、V6AB/V6-B 强主线、已验证跨市场研究中检查是否有候选需要进入 Optionality Review 队列；仍只允许 NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW，不自动交易期权。

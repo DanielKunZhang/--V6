@@ -953,6 +953,17 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "美股 Radar/V6-B 是周度或事件驱动复盘，不需要每天人工处理",
         )
 
+    # Optionality Overlay 是表达层，不是独立信号源。每周只做一次候选清点，
+    # 避免用户忘记从主仓估值、V6AB/V6-B 强主线和已验证跨市场研究中提取有限亏损表达候选。
+    if today.weekday() == 4:
+        add(
+            "LOW",
+            "Optionality Overlay",
+            "周度清点：是否有候选需要进入 Optionality Review 队列",
+            "清点期权表达候选",
+            "只从主仓/进攻价值投 thesis、V6AB/V6-B 强主线、已验证跨市场研究中提取；输出只能是 NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW；不得自动交易期权，必须先写明 max loss / event window / invalidation / exit plan",
+        )
+
     # 跨市场同步防污染检查：定期提醒用户让 AI 审查 V6AB / A股 Radar 的共享成果。
     # 只同步方法论与验证结论；具体阈值、买点、市场结构信号默认隔离。
     if today.weekday() == 4:
