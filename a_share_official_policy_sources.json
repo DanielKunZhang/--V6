@@ -55,6 +55,17 @@
       "priority": 86
     },
     {
+      "id": "samr_news",
+      "name": "市场监管总局-新闻/公开",
+      "source_type": "official_policy",
+      "base_url": "https://www.samr.gov.cn",
+      "list_urls": [
+        "https://www.samr.gov.cn/xw/",
+        "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/"
+      ],
+      "priority": 84
+    },
+    {
       "id": "csrc_news",
       "name": "证监会-新闻发布",
       "source_type": "official_policy",
@@ -79,6 +90,36 @@
         "https://www.ndrc.gov.cn/fggz/cyfz/"
       ],
       "priority": 88
+    },
+    {
+      "id": "beijing_policy",
+      "name": "北京市政府-重点专题",
+      "source_type": "local_policy",
+      "base_url": "https://www.beijing.gov.cn",
+      "list_urls": [
+        "https://www.beijing.gov.cn/ywdt/zwzt/"
+      ],
+      "priority": 78
+    },
+    {
+      "id": "shanghai_policy",
+      "name": "上海市政府-政策文件",
+      "source_type": "local_policy",
+      "base_url": "https://www.shanghai.gov.cn",
+      "list_urls": [
+        "https://www.shanghai.gov.cn/nw12344/index.html"
+      ],
+      "priority": 78
+    },
+    {
+      "id": "guangdong_policy",
+      "name": "广东省政府-政策文件库",
+      "source_type": "local_policy",
+      "base_url": "https://www.gd.gov.cn",
+      "list_urls": [
+        "https://www.gd.gov.cn/zwgk/wjk/"
+      ],
+      "priority": 78
     },
     {
       "id": "sse_latest",
