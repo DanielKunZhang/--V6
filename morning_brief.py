@@ -735,7 +735,7 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         "Theme Evidence",
         "A股 Radar 人工信息搜集：政策/产业/公告/板块异动",
         "记录 A股主题证据",
-        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。搜集建议：中国政府网/发改委/工信部/证监会政策，巨潮/交易所公告，富途/财联社/东方财富板块异动；重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
+        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。富途板块热度已由系统自动生成，不需要人工重复抄纯涨幅榜。搜集建议：中国政府网/发改委/工信部/证监会政策，巨潮/交易所公告，财联社/东方财富中有政策或产业支撑的板块异动；重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
     )
     add(
         "LOW" if today.weekday() < 4 else "MED",

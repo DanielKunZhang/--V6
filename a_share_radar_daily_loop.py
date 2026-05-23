@@ -51,6 +51,7 @@ def render_md(payload: dict[str, Any]) -> str:
         f"- 复盘：`{REPORT_ROOT / 'A股短线Radar复盘_LATEST.md'}`",
         f"- 反哺：`{REPORT_ROOT / 'A股短线Radar复盘反哺_LATEST.md'}`",
         f"- K线补齐：`{REPORT_ROOT / 'A股短线Radar_K线补齐_LATEST.md'}`",
+        f"- 富途板块热度：`{REPORT_ROOT / 'A股富途板块热度自动扫描_LATEST.md'}`",
         f"- 规则过严样本追踪：`{REPORT_ROOT / 'A股短线Radar规则过严样本追踪_LATEST.md'}`",
         f"- 主线分类准度Ledger：`{REPORT_ROOT / 'A股Radar主线分类准度Ledger_LATEST.md'}`",
         f"- 人工主题证据Ledger：`{REPORT_ROOT / 'Theme_Evidence_人工搜集_LATEST.md'}`",
@@ -95,6 +96,7 @@ def main() -> int:
     if args.dry_run:
         backfill_cmd.append("--dry-run")
     steps.append(run_step("targeted_kline_backfill", backfill_cmd, skip=args.skip_backfill))
+    steps.append(run_step("futu_plate_heat_scan", [py, "a_share_futu_plate_heat_scan.py", "--asof", args.asof]))
     steps.append(run_step("strict_rule_tracker", [py, "a_share_radar_strict_rule_tracker.py", "--asof", args.asof]))
     steps.append(run_step("classification_accuracy_ledger", [py, "a_share_radar_classification_ledger.py", "--asof", args.asof]))
     steps.append(run_step("manual_theme_evidence_ledger", [py, "manual_theme_evidence_ledger.py", "--asof", args.asof]))
