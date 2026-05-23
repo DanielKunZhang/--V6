@@ -1,0 +1,17 @@
+{
+  "version": "optionality_overlay_review_queue_v1",
+  "updated_at": "2026-05-23",
+  "rules_doc": "OPTIONALITY_OVERLAY_SOP.md",
+  "desktop_mirror": "/Users/zhangkun/Desktop/AI个人投资公司/系统优化升级依据/Optionality_Overlay_有限亏损表达层_SOP_v1.md",
+  "allowed_outputs": [
+    "NO_OPTION",
+    "WATCH_OPTION",
+    "DEFINED_RISK_REVIEW"
+  ],
+  "notes": [
+    "This queue is a manual review and daily-email reminder surface only.",
+    "It must not place option trades or alter V6/V6AB/A-share Radar trading logic.",
+    "Only candidates sourced from core thesis work, V6/V6AB mainline research, or validated cross-market Radar research may enter."
+  ],
+  "items": []
+}

@@ -16,6 +16,7 @@ backtest_results/
 !*.example.json
 !central_risk_board_config.json
 !a_share_official_policy_sources.json
+!optionality_overlay_review_queue.json
 *.bak
 .DS_Store
 .env

@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-23 16:24:36`
+- Last updated: `2026-05-23 22:49:41`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1076,3 +1076,4 @@ dc58870 feat: add V6 daily report automation
 - [16:07] [代码] A股 Radar 信息源稳定化继续推进：官方白名单扫描器改用浏览器 UA，工信部由 403 恢复为可访问；源配置扩展到 10 个白名单源（政府网、发改委、工信部、科技部、财政部、证监会、能源局、发改委产业、上交所、深交所），支持 source.list_urls 多栏目扫描，并移除无效发改委 404 备用 URL。官方扫描结果已自动并入 Theme Evidence ledger，source_type=auto_official_policy，生成 5/10/14 天复核；2026-05-23 ledger 变为 65 条，其中 A股 1 条、US/V6AB 64 条，发改委“郑栅洁主任赴上海人工智能实验室调研”进入算力/数据中心 evidence，D5 到期复核。A股 INBOX 顶部规则已改为自动源优先、人工只补失败/需复核官方源、巨潮/交易所公告和有政策产业支撑的媒体异动。morning_brief 已显示官方扫描状态/命中数/失败源，晚间指导已显示官方政策扫描区块。
 - [16:16] [代码] Daily email 已补充收尾提醒：morning_brief 的 workflow 现在每天显示 A股官方信息源稳定性巡检（失败源>0 自动升 MED），提醒查看官方白名单扫描、失败源/连续空结果时让 AI 优化 URL/RSS/关键词，并检查官方政策是否与富途板块热度和候选结构共振；A股人工 INBOX 与 V6AB Theme Evidence 录入/清理提醒仍保留在 daily email。
 - [16:24] [代码] A股官方白名单源今晚补充收尾：联网测试国资委、市场监管总局、国家数据局、北京/上海/深圳/广东等候选后，按稳定性加入 4 个源：市场监管总局-新闻/公开、北京市政府-重点专题、上海市政府-政策文件、广东省政府-政策文件库。国资委超时、深圳 SSL 异常、国家数据局常见路径 404，暂不加入。重跑官方扫描白名单源数从 10 增至 14，状态 OK，暂无新增主题命中，原发改委算力/数据中心线索仍进入 ledger。
+- [22:49] [代码] Optionality Overlay 有限亏损表达层已落地：新增 OPTIONALITY_OVERLAY_SOP.md 与 optionality_overlay_review_queue.json，明确它不是独立信号源、不自动交易期权，只允许 NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW；morning_brief 已接入 daily email，估值提醒要求输出 Optionality Review，队列中 WATCH/DEFINED_RISK 项才会触发人工复核提醒。V6/V6AB/A股 Radar 正股逻辑不变。

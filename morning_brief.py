@@ -46,6 +46,7 @@ SA_TRIAL_CSV          = ROOT / "backtest_results" / "external_signal_trials" / "
 US_RADAR_13F_WATCHLIST = ROOT / "us_radar_13f_watchlist.json"
 US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_input" / "latest.json"
 VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
+OPTIONALITY_OVERLAY_QUEUE = ROOT / "optionality_overlay_review_queue.json"
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
@@ -615,9 +616,94 @@ def collect_valuation_sop_actions(today: date, events: list[dict]) -> list[dict]
             "trigger": f"估值 {ticker}",
             "reason": (
                 f"valuation_sop_router：{selected.get('why_this_framework', '')}；"
-                f"先选框架再估值，输出需回写 {', '.join(selected.get('system_feedback_targets', []))}"
+                f"先选框架再估值，输出需回写 {', '.join(selected.get('system_feedback_targets', []))}；"
+                "估值报告必须输出 Optionality Review：NO_OPTION / WATCH_OPTION / DEFINED_RISK_REVIEW；"
+                "不得自动交易期权"
             ),
         })
+    return actions
+
+
+def _parse_iso_date(value: Any) -> date | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value)[:10]).date()
+    except ValueError:
+        return None
+
+
+def collect_optionality_overlay_actions(today: date) -> list[dict]:
+    """
+    Surface manual option-expression review tasks only.
+
+    This is not a trading signal and must not alter V6/V6AB/A-share Radar logic.
+    Queue items are expected to be created by valuation work, V6AB/V6-B research,
+    or validated cross-market Radar research.
+    """
+    payload = read_json(OPTIONALITY_OVERLAY_QUEUE)
+    if not isinstance(payload, dict):
+        return []
+
+    actions: list[dict] = []
+    for item in payload.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status", "")).upper()
+        if status not in {"WATCH_OPTION", "DEFINED_RISK_REVIEW"}:
+            continue
+
+        ticker = str(item.get("ticker") or item.get("symbol") or "UNKNOWN").upper()
+        source = str(item.get("source_system") or "UNKNOWN")
+        thesis = str(item.get("thesis") or item.get("reason") or "").strip()
+        review_date = _parse_iso_date(item.get("review_date") or item.get("next_review_date"))
+        event_date = _parse_iso_date(item.get("event_date") or item.get("event_window_start"))
+
+        due_dates = [d for d in [review_date, event_date] if d is not None]
+        days_to_due = min((d - today).days for d in due_dates) if due_dates else None
+
+        required = ["max_loss_plan", "event_window", "invalidation", "exit_plan"]
+        missing = [field for field in required if not str(item.get(field) or "").strip()]
+
+        if status == "DEFINED_RISK_REVIEW":
+            if missing:
+                priority = "MED"
+            elif days_to_due is not None and days_to_due <= 3:
+                priority = "HIGH" if days_to_due <= 0 else "MED"
+            else:
+                priority = "LOW"
+        else:
+            priority = "LOW"
+            if days_to_due is not None and days_to_due <= 3:
+                priority = "MED"
+
+        if days_to_due is not None and days_to_due > 14 and status == "WATCH_OPTION":
+            continue
+
+        item_label = f"{ticker} Optionality Overlay：{status}"
+        trigger = f"复核期权表达 {ticker}"
+        reason_parts = [
+            f"来源={source}",
+            "只做人工复核，不自动交易，不改变 V6/V6AB/A股 Radar 正股规则",
+        ]
+        if thesis:
+            reason_parts.append(f"thesis={thesis[:120]}")
+        if review_date:
+            reason_parts.append(f"review_date={review_date.isoformat()}")
+        if event_date:
+            reason_parts.append(f"event_date={event_date.isoformat()}")
+        if missing:
+            reason_parts.append(f"缺少 defined-risk 字段：{', '.join(missing)}")
+        else:
+            reason_parts.append("必须复核 max loss / invalidation / exit plan 后才允许人工决定")
+
+        actions.append({
+            "priority": priority,
+            "item": item_label,
+            "trigger": trigger,
+            "reason": "；".join(reason_parts),
+        })
+
     return actions
 
 
@@ -916,6 +1002,15 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         add(
             row["priority"],
             "估值",
+            row["item"],
+            row["trigger"],
+            row["reason"],
+        )
+
+    for row in collect_optionality_overlay_actions(today):
+        add(
+            row["priority"],
+            "Optionality Overlay",
             row["item"],
             row["trigger"],
             row["reason"],
