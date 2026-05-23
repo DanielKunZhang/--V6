@@ -247,6 +247,10 @@ def summarize_block(block: str, limit: int = 220) -> str:
 
 def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: set[int], asof: date) -> list[dict[str, Any]]:
     market = "A股" if "A股" in path.name else "US"
+    paste_lines = collect_paste_lines(lines, consumed_table_lines)
+    if market == "US" and any("seeking" in line.lower() or "hot themes" in line.lower() for line in paste_lines):
+        return parse_seeking_alpha_lines(path, paste_lines, asof)
+
     blocks: list[str] = []
     current: list[str] = []
     in_paste_area = False
@@ -310,8 +314,212 @@ def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: s
     return rows
 
 
+def collect_paste_lines(lines: list[str], consumed_table_lines: set[int]) -> list[str]:
+    out: list[str] = []
+    in_paste_area = False
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == "## 待处理粘贴区":
+            in_paste_area = True
+            continue
+        if not in_paste_area or idx in consumed_table_lines:
+            continue
+        if stripped.startswith("<!--") or stripped.startswith("#"):
+            continue
+        if stripped:
+            out.append(stripped)
+    return out
+
+
+def is_symbol(value: str) -> bool:
+    if not value or len(value) > 8:
+        return False
+    allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
+    return value.upper() == value and all(ch in allowed for ch in value) and any(ch.isalpha() for ch in value)
+
+
+def is_sa_noise(value: str) -> bool:
+    return value in {
+        "Save",
+        "Share",
+        "FREE",
+        "Theme",
+        "Article",
+        "Symbol",
+        "Chg",
+        "Buy",
+        "Strong Buy",
+        "Hold",
+        "Sell",
+        "Strong Sell",
+    }
+
+
+def is_sa_date_line(value: str) -> bool:
+    lower = value.lower()
+    return (
+        lower.startswith("yesterday")
+        or lower.startswith("today")
+        or lower.startswith("mon,")
+        or lower.startswith("tue,")
+        or lower.startswith("wed,")
+        or lower.startswith("thu,")
+        or lower.startswith("fri,")
+        or lower.startswith("sat,")
+        or lower.startswith("sun,")
+    )
+
+
+def make_manual_row(
+    *,
+    path: Path,
+    asof: date,
+    market: str,
+    theme: str,
+    source_type: str,
+    summary: str,
+    link_or_source: str,
+    notes: str,
+) -> dict[str, Any]:
+    raw_id = "|".join([asof.isoformat(), market, theme, source_type, summary])
+    evidence_id = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()[:16]
+    return {
+        "evidence_id": evidence_id,
+        "date": asof.isoformat(),
+        "market": market,
+        "theme": theme,
+        "source_type": source_type,
+        "summary": summary,
+        "evidence_direction": "mixed",
+        "confidence": "2" if source_type == "seeking_alpha_title" else "3",
+        "stage": "NEEDS_TRIAGE",
+        "link_or_source": link_or_source,
+        "user_verdict": "WATCH",
+        "notes": notes,
+        "source_inbox": str(path),
+        "review_status": "PENDING",
+        "review_5d_due": (asof + timedelta(days=5)).isoformat(),
+        "review_10d_due": (asof + timedelta(days=10)).isoformat(),
+        "review_14d_due": (asof + timedelta(days=14)).isoformat(),
+        "review_5d_result": "",
+        "review_10d_result": "",
+        "review_14d_result": "",
+        "actual_impact": "",
+        "classification_correct": "",
+        "error_type": "",
+        "review_notes": "",
+        "created_at": asof.isoformat(),
+        "updated_at": asof.isoformat(),
+    }
+
+
+def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    mode = "articles"
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx].strip()
+        lower = line.lower()
+        if line == "HOT THEMES - NEWS":
+            mode = "hot_themes"
+            idx += 1
+            continue
+        if line == "ON THE MOVE - NEWS":
+            mode = "on_the_move"
+            idx += 1
+            continue
+        if is_sa_noise(line) or line.startswith("<!--"):
+            idx += 1
+            continue
+
+        if mode == "articles":
+            title = line
+            if is_symbol(title) or is_sa_date_line(title) or len(title) < 12:
+                idx += 1
+                continue
+            j = idx + 1
+            if j < len(lines) and lines[j] in {"Buy", "Strong Buy", "Hold", "Sell", "Strong Sell"}:
+                j += 1
+            if j < len(lines) and is_sa_date_line(lines[j]):
+                j += 1
+            if j < len(lines) and is_symbol(lines[j]):
+                symbol = lines[j]
+                summary = f"{line} [{symbol}]"
+                rows.append(
+                    make_manual_row(
+                        path=path,
+                        asof=asof,
+                        market="US",
+                        theme=infer_theme(f"{line} {symbol}", "US"),
+                        source_type="seeking_alpha_title",
+                        summary=summary,
+                        link_or_source="Seeking Alpha title list",
+                        notes="title_only; premium_body_not_read; weak narrative evidence",
+                    )
+                )
+                idx += 1
+                continue
+
+        if mode == "hot_themes":
+            if idx + 2 < len(lines) and is_symbol(lines[idx + 2].strip()):
+                theme_label = line
+                article = lines[idx + 1].strip()
+                symbol = lines[idx + 2].strip()
+                rows.append(
+                    make_manual_row(
+                        path=path,
+                        asof=asof,
+                        market="US",
+                        theme=infer_theme(f"{theme_label} {article} {symbol}", "US"),
+                        source_type="seeking_alpha_news_title",
+                        summary=f"{theme_label}: {article} [{symbol}]",
+                        link_or_source="Seeking Alpha HOT THEMES - NEWS",
+                        notes="free_title_only; needs primary-source validation",
+                    )
+                )
+                idx += 3
+                continue
+
+        if mode == "on_the_move":
+            if idx + 2 < len(lines) and is_symbol(lines[idx + 1].strip()):
+                article = line
+                symbol = lines[idx + 1].strip()
+                chg = lines[idx + 2].strip()
+                rows.append(
+                    make_manual_row(
+                        path=path,
+                        asof=asof,
+                        market="US",
+                        theme=infer_theme(f"{article} {symbol}", "US"),
+                        source_type="seeking_alpha_on_the_move",
+                        summary=f"{article} [{symbol}] {chg}",
+                        link_or_source="Seeking Alpha ON THE MOVE - NEWS",
+                        notes="free_title_only; price-move context; needs validation",
+                    )
+                )
+                idx += 3
+                continue
+
+        idx += 1
+    return rows
+
+
 def merge_rows(existing: list[dict[str, Any]], incoming: list[dict[str, Any]], asof: date) -> list[dict[str, Any]]:
-    by_id = {str(row.get("evidence_id", "")): dict(row) for row in existing if row.get("evidence_id")}
+    refresh_sources = {str(row.get("source_inbox", "")) for row in incoming if row.get("source_inbox")}
+    by_id = {}
+    for row in existing:
+        evidence_id = str(row.get("evidence_id", ""))
+        if not evidence_id:
+            continue
+        source = str(row.get("source_inbox", ""))
+        source_type = str(row.get("source_type", ""))
+        notes = str(row.get("notes", ""))
+        replaceable_manual_row = source in refresh_sources and (
+            source_type.startswith("seeking_alpha") or "raw_manual_paste" in notes
+        )
+        if replaceable_manual_row:
+            continue
+        by_id[evidence_id] = dict(row)
     for row in incoming:
         evidence_id = str(row["evidence_id"])
         old = by_id.get(evidence_id)
