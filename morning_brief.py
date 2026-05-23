@@ -48,6 +48,7 @@ US_RADAR_13F_SYSTEM_INPUT = ROOT / "backtest_results" / "us_radar_13f_system_inp
 VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
+A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -726,12 +727,14 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
     # 4) 固定节奏提醒：把机制收敛为 Daily 顶部的人工入口。
     # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。
     if today.weekday() < 5:
+        classification_ledger = read_json(A_SHARE_CLASSIFICATION_LEDGER)
+        due_count = int(classification_ledger.get("due_count") or 0) if isinstance(classification_ledger, dict) else 0
         add(
             "MED",
             "Radar-CN",
             "A股 Radar Phase 1A 纪律记录",
             "复盘 A股Radar",
-            "当前是中频主题轮动训练系统，不打板不盯盘；每日记录候选、信号来源、为什么是启动初期、触发/冷却/失效、主观干预和复盘覆盖率，30笔完整样本前不改规则",
+            f"当前是中频主题轮动训练系统，不打板不盯盘；每日记录候选、信号来源、为什么是启动初期、触发/冷却/失效、主观干预和复盘覆盖率；主线分类到期复核 {due_count} 条，30笔完整样本前不改规则",
         )
         add(
             "LOW",

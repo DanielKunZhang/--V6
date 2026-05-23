@@ -27,6 +27,7 @@ FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 BACKFILL_MD = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md"
 BACKFILL_JSON = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json"
 STRICT_TRACKER_JSON = REPORT_ROOT / "A股短线Radar规则过严样本追踪_LATEST.json"
+CLASSIFICATION_LEDGER_JSON = REPORT_ROOT / "A股Radar主线分类准度Ledger_LATEST.json"
 
 OUTPUT_DIR = ROOT / "backtest_results" / "a_share_short_radar_evening_guide"
 
@@ -156,6 +157,35 @@ def strict_tracker_table(tracker: dict[str, Any]) -> str:
     return df_to_html_table(df[cols].rename(columns=labels), max_rows=8)
 
 
+def classification_ledger_table(ledger: dict[str, Any]) -> str:
+    rows = ledger.get("due_reviews", []) if isinstance(ledger, dict) else []
+    if not rows:
+        return "<p class='muted'>暂无到期主线分类复核项。</p>"
+    df = pd.DataFrame(rows)
+    if "due_horizons" in df.columns:
+        df["due_horizons"] = df["due_horizons"].apply(lambda value: ", ".join(value) if isinstance(value, list) else value)
+    keep = [
+        "discovery_date",
+        "theme",
+        "phase",
+        "score",
+        "breadth_proxy",
+        "due_horizons",
+        "reason",
+    ]
+    cols = [col for col in keep if col in df.columns]
+    labels = {
+        "discovery_date": "发现日",
+        "theme": "主线",
+        "phase": "当时阶段",
+        "score": "分数",
+        "breadth_proxy": "广度代理",
+        "due_horizons": "到期",
+        "reason": "当时理由",
+    }
+    return df_to_html_table(df[cols].rename(columns=labels), max_rows=8)
+
+
 def compact_candidate_table(candidates: pd.DataFrame, tradable_only: bool) -> str:
     if candidates.empty:
         return "<p class='muted'>暂无候选。</p>"
@@ -230,6 +260,7 @@ def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     feedback = read_json(FEEDBACK_JSON)
     backfill = read_json(BACKFILL_JSON)
     strict_tracker = read_json(STRICT_TRACKER_JSON)
+    classification_ledger = read_json(CLASSIFICATION_LEDGER_JSON)
     themes = read_csv(THEMES_CSV)
     candidates = read_csv(CANDIDATES_CSV)
     summary = summarize_plan(plan, themes, candidates)
@@ -283,6 +314,9 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 {backfill_table(backfill)}
 <h3>规则过严样本追踪</h3>
 {strict_tracker_table(strict_tracker)}
+<h3>主线分类准度 Ledger</h3>
+<p class="muted">到期后只复核当时阶段判断是否正确，不据此临时改规则；30 条完整样本前只统计错误类型。</p>
+{classification_ledger_table(classification_ledger)}
 </div>
 
 <div class="box">
@@ -325,6 +359,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "backfill_md": str(BACKFILL_MD),
             "backfill_json": str(BACKFILL_JSON),
             "strict_tracker_json": str(STRICT_TRACKER_JSON),
+            "classification_ledger_json": str(CLASSIFICATION_LEDGER_JSON),
         },
     }
     return subject, html_content, payload
