@@ -86,8 +86,9 @@
       "wacc": 0.12,
       "tgr": 0.03,
       "geo_discount_pct": 0,
+      "capital_allocation_discount_pct": 5,
       "kelly_position_pct": 11.0,
-      "notes": "FY2025 EBIT -13%/OCF -12.3% 利润压缩确认；Temu 监管风险 EU DSA 调查中；净现金 ¥4124 亿（ADS $39.78）极度充裕；V_base 从 $234→$148 下修；Q1财报 2026-05-19 前不加仓"
+      "notes": "FY2025 EBIT -13%/OCF -12.3% 利润压缩确认；Temu 监管风险 EU DSA 调查中；净现金 ¥4124 亿（ADS $39.78）极度充裕但无回购/分红框架；V_base 从 $234→$148 下修；Q1财报 2026-05-19 前不加仓；后续重估默认加入股东回报/资本配置折扣5%，若 Temu 增速放缓、利润/OCF 继续恶化且仍无资本回报框架，折扣扩大到8%-10%"
     },
     "9992.HK": {
       "company": "泡泡玛特 Pop Mart",

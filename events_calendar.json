@@ -18,7 +18,7 @@
     "date": "2026-05-27",
     "domain": "价值投资",
     "text": "PDD Q1财报后主仓重估",
-    "action": "触发：复盘 PDD；执行财报数据核查、Thesis Re-underwrite、SOP v2.5估值更新、仓位决策，最后归档到交易决策日志。财报前硬规则：NO_ADD_PRE_EARNINGS，不因跌到93附近加仓，不因后悔情绪直接清仓。"
+    "action": "触发：复盘 PDD；执行财报数据核查、Thesis Re-underwrite、SOP v2.5估值更新、仓位决策，最后归档到交易决策日志。财报前硬规则：NO_ADD_PRE_EARNINGS，不因跌到93附近加仓，不因后悔情绪直接清仓。重估必须加入股东回报/资本配置检查：默认 Shareholder Return / Capital Allocation Discount=5%；若 Temu 增速放缓、利润/OCF 继续恶化且仍无回购/分红框架，折扣扩大到8%-10%；若 Temu 盈利路径清晰或管理层启动资本回报，折扣可降到0%-3%。"
   },
   {
     "date": "2026-05-19",
