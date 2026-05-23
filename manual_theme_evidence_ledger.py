@@ -29,19 +29,19 @@ REVIEW_HORIZONS = (5, 10, 14)
 
 TEMPLATE = """# {title}
 
-用途：你把当天/本周看到的高质量政策、产业、公告、财报、资金或盘面线索放在下面表格里。系统只负责结构化记录和到期提醒，不自动交易。
+用途：这里是收件箱，不是表格作业。你可以直接把 Seeking Alpha、公告、政策、新闻标题、截图文字、自己的几句话判断粘贴到下面。
 
-填写规则：
-- 一条线索一行。
-- 不确定就写 `WATCH`，不要为了完整性硬凑。
-- `confidence` 用 1-5，3=值得记录，4=较强，5=非常强。
-- `user_verdict` 用 `KEEP / WATCH / REJECT`。
-- INBOX 只放待处理新信息；系统处理写入 ledger 后，可以删除已处理行。
-- 历史档案看 `Theme_Evidence_人工搜集_LATEST.md/json/csv`，不要把 INBOX 当档案库。
+使用规则：
+- 直接粘贴原文或摘要即可，不需要填表。
+- 多条信息之间空一行，或者用 `---` 分隔。
+- 如果你愿意，可以在开头写一句：主题=半导体设备 / NVDA / AI power；不写也可以。
+- INBOX 只放待处理新信息；系统处理写入 ledger 后，可以删除已处理内容。
+- 历史档案看 `Theme_Evidence_人工搜集_LATEST.md/json/csv`。
 
-| date | market | theme | source_type | summary | evidence_direction | confidence | stage | link_or_source | user_verdict | notes |
-| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- |
-| 2026-05-23 | {market} | 示例主题 | policy/industry/earnings/flow/price_action/filing/13F | 示例：这里写一句话摘要 | positive/negative/mixed | 3 | 启动/主升/分歧/冷却/WATCH | 来源标题或链接 | WATCH | 可空 |
+## 待处理粘贴区
+
+<!-- 在下面直接粘贴新信息。处理后可以删除。 -->
+
 """
 
 
@@ -133,10 +133,12 @@ def parse_inbox(path: Path, asof: date) -> list[dict[str, Any]]:
     lines = path.read_text(encoding="utf-8").splitlines()
     rows: list[dict[str, Any]] = []
     headers: list[str] | None = None
-    for line in lines:
+    consumed_table_lines: set[int] = set()
+    for line_no, line in enumerate(lines):
         stripped = line.strip()
         if not stripped.startswith("|") or not stripped.endswith("|"):
             continue
+        consumed_table_lines.add(line_no)
         cells = split_md_row(stripped)
         if not cells:
             continue
@@ -176,6 +178,124 @@ def parse_inbox(path: Path, asof: date) -> list[dict[str, Any]]:
                 "review_5d_due": (evidence_date + timedelta(days=5)).isoformat(),
                 "review_10d_due": (evidence_date + timedelta(days=10)).isoformat(),
                 "review_14d_due": (evidence_date + timedelta(days=14)).isoformat(),
+                "review_5d_result": "",
+                "review_10d_result": "",
+                "review_14d_result": "",
+                "actual_impact": "",
+                "classification_correct": "",
+                "error_type": "",
+                "review_notes": "",
+                "created_at": asof.isoformat(),
+                "updated_at": asof.isoformat(),
+            }
+        )
+    rows.extend(parse_free_text_blocks(path, lines, consumed_table_lines, asof))
+    return rows
+
+
+def infer_theme(text: str, market: str) -> str:
+    lowered = text.lower()
+    pairs = [
+        ("人形机器人", "人形机器人"),
+        ("机器人", "人形机器人"),
+        ("半导体设备", "半导体设备"),
+        ("国产替代", "国产替代"),
+        ("低空经济", "低空经济"),
+        ("电力设备", "电力设备"),
+        ("算力", "算力"),
+        ("nvda", "NVDA / AI GPU"),
+        ("nvidia", "NVDA / AI GPU"),
+        ("hbm", "AI memory / HBM"),
+        ("mu", "AI memory / HBM"),
+        ("broadcom", "AI networking / ASIC"),
+        ("avgo", "AI networking / ASIC"),
+        ("anet", "AI networking / fabric"),
+        ("vertiv", "AI power / data center"),
+        ("vrt", "AI power / data center"),
+        ("data center", "AI data center"),
+        ("datacenter", "AI data center"),
+        ("capex", "AI capex"),
+        ("seeking alpha", "US manual source"),
+    ]
+    for needle, theme in pairs:
+        if needle in lowered or needle in text:
+            return theme
+    return "A股待分类主题" if market == "A股" else "US待分类主题"
+
+
+def infer_source_type(text: str) -> str:
+    lowered = text.lower()
+    if "seeking alpha" in lowered:
+        return "seeking_alpha"
+    if "sec" in lowered or "10-q" in lowered or "10-k" in lowered or "8-k" in lowered:
+        return "filing"
+    if "earnings" in lowered or "财报" in text or "业绩" in text:
+        return "earnings"
+    if "公告" in text or "巨潮" in text:
+        return "announcement"
+    if "政策" in text or "发改委" in text or "工信部" in text or "证监会" in text:
+        return "policy"
+    if "订单" in text or "产能" in text or "客户" in text or "capex" in lowered:
+        return "industry"
+    return "manual_paste"
+
+
+def summarize_block(block: str, limit: int = 220) -> str:
+    one_line = " ".join(line.strip() for line in block.splitlines() if line.strip())
+    return one_line[:limit]
+
+
+def parse_free_text_blocks(path: Path, lines: list[str], consumed_table_lines: set[int], asof: date) -> list[dict[str, Any]]:
+    market = "A股" if "A股" in path.name else "US"
+    blocks: list[str] = []
+    current: list[str] = []
+    in_paste_area = False
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == "## 待处理粘贴区":
+            in_paste_area = True
+            continue
+        if not in_paste_area:
+            continue
+        if idx in consumed_table_lines:
+            continue
+        if not stripped or stripped == "---":
+            if current:
+                blocks.append("\n".join(current).strip())
+                current = []
+            continue
+        if stripped.startswith("<!--") or stripped.startswith("#"):
+            continue
+        current.append(line)
+    if current:
+        blocks.append("\n".join(current).strip())
+
+    rows: list[dict[str, Any]] = []
+    for block in blocks:
+        if not block or "示例：" in block:
+            continue
+        summary = summarize_block(block)
+        raw_id = "|".join([asof.isoformat(), market, summary])
+        evidence_id = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()[:16]
+        rows.append(
+            {
+                "evidence_id": evidence_id,
+                "date": asof.isoformat(),
+                "market": market,
+                "theme": infer_theme(block, market),
+                "source_type": infer_source_type(block),
+                "summary": summary,
+                "evidence_direction": "mixed",
+                "confidence": "3",
+                "stage": "NEEDS_TRIAGE",
+                "link_or_source": str(path),
+                "user_verdict": "WATCH",
+                "notes": "raw_manual_paste; needs AI triage",
+                "source_inbox": str(path),
+                "review_status": "PENDING",
+                "review_5d_due": (asof + timedelta(days=5)).isoformat(),
+                "review_10d_due": (asof + timedelta(days=10)).isoformat(),
+                "review_14d_due": (asof + timedelta(days=14)).isoformat(),
                 "review_5d_result": "",
                 "review_10d_result": "",
                 "review_14d_result": "",
