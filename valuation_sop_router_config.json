@@ -51,7 +51,9 @@
     "ADBE": {"framework": "AI_Core_SOP_v2.6"},
     "AVGO": {"framework": "AI_Core_SOP_v2.6"},
     "TSM": {"framework": "AI_Core_SOP_v2.6"},
-    "ASML": {"framework": "AI_Core_SOP_v2.6"}
+    "ASML": {"framework": "AI_Core_SOP_v2.6"},
+    "ANET": {"framework": "AI_Core_SOP_v2.6"},
+    "AMD": {"framework": "AI_Core_SOP_v2.6"}
   },
   "system_feedback_targets_default": ["watchlist.json", "radar_order_valuation_seed.csv", "events_calendar.json"]
 }

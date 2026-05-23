@@ -1,6 +1,6 @@
 # AI 工作同步 CURRENT
 
-- Last updated: `2026-05-24 00:48:03`
+- Last updated: `2026-05-24 00:56:51`
 - Canonical file: `/Users/zhangkun/WorkBuddy/程序化/量化程序/AI_WORK_SYNC_CURRENT.md`
 - 用途：这是唯一对外同步文件。给 GPT、Claude 或任何新 AI 时，优先上传/读取这一份。
 
@@ -1060,3 +1060,4 @@ dc58870 feat: add V6 daily report automation
 ### GPT
 
 - [00:47] [代码] A股 Radar 拥挤交易/抱团风险已落地：a_share_futu_plate_heat_scan 为板块新增 crowding_risk/crowding_reason，按 AI硬件/光模块/算力链/半导体/MLCC 等热门关键词、热度、上涨比例、强势股、涨停代理和成交额标记 LOW/MED/HIGH/EXTREME；a_share_short_radar_evening_guide 新增“拥挤/抱团风险”区块，强主线+极端拥挤只允许观察或一手级 pilot 复核，主题强但无业绩/订单/政策/公告验证不进实盘候选；morning_brief 和 A股 SOP 文档已同步该原则。
+- [00:56] [代码] AI Core Long Compounder Radar 已补齐快速估值锚：META/AVGO/TSM/ASML/ANET/AMD 写入 watchlist，ANET/AMD 接入 AI-Core SOP v2.6 路由，新增 research_snapshots/20260524/AI_Core_Long_Compounder_Quick_Valuation_Anchors_v1.md；刷新后 RESEARCH_VALUATION_FIRST 清零，当前 ADBE=STARTER_OR_UPGRADE_REVIEW，META=WATCH_REVIEW_ONLY，NVDA=HOLD_NO_ADD，AMZN/AVGO/MSFT/TSM/ANET=WATCH_WAIT_FOR_PULLBACK，ASML/GOOGL/AMD=DO_NOT_CHASE。估值纪律仍是 V_base 决定正股能否买，V_option 不允许追高。

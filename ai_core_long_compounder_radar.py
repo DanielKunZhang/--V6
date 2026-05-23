@@ -49,8 +49,8 @@ def valuation_status(price: float | None, floor: float | None, base: float | Non
         return "STARTER_CORE_ZONE", f"价格约为 V_base 的 {ratio:.2f}x"
     if ratio <= 1.00:
         return "WATCH_POSITION_ZONE", f"价格约为 V_base 的 {ratio:.2f}x"
-    if ceiling and price > ceiling:
-        return "OVER_BULL_CEILING", f"价格高于 Bull ceiling，约为 V_base 的 {ratio:.2f}x"
+    if ceiling and price >= ceiling * 0.90:
+        return "OVER_BULL_CEILING", f"价格接近或高于 Bull ceiling，约为 V_base 的 {ratio:.2f}x"
     return "ABOVE_BASE_WAIT", f"价格高于 V_base，约为 V_base 的 {ratio:.2f}x"
 
 
