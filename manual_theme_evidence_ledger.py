@@ -5,6 +5,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ OUTPUT_DIR = ROOT / "backtest_results" / "manual_theme_evidence_ledger"
 
 A_SHARE_INBOX = INBOX_DIR / "A股Radar_人工信息搜集_INBOX.md"
 V6AB_INBOX = INBOX_DIR / "V6AB_人工信息搜集_INBOX.md"
+OFFICIAL_POLICY_SCAN_JSON = REPORT_ROOT / "A股官方政策白名单扫描_LATEST.json"
 
 LOCAL_JSON = OUTPUT_DIR / "latest_theme_evidence_ledger.json"
 LOCAL_CSV = OUTPUT_DIR / "latest_theme_evidence_ledger.csv"
@@ -208,6 +210,9 @@ def infer_theme(text: str, market: str) -> str:
         ("nvidia", "NVDA / AI GPU"),
         ("hbm", "AI memory / HBM"),
         ("mu", "AI memory / HBM"),
+        ("chip stocks", "AI semis / accelerators"),
+        ("qualcomm", "AI semis / accelerators"),
+        ("amd", "AI semis / accelerators"),
         ("broadcom", "AI networking / ASIC"),
         ("avgo", "AI networking / ASIC"),
         ("anet", "AI networking / fabric"),
@@ -227,7 +232,9 @@ def infer_theme(text: str, market: str) -> str:
         ("googl", "AI cloud / software"),
         ("amazon", "AI cloud / software"),
         ("amzn", "AI cloud / software"),
+        ("meta", "AI cloud / software"),
         ("servicenow", "AI software / agentic"),
+        ("quantum computing", "Quantum computing"),
         ("ai tech", "AI tech"),
         ("ai hardware", "AI hardware"),
         ("data center", "AI data center"),
@@ -236,6 +243,10 @@ def infer_theme(text: str, market: str) -> str:
         ("seeking alpha", "US manual source"),
     ]
     for needle, theme in pairs:
+        if len(needle) <= 5 and needle.isascii():
+            if re.search(rf"\b{re.escape(needle)}\b", lowered, flags=re.IGNORECASE):
+                return theme
+            continue
         if needle in lowered or needle in text:
             return theme
     return "A股待分类主题" if market == "A股" else "US待分类主题"
@@ -384,6 +395,17 @@ def is_sa_date_line(value: str) -> bool:
     )
 
 
+def parse_symbol_change_line(value: str) -> str:
+    parts = value.strip().split()
+    if len(parts) < 2:
+        return ""
+    symbol = parts[0].strip()
+    change = parts[1].strip()
+    if is_symbol(symbol) and ("%" in change or change.startswith(("+", "-"))):
+        return symbol
+    return ""
+
+
 def make_manual_row(
     *,
     path: Path,
@@ -427,6 +449,94 @@ def make_manual_row(
     }
 
 
+def make_evidence_row(
+    *,
+    evidence_id: str,
+    evidence_date: date,
+    market: str,
+    theme: str,
+    source_type: str,
+    summary: str,
+    confidence: str,
+    stage: str,
+    link_or_source: str,
+    user_verdict: str,
+    notes: str,
+    source_inbox: str,
+    asof: date,
+) -> dict[str, Any]:
+    return {
+        "evidence_id": evidence_id,
+        "date": evidence_date.isoformat(),
+        "market": market,
+        "theme": theme,
+        "source_type": source_type,
+        "summary": summary,
+        "evidence_direction": "mixed",
+        "confidence": confidence,
+        "stage": stage,
+        "link_or_source": link_or_source,
+        "user_verdict": user_verdict,
+        "notes": notes,
+        "source_inbox": source_inbox,
+        "review_status": "PENDING",
+        "review_5d_due": (evidence_date + timedelta(days=5)).isoformat(),
+        "review_10d_due": (evidence_date + timedelta(days=10)).isoformat(),
+        "review_14d_due": (evidence_date + timedelta(days=14)).isoformat(),
+        "review_5d_result": "",
+        "review_10d_result": "",
+        "review_14d_result": "",
+        "actual_impact": "",
+        "classification_correct": "",
+        "error_type": "",
+        "review_notes": "",
+        "created_at": asof.isoformat(),
+        "updated_at": asof.isoformat(),
+    }
+
+
+def parse_official_policy_scan(path: Path, asof: date) -> list[dict[str, Any]]:
+    payload = read_json(path)
+    rows = payload.get("rows", []) if isinstance(payload, dict) else []
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        title = str(row.get("title", "")).strip()
+        if not title:
+            continue
+        evidence_date = parse_date(row.get("date")) or asof
+        theme = str(row.get("theme", "")).strip() or "A股待分类官方线索"
+        source = str(row.get("source", "")).strip()
+        source_type = str(row.get("source_type", "")).strip() or "official_policy"
+        url = str(row.get("url", "")).strip()
+        confidence = str(row.get("confidence", "")).strip() or "5"
+        raw_id = str(row.get("evidence_id", "")).strip() or hashlib.sha1(
+            "|".join([source, title, url]).encode("utf-8")
+        ).hexdigest()[:16]
+        notes = "auto_official_whitelist_scan; no_trade_signal; Phase1A evidence only"
+        if row.get("needs_manual_review"):
+            notes += "; needs_manual_review"
+        out.append(
+            make_evidence_row(
+                evidence_id=f"cn_official_{raw_id}"[:32],
+                evidence_date=evidence_date,
+                market="A股",
+                theme=theme,
+                source_type=f"auto_{source_type}",
+                summary=f"{title} [{source}]",
+                confidence=confidence,
+                stage="OFFICIAL_AUTO_SCAN",
+                link_or_source=url or str(path),
+                user_verdict="WATCH",
+                notes=notes,
+                source_inbox=str(path),
+                asof=asof,
+            )
+        )
+    return out
+
+
 def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     mode = "articles"
@@ -440,6 +550,10 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
             continue
         if line == "ON THE MOVE - NEWS":
             mode = "on_the_move"
+            idx += 1
+            continue
+        if line.startswith("Trending News"):
+            mode = "trending_news"
             idx += 1
             continue
         if is_sa_noise(line) or line.startswith("<!--"):
@@ -515,6 +629,28 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
                 )
                 idx += 3
                 continue
+
+        if mode == "trending_news":
+            if is_symbol(line) or is_sa_date_line(line) or line.lower().endswith("comments") or line.lower().endswith("comment"):
+                idx += 1
+                continue
+            if idx + 1 < len(lines):
+                symbol = parse_symbol_change_line(lines[idx + 1].strip())
+                if symbol:
+                    rows.append(
+                        make_manual_row(
+                            path=path,
+                            asof=asof,
+                            market="US",
+                            theme=infer_theme(f"{line} {symbol}", "US"),
+                            source_type="seeking_alpha_news_title",
+                            summary=f"{line} [{symbol}]",
+                            link_or_source="Seeking Alpha Trending News",
+                            notes="free_clickable_news; title_summary_only; validate important items with primary sources",
+                        )
+                    )
+                    idx += 2
+                    continue
 
         if mode == "on_the_move":
             if idx + 2 < len(lines) and is_symbol(lines[idx + 1].strip()):
@@ -628,6 +764,7 @@ def build_summary(rows: list[dict[str, Any]], asof: date) -> dict[str, Any]:
         "inboxes": {
             "a_share": str(A_SHARE_INBOX),
             "v6ab": str(V6AB_INBOX),
+            "a_share_official_auto": str(OFFICIAL_POLICY_SCAN_JSON),
         },
     }
 
@@ -650,6 +787,7 @@ def render_md(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- 到期复核：`{summary['due_count']}`",
         f"- A股 INBOX：`{summary['inboxes']['a_share']}`",
         f"- V6AB INBOX：`{summary['inboxes']['v6ab']}`",
+        f"- A股官方自动扫描：`{summary['inboxes']['a_share_official_auto']}`",
         "",
         "## 到期复核",
         "",
@@ -703,7 +841,11 @@ def main() -> int:
     ensure_inboxes()
     existing = read_json(LOCAL_JSON)
     existing_rows = existing.get("rows", []) if isinstance(existing, dict) else []
-    incoming = parse_inbox(A_SHARE_INBOX, asof) + parse_inbox(V6AB_INBOX, asof)
+    incoming = (
+        parse_inbox(A_SHARE_INBOX, asof)
+        + parse_inbox(V6AB_INBOX, asof)
+        + parse_official_policy_scan(OFFICIAL_POLICY_SCAN_JSON, asof)
+    )
     rows = merge_rows(existing_rows, incoming, asof)
     summary = build_summary(rows, asof)
     payload = {**summary, "rows": rows}

@@ -49,6 +49,7 @@ VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
+THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股官方政策白名单扫描_LATEST.json")
 THEME_EVIDENCE_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/Theme_Evidence_人工搜集_LATEST.json")
 THEME_EVIDENCE_A_SHARE_INBOX = Path("/Users/zhangkun/Desktop/AI个人投资公司/信息源扫描/Theme_Evidence_Inbox/A股Radar_人工信息搜集_INBOX.md")
 THEME_EVIDENCE_V6AB_INBOX = Path("/Users/zhangkun/Desktop/AI个人投资公司/信息源扫描/Theme_Evidence_Inbox/V6AB_人工信息搜集_INBOX.md")
@@ -635,6 +636,74 @@ def _date_from_decision(row: dict) -> date | None:
         return None
 
 
+def _parse_iso_date(value: Any) -> date | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.strptime(text[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def summarize_v6ab_theme_evidence(payload: Any, today: date, limit: int = 5) -> str:
+    """Extract recent V6AB manual evidence worth primary-source review."""
+    if not isinstance(payload, dict):
+        return ""
+    rows = payload.get("rows", [])
+    if not isinstance(rows, list):
+        return ""
+    keywords = (
+        "AI infrastructure",
+        "AI infra",
+        "AI chip",
+        "AI chips",
+        "Nvidia",
+        "NVDA",
+        "Micron",
+        "MU",
+        "Lumentum",
+        "Coherent",
+        "LITE",
+        "datacenter",
+        "data center",
+        "electrification",
+        "power",
+        "ServiceNow",
+        "NOW",
+        "Microsoft",
+        "MSFT",
+        "Amazon",
+        "AMZN",
+        "Qualcomm",
+        "AMD",
+        "chip stocks",
+        "semis",
+    )
+    items: list[str] = []
+    for row in rows:
+        source_inbox = str(row.get("source_inbox", ""))
+        if "V6AB_" not in source_inbox:
+            continue
+        row_date = _parse_iso_date(row.get("date"))
+        if row_date is None or (today - row_date).days > 3:
+            continue
+        haystack = f"{row.get('theme', '')} {row.get('summary', '')}"
+        if not any(k.lower() in haystack.lower() for k in keywords):
+            continue
+        source_type = str(row.get("source_type", ""))
+        summary = str(row.get("summary", "")).strip()
+        theme = str(row.get("theme", "")).strip()
+        if not summary:
+            continue
+        tag = "免费标题" if source_type != "seeking_alpha_premium_title" else "Premium标题"
+        short_summary = summary if len(summary) <= 100 else f"{summary[:97].rstrip()}..."
+        items.append(f"{theme}: {short_summary}（{tag}，需主源验证）")
+        if len(items) >= limit:
+            break
+    return "；".join(items)
+
+
 def collect_workflow_actions(events: list[dict], stale_status: dict | None = None) -> list[dict]:
     """
     Daily 报告的任务中枢：只告诉用户今天该做什么、用什么关键词触发。
@@ -730,19 +799,26 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
     # 4) 固定节奏提醒：把机制收敛为 Daily 顶部的人工入口。
     theme_evidence = read_json(THEME_EVIDENCE_LEDGER)
     evidence_due_count = int(theme_evidence.get("due_count") or 0) if isinstance(theme_evidence, dict) else 0
+    v6ab_evidence_focus = summarize_v6ab_theme_evidence(theme_evidence, today)
+    official_scan = read_json(THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN)
+    official_status = str(official_scan.get("status", "UNKNOWN")) if isinstance(official_scan, dict) else "UNKNOWN"
+    official_rows = int(official_scan.get("row_count") or 0) if isinstance(official_scan, dict) else 0
+    official_failures = official_scan.get("failures", []) if isinstance(official_scan, dict) else []
+    official_failed_count = sum(1 for item in official_failures if isinstance(item, dict) and item.get("status") == "FAILED")
     add(
         "MED" if today.weekday() < 5 else "LOW",
         "Theme Evidence",
         "A股 Radar 人工信息搜集：政策/产业/公告/板块异动",
         "记录 A股主题证据",
-        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。富途板块热度已由系统自动生成，不需要人工重复抄纯涨幅榜。搜集建议：中国政府网/发改委/工信部/证监会政策，巨潮/交易所公告，财联社/东方财富中有政策或产业支撑的板块异动；重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
+        f"官方白名单扫描已自动处理政府/交易所公开源，状态={official_status}，命中 {official_rows} 条，失败源 {official_failed_count} 个；报告见 {THEME_EVIDENCE_A_SHARE_OFFICIAL_SCAN.with_suffix('.md')}。人工只补系统失败/需复核的官方源、巨潮/交易所公司公告、以及有政策或产业支撑的财联社/东方财富板块异动，写入 {THEME_EVIDENCE_A_SHARE_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行。富途板块热度已自动生成，不需要人工重复抄纯涨幅榜。重点搜人形机器人、半导体设备、低空经济、AI应用、算力、电力设备、新型工业化、设备更新、国产替代。只记录政策明确、订单/产能/客户/业绩验证、龙头中军同步、产业链瓶颈或强反证；不记录纯涨幅榜/无来源观点/情绪标题。当前 evidence 到期复核 {evidence_due_count} 条",
     )
     add(
-        "LOW" if today.weekday() < 4 else "MED",
+        "MED" if v6ab_evidence_focus or today.weekday() == 4 else "LOW",
         "Theme Evidence",
         "V6AB / 美股 Radar 人工信息搜集：财报、SEC、13F、产业链扩散",
         "记录 V6AB主题证据",
-        f"把本周看到的高质量线索写入 {THEME_EVIDENCE_V6AB_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。搜集建议：SEC EDGAR/公司IR/财报电话会/13F/Fed/BEA/产业链公开报道；重点搜 AI infra、semis、power、data center、HBM、光模块、云capex，以及 2020 technology/precious metals、2022 energy/inflation/defensive 历史主线证据。只记录财报/订单/capex/供应链瓶颈/机构持仓/宏观数据或强反证；不记录泛泛新闻。只做 evidence，不改变 V2 模拟盘",
+        f"把本周看到的高质量线索写入 {THEME_EVIDENCE_V6AB_INBOX}；INBOX 只放待处理新信息，处理入 ledger 后可删除已处理行，历史看 Theme_Evidence_人工搜集_LATEST。搜集建议：SEC EDGAR/公司IR/财报电话会/13F/Fed/BEA/产业链公开报道；重点搜 AI infra、semis、power、data center、HBM、光模块、云capex，以及 2020 technology/precious metals、2022 energy/inflation/defensive 历史主线证据。只记录财报/订单/capex/供应链瓶颈/机构持仓/宏观数据或强反证；不记录泛泛新闻。只做 evidence，不改变 V2 模拟盘"
+        + (f"；今日需人工复核：{v6ab_evidence_focus}" if v6ab_evidence_focus else ""),
     )
 
     # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。

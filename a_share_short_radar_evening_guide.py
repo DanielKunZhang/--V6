@@ -26,6 +26,7 @@ FEEDBACK_MD = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.md"
 FEEDBACK_JSON = REPORT_ROOT / "A股短线Radar复盘反哺_LATEST.json"
 BACKFILL_MD = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.md"
 BACKFILL_JSON = REPORT_ROOT / "A股短线Radar_K线补齐_LATEST.json"
+OFFICIAL_POLICY_JSON = REPORT_ROOT / "A股官方政策白名单扫描_LATEST.json"
 STRICT_TRACKER_JSON = REPORT_ROOT / "A股短线Radar规则过严样本追踪_LATEST.json"
 CLASSIFICATION_LEDGER_JSON = REPORT_ROOT / "A股Radar主线分类准度Ledger_LATEST.json"
 
@@ -186,6 +187,33 @@ def classification_ledger_table(ledger: dict[str, Any]) -> str:
     return df_to_html_table(df[cols].rename(columns=labels), max_rows=8)
 
 
+def official_policy_table(payload: dict[str, Any]) -> str:
+    rows = payload.get("rows", []) if isinstance(payload, dict) else []
+    failures = payload.get("failures", []) if isinstance(payload, dict) else []
+    parts: list[str] = []
+    if rows:
+        df = pd.DataFrame(rows)
+        keep = ["date", "source", "theme", "confidence", "needs_manual_review", "title"]
+        cols = [col for col in keep if col in df.columns]
+        labels = {
+            "date": "日期",
+            "source": "来源",
+            "theme": "主题",
+            "confidence": "置信度",
+            "needs_manual_review": "需复核",
+            "title": "标题",
+        }
+        parts.append(df_to_html_table(df[cols].rename(columns=labels), max_rows=8))
+    else:
+        parts.append("<p class='muted'>暂无官方白名单关键词命中。</p>")
+    if failures:
+        failed = [item for item in failures if item.get("status") == "FAILED"]
+        if failed:
+            items = "".join(f"<li>{esc(item.get('source'))}: {esc(item.get('reason'))}</li>" for item in failed[:5])
+            parts.append(f"<p class='muted'>需人工补查的失败源：</p><ul>{items}</ul>")
+    return "\n".join(parts)
+
+
 def compact_candidate_table(candidates: pd.DataFrame, tradable_only: bool) -> str:
     if candidates.empty:
         return "<p class='muted'>暂无候选。</p>"
@@ -259,6 +287,7 @@ def build_html(asof: str) -> tuple[str, str, dict[str, Any]]:
     review = read_json(REVIEW_JSON)
     feedback = read_json(FEEDBACK_JSON)
     backfill = read_json(BACKFILL_JSON)
+    official_policy = read_json(OFFICIAL_POLICY_JSON)
     strict_tracker = read_json(STRICT_TRACKER_JSON)
     classification_ledger = read_json(CLASSIFICATION_LEDGER_JSON)
     themes = read_csv(THEMES_CSV)
@@ -312,6 +341,9 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
 {feedback_table(feedback)}
 <h3>K线补齐状态</h3>
 {backfill_table(backfill)}
+<h3>官方政策/公告白名单扫描</h3>
+<p class="muted">官方源只提供主线证据和人工复核入口；不是买入信号。若与板块热度和候选结构共振，再进入主线持续性观察。</p>
+{official_policy_table(official_policy)}
 <h3>规则过严样本追踪</h3>
 {strict_tracker_table(strict_tracker)}
 <h3>主线分类准度 Ledger</h3>
@@ -358,6 +390,7 @@ code {{ background:#f2f4f7; padding:2px 4px; border-radius:4px; }}
             "feedback_json": str(FEEDBACK_JSON),
             "backfill_md": str(BACKFILL_MD),
             "backfill_json": str(BACKFILL_JSON),
+            "official_policy_json": str(OFFICIAL_POLICY_JSON),
             "strict_tracker_json": str(STRICT_TRACKER_JSON),
             "classification_ledger_json": str(CLASSIFICATION_LEDGER_JSON),
         },

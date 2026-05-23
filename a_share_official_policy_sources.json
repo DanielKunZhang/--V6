@@ -1,0 +1,134 @@
+{
+  "sources": [
+    {
+      "id": "gov_cn_policy_latest",
+      "name": "中国政府网-政策最新",
+      "source_type": "official_policy",
+      "base_url": "https://www.gov.cn",
+      "list_urls": [
+        "https://www.gov.cn/zhengce/zuixin/",
+        "https://www.gov.cn/zhengce/",
+        "https://www.gov.cn/lianbo/"
+      ],
+      "priority": 95
+    },
+    {
+      "id": "ndrc_news",
+      "name": "国家发改委-新闻发布",
+      "source_type": "official_policy",
+      "base_url": "https://www.ndrc.gov.cn",
+      "list_url": "https://www.ndrc.gov.cn/xwdt/xwfb/",
+      "priority": 92
+    },
+    {
+      "id": "miit_news",
+      "name": "工信部-新闻动态",
+      "source_type": "official_policy",
+      "base_url": "https://www.miit.gov.cn",
+      "list_urls": [
+        "https://www.miit.gov.cn/xwdt/",
+        "https://www.miit.gov.cn/xwdt/gxdt/",
+        "https://www.miit.gov.cn/jgsj/kjs/wjfb/"
+      ],
+      "priority": 92
+    },
+    {
+      "id": "most_news",
+      "name": "科技部-新闻动态",
+      "source_type": "official_policy",
+      "base_url": "https://www.most.gov.cn",
+      "list_urls": [
+        "https://www.most.gov.cn/kjbgz/",
+        "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/"
+      ],
+      "priority": 88
+    },
+    {
+      "id": "mof_news",
+      "name": "财政部-新闻动态",
+      "source_type": "official_policy",
+      "base_url": "https://www.mof.gov.cn",
+      "list_urls": [
+        "https://www.mof.gov.cn/zhengwuxinxi/caizhengxinwen/",
+        "https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/"
+      ],
+      "priority": 86
+    },
+    {
+      "id": "csrc_news",
+      "name": "证监会-新闻发布",
+      "source_type": "official_policy",
+      "base_url": "https://www.csrc.gov.cn",
+      "list_url": "https://www.csrc.gov.cn/csrc/c100028/common_list.shtml",
+      "priority": 88
+    },
+    {
+      "id": "nea_news",
+      "name": "国家能源局-新闻",
+      "source_type": "official_policy",
+      "base_url": "https://www.nea.gov.cn",
+      "list_url": "https://www.nea.gov.cn/xwzx/nyyw.htm",
+      "priority": 86
+    },
+    {
+      "id": "ndrc_industry",
+      "name": "国家发改委-产业发展",
+      "source_type": "official_policy",
+      "base_url": "https://www.ndrc.gov.cn",
+      "list_urls": [
+        "https://www.ndrc.gov.cn/fggz/cyfz/"
+      ],
+      "priority": 88
+    },
+    {
+      "id": "sse_latest",
+      "name": "上交所-最新动态",
+      "source_type": "exchange_notice",
+      "base_url": "https://www.sse.com.cn",
+      "list_url": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/",
+      "priority": 82
+    },
+    {
+      "id": "szse_news",
+      "name": "深交所-新闻动态",
+      "source_type": "exchange_notice",
+      "base_url": "https://www.szse.cn",
+      "list_url": "https://www.szse.cn/aboutus/trends/news/",
+      "priority": 82
+    }
+  ],
+  "theme_keywords": [
+    {
+      "theme": "人形机器人",
+      "keywords": ["人形机器人", "机器人", "具身智能", "智能制造", "减速器", "伺服", "工业母机"]
+    },
+    {
+      "theme": "半导体设备 / 国产替代",
+      "keywords": ["半导体设备", "集成电路", "先进封装", "光刻", "刻蚀", "国产替代", "芯片", "晶圆"]
+    },
+    {
+      "theme": "低空经济",
+      "keywords": ["低空经济", "无人机", "eVTOL", "通用航空", "空域", "飞行汽车"]
+    },
+    {
+      "theme": "算力 / 数据中心",
+      "keywords": ["算力", "数据中心", "智算", "人工智能", "AI", "大模型", "云计算"]
+    },
+    {
+      "theme": "电力设备 / 储能",
+      "keywords": ["电力设备", "特高压", "储能", "新型电力系统", "电网", "新能源消纳", "能源安全"]
+    },
+    {
+      "theme": "设备更新 / 新型工业化",
+      "keywords": ["设备更新", "新型工业化", "工业互联网", "专精特新", "制造业升级"]
+    },
+    {
+      "theme": "商业航天 / 卫星互联网",
+      "keywords": ["商业航天", "卫星互联网", "火箭", "卫星", "北斗"]
+    },
+    {
+      "theme": "资本市场 / 并购重组",
+      "keywords": ["并购重组", "再融资", "上市公司质量", "资本市场", "科创板", "创业板"]
+    }
+  ]
+}

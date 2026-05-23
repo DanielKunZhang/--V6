@@ -15,6 +15,7 @@ backtest_results/
 !*example.json
 !*.example.json
 !central_risk_board_config.json
+!a_share_official_policy_sources.json
 *.bak
 .DS_Store
 .env
