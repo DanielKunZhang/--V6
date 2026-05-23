@@ -26,6 +26,7 @@ DESKTOP_CSV = REPORT_ROOT / "Theme_Evidence_人工搜集_LATEST.csv"
 DESKTOP_MD = REPORT_ROOT / "Theme_Evidence_人工搜集_LATEST.md"
 
 REVIEW_HORIZONS = (5, 10, 14)
+SA_RATINGS = {"Buy", "Strong Buy", "Hold", "Sell", "Strong Sell"}
 
 TEMPLATE = """# {title}
 
@@ -210,8 +211,25 @@ def infer_theme(text: str, market: str) -> str:
         ("broadcom", "AI networking / ASIC"),
         ("avgo", "AI networking / ASIC"),
         ("anet", "AI networking / fabric"),
+        ("lumentum", "AI optical / photonics"),
+        ("coherent", "AI optical / photonics"),
+        ("lite", "AI optical / photonics"),
         ("vertiv", "AI power / data center"),
         ("vrt", "AI power / data center"),
+        ("generac", "AI power / data center"),
+        ("gnrc", "AI power / data center"),
+        ("rocket lab", "Space / launch"),
+        ("rklb", "Space / launch"),
+        ("spacex", "Space / launch"),
+        ("microsoft", "AI cloud / software"),
+        ("msft", "AI cloud / software"),
+        ("alphabet", "AI cloud / software"),
+        ("googl", "AI cloud / software"),
+        ("amazon", "AI cloud / software"),
+        ("amzn", "AI cloud / software"),
+        ("servicenow", "AI software / agentic"),
+        ("ai tech", "AI tech"),
+        ("ai hardware", "AI hardware"),
         ("data center", "AI data center"),
         ("datacenter", "AI data center"),
         ("capex", "AI capex"),
@@ -347,11 +365,7 @@ def is_sa_noise(value: str) -> bool:
         "Article",
         "Symbol",
         "Chg",
-        "Buy",
-        "Strong Buy",
-        "Hold",
-        "Sell",
-        "Strong Sell",
+        *SA_RATINGS,
     }
 
 
@@ -391,7 +405,7 @@ def make_manual_row(
         "source_type": source_type,
         "summary": summary,
         "evidence_direction": "mixed",
-        "confidence": "2" if source_type == "seeking_alpha_title" else "3",
+        "confidence": "2" if source_type == "seeking_alpha_premium_title" else "3",
         "stage": "NEEDS_TRIAGE",
         "link_or_source": link_or_source,
         "user_verdict": "WATCH",
@@ -433,31 +447,53 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
             continue
 
         if mode == "articles":
+            inline = parse_inline_rating_symbol(line)
+            if inline:
+                title, rating, symbol = inline
+                rows.append(
+                    make_manual_row(
+                        path=path,
+                        asof=asof,
+                        market="US",
+                        theme=infer_theme(f"{title} {symbol}", "US"),
+                        source_type="seeking_alpha_premium_title",
+                        summary=f"{title} [{rating}; {symbol}]",
+                        link_or_source="Seeking Alpha premium title list",
+                        notes="premium_title_only; body_not_read; weak narrative evidence",
+                    )
+                )
+                idx += 1
+                continue
             title = line
             if is_symbol(title) or is_sa_date_line(title) or len(title) < 12:
                 idx += 1
                 continue
             j = idx + 1
-            if j < len(lines) and lines[j] in {"Buy", "Strong Buy", "Hold", "Sell", "Strong Sell"}:
+            rating = ""
+            timestamp = ""
+            if j < len(lines) and lines[j] in SA_RATINGS:
+                rating = lines[j]
                 j += 1
             if j < len(lines) and is_sa_date_line(lines[j]):
+                timestamp = lines[j]
                 j += 1
             if j < len(lines) and is_symbol(lines[j]):
                 symbol = lines[j]
-                summary = f"{line} [{symbol}]"
+                details = "; ".join(part for part in [rating, timestamp, symbol] if part)
+                summary = f"{line} [{details}]"
                 rows.append(
                     make_manual_row(
                         path=path,
                         asof=asof,
                         market="US",
                         theme=infer_theme(f"{line} {symbol}", "US"),
-                        source_type="seeking_alpha_title",
+                        source_type="seeking_alpha_premium_title",
                         summary=summary,
-                        link_or_source="Seeking Alpha title list",
-                        notes="title_only; premium_body_not_read; weak narrative evidence",
+                        link_or_source="Seeking Alpha premium title list",
+                        notes="premium_title_only; body_not_read; weak narrative evidence",
                     )
                 )
-                idx += 1
+                idx = j + 1
                 continue
 
         if mode == "hot_themes":
@@ -474,7 +510,7 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
                         source_type="seeking_alpha_news_title",
                         summary=f"{theme_label}: {article} [{symbol}]",
                         link_or_source="Seeking Alpha HOT THEMES - NEWS",
-                        notes="free_title_only; needs primary-source validation",
+                        notes="free_clickable_news; title_summary_only; validate important items with primary sources",
                     )
                 )
                 idx += 3
@@ -494,7 +530,7 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
                         source_type="seeking_alpha_on_the_move",
                         summary=f"{article} [{symbol}] {chg}",
                         link_or_source="Seeking Alpha ON THE MOVE - NEWS",
-                        notes="free_title_only; price-move context; needs validation",
+                        notes="free_clickable_news; price-move context; validate important items with primary sources",
                     )
                 )
                 idx += 3
@@ -502,6 +538,21 @@ def parse_seeking_alpha_lines(path: Path, lines: list[str], asof: date) -> list[
 
         idx += 1
     return rows
+
+
+def parse_inline_rating_symbol(line: str) -> tuple[str, str, str] | None:
+    ratings = ["Strong Buy", "Strong Sell", "Buy", "Hold", "Sell"]
+    for rating in ratings:
+        marker = f" {rating.upper()} "
+        upper = line.upper()
+        if marker not in upper:
+            continue
+        idx = upper.rfind(marker)
+        title = line[:idx].strip()
+        symbol = line[idx + len(marker) :].strip().split()[0] if line[idx + len(marker) :].strip() else ""
+        if title and is_symbol(symbol):
+            return title, rating, symbol
+    return None
 
 
 def merge_rows(existing: list[dict[str, Any]], incoming: list[dict[str, Any]], asof: date) -> list[dict[str, Any]]:
