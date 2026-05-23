@@ -49,6 +49,9 @@ VALUATION_ROUTER_CONFIG = ROOT / "valuation_sop_router_config.json"
 COMPANY_RESEARCH_DIR = Path("/Users/zhangkun/Desktop/AI个人投资公司/公司研究")
 V6AB_LEGACY_FORWARD_WATCH = ROOT / "backtest_results" / "v6ab_legacy_preservation_forward_watch" / "latest.json"
 A_SHARE_CLASSIFICATION_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/A股Radar主线分类准度Ledger_LATEST.json")
+THEME_EVIDENCE_LEDGER = Path("/Users/zhangkun/Desktop/AI个人投资公司/报表输出/LATEST/Theme_Evidence_人工搜集_LATEST.json")
+THEME_EVIDENCE_A_SHARE_INBOX = Path("/Users/zhangkun/Desktop/AI个人投资公司/信息源扫描/Theme_Evidence_Inbox/A股Radar_人工信息搜集_INBOX.md")
+THEME_EVIDENCE_V6AB_INBOX = Path("/Users/zhangkun/Desktop/AI个人投资公司/信息源扫描/Theme_Evidence_Inbox/V6AB_人工信息搜集_INBOX.md")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -725,6 +728,23 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
         )
 
     # 4) 固定节奏提醒：把机制收敛为 Daily 顶部的人工入口。
+    theme_evidence = read_json(THEME_EVIDENCE_LEDGER)
+    evidence_due_count = int(theme_evidence.get("due_count") or 0) if isinstance(theme_evidence, dict) else 0
+    add(
+        "MED" if today.weekday() < 5 else "LOW",
+        "Theme Evidence",
+        "A股 Radar 人工信息搜集：政策/产业/公告/板块异动",
+        "记录 A股主题证据",
+        f"把今天看到的高质量线索写入 {THEME_EVIDENCE_A_SHARE_INBOX}；重点搜集人形机器人、半导体设备及新出现的政策/产业主线。系统会结构化入 ledger；当前 evidence 到期复核 {evidence_due_count} 条",
+    )
+    add(
+        "LOW" if today.weekday() < 4 else "MED",
+        "Theme Evidence",
+        "V6AB / 美股 Radar 人工信息搜集：财报、SEC、13F、产业链扩散",
+        "记录 V6AB主题证据",
+        f"把本周看到的 AI infra/semis/power/data center、2020 technology/precious metals、2022 energy/defensive 等高质量线索写入 {THEME_EVIDENCE_V6AB_INBOX}；只做 evidence，不改变 V2 模拟盘",
+    )
+
     # A股 Radar 是小资金短线实验仓，若当天有交易/候选，应日更复盘。
     if today.weekday() < 5:
         classification_ledger = read_json(A_SHARE_CLASSIFICATION_LEDGER)
