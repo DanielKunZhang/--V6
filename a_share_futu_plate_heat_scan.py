@@ -45,6 +45,16 @@ def safe_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def is_mainland_common_stock(code: str) -> bool:
+    if code.startswith("SH."):
+        raw = code.split(".", 1)[1]
+        return raw.startswith("6")
+    if code.startswith("SZ."):
+        raw = code.split(".", 1)[1]
+        return raw.startswith(("0", "3"))
+    return False
+
+
 def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
     from futu import Market, OpenQuoteContext, Plate, RET_OK
 
@@ -92,7 +102,7 @@ def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
                 continue
             member_records = members.to_dict("records")
             codes = [str(pick(item, "code", "stock_code")) for item in member_records]
-            codes = [code for code in codes if code.startswith(("SH.", "SZ."))][:max_members]
+            codes = [code for code in codes if is_mainland_common_stock(code)][:max_members]
             if not codes:
                 continue
             ret, snap = ctx.get_market_snapshot(codes)
@@ -126,6 +136,7 @@ def scan_worker(args: dict[str, Any], queue: mp.Queue) -> None:
                     "strong_count_5pct": strong_count,
                     "strong_ratio_5pct": round(strong_ratio, 4),
                     "limit_proxy_count": limit_proxy_count,
+                    "zero_change_count": sum(1 for value in changes if value == 0),
                     "amount_rmb": round(amount_rmb, 2),
                     "heat_score": heat_score,
                     "top_leaders": [
@@ -207,6 +218,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "strong_count_5pct",
         "strong_ratio_5pct",
         "limit_proxy_count",
+        "zero_change_count",
         "amount_rmb",
         "top_leaders",
     ]
@@ -257,6 +269,11 @@ def render_md(payload: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## 数据质量提示",
+            "",
+            "- 若非交易日/休市时 `change_rate` 全为 0，本报告只说明接口可用和板块成分/成交额可读，不代表真实当日强弱。",
+            "- 交易日收盘后或盘中重跑，才适合用于板块热度复核。",
+            "",
             "## 人工复核口径",
             "",
             "- 若 Top 板块与政策/产业线索一致，可复制摘要到 A股Radar 人工信息搜集 INBOX。",
@@ -273,10 +290,10 @@ def main() -> int:
     parser.add_argument("--asof", default=str(date.today()))
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=11111)
-    parser.add_argument("--max-plates", type=int, default=30)
+    parser.add_argument("--max-plates", type=int, default=8)
     parser.add_argument("--max-members", type=int, default=80)
-    parser.add_argument("--timeout-sec", type=int, default=35)
-    parser.add_argument("--sleep-sec", type=float, default=0.05)
+    parser.add_argument("--timeout-sec", type=int, default=60)
+    parser.add_argument("--sleep-sec", type=float, default=3.2)
     args = parser.parse_args()
 
     result = run_scan(args)
