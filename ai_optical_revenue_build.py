@@ -107,6 +107,7 @@ def build_payload(config: dict[str, Any], ticker: str, asof: str) -> dict[str, A
 
 def build_decision(company: dict[str, Any], financials: dict[str, Any]) -> dict[str, Any]:
     current = company.get("current_market", {})
+    initial_decision = company.get("initial_decision", "")
     price = float(current.get("price", 0) or 0)
     bear_value = float(financials["bear"].get("value_per_share", 0))
     base_value = float(financials["base"].get("value_per_share", 0))
@@ -121,7 +122,14 @@ def build_decision(company: dict[str, Any], financials: dict[str, Any]) -> dict[
         }
     base_discount = price / base_value if base_value else None
     upside_dependency = max(0.0, (price - bear_value) / max(upside_value - bear_value, 1.0))
-    if price > base_value:
+    if initial_decision == "HIGH_BETA_RESEARCH_ONLY":
+        if price > base_value:
+            action = "DO_NOT_CHASE"
+            reason = "High-beta optical name with price above rough base value; wait for Q2/Q3 proof, dilution clarity, customer risk review, and better entry."
+        else:
+            action = "HIGH_BETA_WATCH_ONLY"
+            reason = "High-beta optical name cannot enter pilot from valuation alone; require Q2/Q3 proof, dilution clarity, customer risk review, and crowding reset."
+    elif price > base_value:
         action = "DO_NOT_CHASE"
         reason = "Price is above rough base value; revenue upside may be real but common stock has no base-case margin of safety."
     elif upside_dependency > 0.35:
@@ -550,7 +558,11 @@ def render_compare_md(payloads: list[dict[str, Any]], asof: str) -> str:
         decision = payload["decision"]
         checks = payload.get("validation", [])
         calibration = "PASS" if checks and all(c.get("status") == "PASS" for c in checks) else "CHECK"
-        evidence_level = "product-level" if payload["ticker"] == "LITE" else "segment-level"
+        evidence_level = {
+            "LITE": "product-level mixed",
+            "COHR": "segment-level",
+            "AAOI": "high-beta guide-level",
+        }.get(payload["ticker"], "model")
         lines.append(
             f"| `{payload['ticker']}` | {payload['company']['company']} | `{decision['action']}` | "
             f"${decision['price']:.2f} | ${decision['bear_value']:.0f}/${decision['base_value']:.0f}/${decision['upside_value']:.0f} | "
@@ -562,8 +574,9 @@ def render_compare_md(payloads: list[dict[str, Any]], asof: str) -> str:
             "## 当前结论",
             "",
             "- `LITE`：产品线模型更细，但价格已超过粗略 upside 锚，结论是 `DO_NOT_CHASE`。",
-            "- `COHR`：主源分部证据更直接，估值吸收程度低于 LITE，但仍需补 800G/1.6T/CPO/OCS 产品级证据。",
-            "- 两者都只进入 V6AB/Radar evidence，不改变 V6AB V2 模拟盘。",
+            "- `COHR`：主源分部证据更直接，但也已超过粗略 upside 锚，结论是 `DO_NOT_CHASE`。",
+            "- `AAOI`：弹性最高，但质量、稀释、客户集中和执行风险最大；只作为 high-beta right-tail 样本。",
+            "- 三者都只进入 V6AB/Radar evidence，不改变 V6AB V2 模拟盘。",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -575,7 +588,11 @@ def render_compare_html(payloads: list[dict[str, Any]], asof: str) -> str:
         decision = payload["decision"]
         checks = payload.get("validation", [])
         calibration = "PASS" if checks and all(c.get("status") == "PASS" for c in checks) else "CHECK"
-        evidence_level = "product-level" if payload["ticker"] == "LITE" else "segment-level"
+        evidence_level = {
+            "LITE": "product-level mixed",
+            "COHR": "segment-level",
+            "AAOI": "high-beta guide-level",
+        }.get(payload["ticker"], "model")
         rows.append(
             "<tr>"
             f"<td>{esc(payload['ticker'])}</td>"
@@ -614,7 +631,8 @@ thead th {{ background:#173b57; color:white; }}
 <section class="panel">
 <h2>当前结论</h2>
 <p>LITE 产品线模型更细，但价格已超过粗略 upside 锚，结论是 DO_NOT_CHASE。</p>
-<p>COHR 主源分部证据更直接，估值吸收程度低于 LITE，但仍需补 800G/1.6T/CPO/OCS 产品级证据。</p>
+<p>COHR 主源分部证据更直接，但也已超过粗略 upside 锚，结论是 DO_NOT_CHASE。</p>
+<p>AAOI 弹性最高，但质量、稀释、客户集中和执行风险最大；只作为 high-beta right-tail 样本。</p>
 </section>
 </main></body></html>
 """

@@ -999,7 +999,7 @@ def collect_workflow_actions(events: list[dict], stale_status: dict | None = Non
             "AI Optical",
             "AI Optical / Rack-scale Revenue Build 周度复核",
             "复核AI光通信收入模型",
-            f"查看 AI_Optical_Revenue_Build_Compare_LATEST：用途是把 LITE/COHR 等 AI optical/rack-scale 强主线拆成收入、FCF、价格吸收和证据等级。当前 DO_NOT_CHASE={','.join(do_not_chase) or '暂无'}。只补主源证据、等回撤或等估值重置；不追高，不改变 V6AB V2",
+            f"查看 AI_Optical_Revenue_Build_Compare_LATEST：用途是把 LITE/COHR/AAOI 等 AI optical/rack-scale 强主线拆成收入、FCF、价格吸收和证据等级。当前 DO_NOT_CHASE={','.join(do_not_chase) or '暂无'}。AAOI 这类 high-beta 名字只看 Q2/Q3 证据、稀释和客户集中风险；只补主源证据、等回撤或等估值重置；不追高，不改变 V6AB V2",
         )
 
     # 跨市场同步防污染检查：定期提醒用户让 AI 审查 V6AB / A股 Radar 的共享成果。

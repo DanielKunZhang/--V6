@@ -331,6 +331,130 @@
       ],
       "initial_decision": "RESEARCH_BUILD_ONLY",
       "system_action": "Use as higher-quality AI optical comparison candidate versus LITE after product-level evidence is added."
+    },
+    "AAOI": {
+      "company": "Applied Optoelectronics Inc.",
+      "market": "US",
+      "theme": "AI optical high-beta / 800G-1.6T ramp",
+      "source_note": "High-beta first-pass build based on AAOI Q1 2026 official results and 2026 revenue guidance. This is not a quality compounder model; it explicitly tracks execution, dilution, customer concentration, and profitability risk.",
+      "official_sources": [
+        {
+          "name": "AAOI Q1 2026 results press release / 8-K exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316826003562/aaoi_ex9901.htm",
+          "use": "Q1 revenue, gross margin, Q2 revenue guidance, 800G ramp commentary"
+        },
+        {
+          "name": "AAOI Q1 2026 earnings call transcript",
+          "url": "https://www.fool.com/earnings/call-transcripts/2026/05/07/aaoi-q1-2026-earnings-call-transcript/",
+          "use": "Full-year 2026 revenue >$1.1B, non-GAAP operating income >$140M, capacity and 800G/1.6T ramp commentary"
+        },
+        {
+          "name": "AAOI May 2026 shelf / ATM risk filing",
+          "url": "https://appliedoptoelectronics.gcs-web.com/static-files/f23a7786-bd42-48c2-8e7f-20e15bf9be2d",
+          "use": "Dilution and financing risk"
+        }
+      ],
+      "official_calibration": {
+        "Q1FY26A": {
+          "total_revenue": 151.1,
+          "gaap_gross_margin_pct": 29.1
+        },
+        "Q2FY26G": {
+          "revenue_guidance_low": 180,
+          "revenue_guidance_high": 198,
+          "non_gaap_gross_margin_low_pct": 29.0,
+          "non_gaap_gross_margin_high_pct": 30.0,
+          "diluted_shares_m": 80.7
+        }
+      },
+      "currency": "USD",
+      "unit": "USD millions per quarter",
+      "quarters": ["Q1FY26A", "Q2FY26G", "Q3FY26E", "Q4FY26E", "Q1FY27E", "Q2FY27E"],
+      "segments": [
+        {
+          "name": "Datacenter / AI transceivers",
+          "lines": [
+            {
+              "name": "800G/1.6T datacenter transceivers",
+              "values": [81.4, 125, 270, 350, 410, 470],
+              "driver": "Core AAOI ramp line. Q1 included first volume 800G shipment; management expects larger growth starting Q3 as capacity comes online.",
+              "evidence_level": "OFFICIAL_DIRECTION_GUIDANCE_MODEL",
+              "evidence_note": "Direction and FY2026 guide are official/call-derived; quarterly Q3/Q4 split is model assumption."
+            }
+          ]
+        },
+        {
+          "name": "CATV / HFC / other",
+          "lines": [
+            {
+              "name": "CATV / HFC / legacy other",
+              "values": [69.7, 64, 70, 70, 72, 75],
+              "driver": "Non-core or lower-quality stabilizer. Should not receive AI multiple.",
+              "evidence_level": "RESIDUAL_NON_AI",
+              "evidence_note": "Residual line after datacenter estimate; needs official segment reconciliation."
+            }
+          ]
+        }
+      ],
+      "scenario_modifiers": {
+        "bear": {
+          "description": "Capacity ramp slips, customer order timing is uneven, dilution remains heavy, and margins improve slowly.",
+          "line_multipliers": {
+            "800G/1.6T datacenter transceivers": 0.72,
+            "CATV / HFC / legacy other": 0.9
+          }
+        },
+        "base": {
+          "description": "Management FY2026 >$1.1B revenue path is met, with Q3/Q4 ramp carrying the year.",
+          "line_multipliers": {}
+        },
+        "upside": {
+          "description": "AAOI executes capacity ramp cleanly and 800G/1.6T demand remains supply-constrained into 2027.",
+          "line_multipliers": {
+            "800G/1.6T datacenter transceivers": 1.25,
+            "CATV / HFC / legacy other": 1.0
+          }
+        }
+      },
+      "financial_layer": {
+        "bear": {
+          "gross_margin_pct": [0.291, 0.295, 0.305, 0.315, 0.325, 0.330],
+          "operating_margin_pct": [-0.030, 0.000, 0.060, 0.090, 0.110, 0.120],
+          "fcf_margin_pct": [-0.080, -0.030, 0.020, 0.050, 0.060, 0.070]
+        },
+        "base": {
+          "gross_margin_pct": [0.291, 0.300, 0.330, 0.355, 0.370, 0.380],
+          "operating_margin_pct": [-0.010, 0.020, 0.120, 0.180, 0.200, 0.210],
+          "fcf_margin_pct": [-0.050, 0.000, 0.070, 0.110, 0.125, 0.135]
+        },
+        "upside": {
+          "gross_margin_pct": [0.300, 0.315, 0.365, 0.395, 0.410, 0.420],
+          "operating_margin_pct": [0.000, 0.040, 0.170, 0.230, 0.255, 0.265],
+          "fcf_margin_pct": [-0.030, 0.020, 0.110, 0.160, 0.180, 0.190]
+        },
+        "net_cash_m": -250,
+        "diluted_shares_m": 85,
+        "valuation_multiples": {
+          "bear_fcf_multiple": 10,
+          "base_fcf_multiple": 14,
+          "upside_fcf_multiple": 18
+        }
+      },
+      "current_market": {
+        "price": 176.81,
+        "price_date": "2026-05-21",
+        "source": "public historical close cross-check; refresh before any future action"
+      },
+      "evidence_gates": [
+        "Q2 2026 revenue lands inside/above guide and gross margin improves despite tariffs.",
+        "Q3 800G/1.6T volume ramp is visible in revenue and customer commentary.",
+        "FY2026 revenue >$1.1B and non-GAAP operating income >$140M remain intact.",
+        "ATM/shelf dilution slows and share count does not erase operating leverage.",
+        "Customer concentration and Amazon/internalization risk are explicitly reviewed.",
+        "Price/crowding is not already pricing the upside case."
+      ],
+      "initial_decision": "HIGH_BETA_RESEARCH_ONLY",
+      "system_action": "Use as high-beta V6AB/Radar right-tail sample; not AI Core, not main position, not tradeable without Q2/Q3 proof."
     }
   }
 }
