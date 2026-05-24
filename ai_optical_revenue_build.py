@@ -367,6 +367,29 @@ def render_md(payload: dict[str, Any]) -> str:
     lines.extend(["", "## 证据 Gate", ""])
     for gate in company.get("evidence_gates", []):
         lines.append(f"- {gate}")
+    audit = company.get("external_report_audit")
+    if isinstance(audit, dict):
+        lines.extend(
+            [
+                "",
+                "## 外部高弹性报告反向审计",
+                "",
+                f"- 来源：{audit.get('source', '')}",
+                f"- 状态：`{audit.get('status', '')}`",
+                f"- 系统使用：{audit.get('system_use', '')}",
+                "",
+                "### 外部报告目标价",
+                "",
+            ]
+        )
+        for key, value in audit.get("reported_targets", {}).items():
+            lines.append(f"- `{key}`: `${float(value):,.0f}`")
+        lines.extend(["", "### 可吸收点", ""])
+        for point in audit.get("useful_points", []):
+            lines.append(f"- {point}")
+        lines.extend(["", "### 拒绝吸收", ""])
+        for point in audit.get("rejected_points", []):
+            lines.append(f"- {point}")
     lines.extend(["", "## 主源", ""])
     for source in company.get("official_sources", []):
         lines.append(f"- {source['name']}: {source['url']}")
@@ -446,6 +469,28 @@ def render_html(payload: dict[str, Any]) -> str:
 
     header = "".join(f"<th>{esc(q)}</th>" for q in quarters)
     gates = "".join(f"<li>{esc(gate)}</li>" for gate in company.get("evidence_gates", []))
+    audit = company.get("external_report_audit")
+    audit_html = ""
+    if isinstance(audit, dict):
+        targets = "".join(
+            f"<tr><td>{esc(key)}</td><td>{esc(fmt_money(float(value)))}</td></tr>"
+            for key, value in audit.get("reported_targets", {}).items()
+        )
+        useful = "".join(f"<li>{esc(point)}</li>" for point in audit.get("useful_points", []))
+        rejected = "".join(f"<li>{esc(point)}</li>" for point in audit.get("rejected_points", []))
+        audit_html = f"""
+<section class="panel">
+<h2>外部高弹性报告反向审计</h2>
+<p><b>Status:</b> {esc(audit.get('status', ''))}</p>
+<p class="meta">来源：{esc(audit.get('source', ''))}</p>
+<p class="meta">{esc(audit.get('system_use', ''))}</p>
+<table><thead><tr><th>Scenario</th><th>External target</th></tr></thead><tbody>{targets}</tbody></table>
+<h3>可吸收点</h3>
+<ul>{useful}</ul>
+<h3>拒绝吸收</h3>
+<ul>{rejected}</ul>
+</section>
+"""
     sources = "".join(
         f"<li><a href='{esc(source['url'])}'>{esc(source['name'])}</a> - {esc(source['use'])}</li>"
         for source in company.get("official_sources", [])
@@ -514,6 +559,8 @@ ul {{ line-height: 1.7; }}
 <ul>{gates}</ul>
 <p class="meta">{esc(company['source_note'])}</p>
 </section>
+
+{audit_html}
 
 <section class="panel">
 <h2>主源</h2>

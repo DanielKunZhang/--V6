@@ -194,9 +194,39 @@
         "Lumentum IR or earnings call confirms AI/datacenter demand by product line.",
         "200G EML ramp has customer qualification, supply capacity, and margin evidence.",
         "1.6T and CPO timing is supported by customer roadmap, not only market narrative.",
+        "F4Q26 actual revenue is at/above the $985M guidance midpoint and non-GAAP operating margin remains inside/above the 35%-36% guide.",
+        "By F2Q27, 200G EML share of Components is trending toward 30%+ instead of staying below 25%.",
+        "By F4Q27, 1.6T transceiver gross margin is trending toward 45%+; below 40% means vertical integration economics are weaker than the bull narrative.",
+        "By F4Q27, CPO single-quarter revenue is visible and preferably above $100M; below $50M keeps CPO as option value only.",
+        "OCS backlog/new awards expand beyond the already discussed $400M+ base; no new backlog weakens the architecture-adoption thesis.",
+        "Marvell/silicon-photonics substitution risk is explicitly reviewed before raising multiples.",
         "Revenue growth converts into gross margin and FCF, not just lower-quality pass-through sales.",
         "Stock price/crowding does not already price the upside case."
       ],
+      "external_report_audit": {
+        "source": "/Users/zhangkun/Desktop/AI个人投资公司/五线开花/截图/LITE-重新解读报告-2026-05-24.pdf",
+        "status": "USE_STRUCTURE_NOT_TARGET_PRICE",
+        "reported_targets": {
+          "bear": 840,
+          "base": 1834,
+          "bull": 2077,
+          "extreme": 2643,
+          "weighted": 2038
+        },
+        "useful_points": [
+          "Product-module decomposition: 200G EML, 1.6T transceiver, CPO, OCS.",
+          "Event windows: F4Q26 result, FY27 guide path, F1Q27/F2Q27 ramp proof.",
+          "Monitor table: revenue, 200G mix, 1.6T margin, CPO revenue, OCS backlog, Marvell/silicon-photonics risk.",
+          "Psychology check: bull/extreme is hope, not position sizing anchor."
+        ],
+        "rejected_points": [
+          "Do not use $1834/$2038 as system value anchors.",
+          "Do not treat FY28 EPS x 30x as base-case margin of safety.",
+          "Do not treat PEG as reliable for a high-beta optical cycle with customer concentration and technology-substitution risk.",
+          "Do not treat $526 or $800 as hard support; they are model/technical anchors, not balance-sheet floors."
+        ],
+        "system_use": "Absorb monitoring gates and decomposition; keep current DO_NOT_CHASE unless price/crowding resets and official evidence upgrades."
+      },
       "initial_decision": "RESEARCH_BUILD_ONLY",
       "system_action": "Use as V6AB/Radar evidence input after source validation; do not trade from the model alone."
     },
